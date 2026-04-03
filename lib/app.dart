@@ -15,7 +15,7 @@ class NaviSanteApp extends StatelessWidget {
         BlocProvider(create: (_) => LanguageCubit()),
       ],
       child: MaterialApp(
-        title: 'Navi Santé',
+        title: 'NaviSanté',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorSchemeSeed: const Color(0xFF2A7D8F),

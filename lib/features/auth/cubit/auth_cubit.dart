@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/auth_services.dart';
+import '../../../core/utils/auth_email_validator.dart';
 
 part 'auth_state.dart';
 
@@ -12,9 +13,21 @@ class AuthCubit extends Cubit<AuthState> {
     : _authServices = authServices ?? AuthServices(),
       super(const AuthInitial());
 
+  static final _emailRegex = RegExp(
+    r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$',
+  );
+
   // ── Login ──────────────────────────────────────────────────────
   Future<void> login({required String email, required String password}) async {
     emit(const AuthLoading());
+    final formatError = _emailRegex.hasMatch(email.trim().toLowerCase())
+        ? null
+        : 'Please enter a valid email address.';
+
+    if (formatError != null) {
+      emit(AuthError(formatError));
+      return;
+    }
     try {
       final response = await _authServices.signInWithEmailPassword(
         email.trim().toLowerCase(),
@@ -53,6 +66,15 @@ class AuthCubit extends Cubit<AuthState> {
       // Normalize email to lowercase and sanitize metadata
       final normalizedEmail = email.trim().toLowerCase();
       final sanitizedFullName = _sanitizeMetadata(fullName.trim());
+
+      // ── Email Validation (MUST happen BEFORE signup) ────────────
+      // Validate: format + disposable domains + DNS reachability
+      // This runs BEFORE creating the account to prevent orphaned records
+      final emailError = await AppEmailValidator.validate(normalizedEmail);
+      if (emailError != null) {
+        emit(AuthError(emailError));
+        return;
+      }
 
       final response = await _authServices.signUpWithEmailPassword(
         normalizedEmail,
