@@ -315,7 +315,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Expanded(
                           child: _SocialButton(
                             label: 'Google',
-                            icon: _googleIcon(),
+                            icon: _googleIcon(), /* TODO: Google logo*/
                             onTap: () {
                               /* TODO: Google auth */
                             },
@@ -544,7 +544,9 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
         content: _sent
             ? const Text(
                 'If this email is registered, you will receive '
-                'a password reset link shortly.',
+                'a password reset link shortly. '
+                'Please follow the steps in the link to reset your password, '
+                 'then try to login again',
               )
             : Column(
                 mainAxisSize: MainAxisSize.min,

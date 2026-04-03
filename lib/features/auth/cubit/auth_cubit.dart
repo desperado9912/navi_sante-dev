@@ -17,6 +17,7 @@ class AuthCubit extends Cubit<AuthState> {
     r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$',
   );
 
+
   // ── Login ──────────────────────────────────────────────────────
   Future<void> login({required String email, required String password}) async {
     emit(const AuthLoading());
