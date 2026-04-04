@@ -5,6 +5,8 @@ import '../cubit/language_cubit.dart';
 import '../widgets/auth_text_field.dart';
 import '../widgets/language_picker.dart';
 import 'signup.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -315,18 +317,23 @@ class _LoginScreenState extends State<LoginScreen> {
                         Expanded(
                           child: _SocialButton(
                             label: 'Google',
-                            icon: _googleIcon(), /* TODO: Google logo*/
+                            icon: SvgPicture.asset(
+                              'assets/google_logo.svg',
+                              height: 20,
+                              width: 20,
+                            ),
                             onTap: () {
                               /* TODO: Google auth */
-                            },
+                              // => context.read<AuthCubit>().signInWithGoogle(),
+                            }
                           ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: _SocialButton(
                             label: 'Apple',
-                            icon: const Icon(
-                              Icons.apple_rounded,
+                            icon: const FaIcon(
+                              FontAwesomeIcons.apple,
                               size: 22,
                               color: Color(0xFF1A1A1A),
                             ),
@@ -476,14 +483,16 @@ class _SocialButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 14),
         side: const BorderSide(color: Color(0xFFE0E0E0)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
         backgroundColor: Colors.white,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           icon,
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Text(
             label,
             style: const TextStyle(
@@ -620,78 +629,5 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
   }
 }
 
-// Inline Google icon using CustomPainter (no extra package needed)
-Widget _googleIcon() {
-  return SizedBox(
-    width: 22,
-    height: 22,
-    child: CustomPaint(painter: _GoogleLogoPainter()),
-  );
-}
 
-class _GoogleLogoPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
 
-    // Red arc (top-right)
-    paint.color = const Color(0xFFEA4335);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -1.2,
-      2.0,
-      false,
-      paint
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = size.width * 0.22,
-    );
-    // Blue arc (bottom)
-    paint.color = const Color(0xFF4285F4);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      0.8,
-      1.6,
-      false,
-      paint,
-    );
-    // Green arc (bottom-left)
-    paint.color = const Color(0xFF34A853);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      2.4,
-      1.2,
-      false,
-      paint,
-    );
-    // Yellow arc (left)
-    paint.color = const Color(0xFFFBBC05);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      3.6,
-      0.9,
-      false,
-      paint,
-    );
-    // White center
-    paint
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, radius * 0.55, paint);
-    // Blue bar (right)
-    paint.color = const Color(0xFF4285F4);
-    canvas.drawRect(
-      Rect.fromLTWH(
-        center.dx,
-        center.dy - size.height * 0.12,
-        radius * 0.95,
-        size.height * 0.24,
-      ),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
