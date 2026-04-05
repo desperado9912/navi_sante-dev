@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/auth_services.dart';
 import '../../../core/utils/auth_email_validator.dart';
+import '../../../core/utils/security_logger.dart';
 
 part 'auth_state.dart';
 
@@ -126,24 +127,32 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  // ── Forgot Password ────────────────────────────────────────────
-  Future<void> sendPasswordReset({required String email}) async {
-    emit(const AuthLoading());
-    try {
-      final normalizedEmail = email.trim().toLowerCase();
-      await Supabase.instance.client.auth.resetPasswordForEmail(
-        normalizedEmail,
-      );
-      // Always emit success to avoid email enumeration attacks for reset
-      emit(const AuthSuccess());
-    } on AuthException catch (e) {
-      debugPrint('Password reset request: ${e.message}');
-      emit(const AuthSuccess());
-    } catch (error) {
-      debugPrint('Password reset error: $error');
-      emit(const AuthSuccess());
-    }
+
+// ── Forgot Password ────────────────────────────────────────────
+// Calls our Edge Function which generates a secure one-time token,
+// stores it with a 30-minute expiry, and sends the reset email.
+// The email link goes to our secure Vercel page — not directly to Supabase.
+Future<void> sendPasswordReset({required String email}) async {
+  emit(const AuthLoading());
+  final normalizedEmail = email.trim().toLowerCase();
+  try {
+    await Supabase.instance.client.functions.invoke(
+      'request-password-reset',
+      body: {'email': normalizedEmail},
+    );
+    // Always emit success regardless of server response.
+    // Prevents email enumeration — user never knows if email exists.
+    await SecurityLogger.log(
+      eventType: SecurityLogger.passwordResetRequest,
+      email: normalizedEmail,
+    );
+
+    emit(const AuthSuccess());
+  } catch (_) {
+    // Swallow all errors — always show success
+    emit(const AuthSuccess());
   }
+}
 
   void reset() => emit(const AuthInitial());
 
