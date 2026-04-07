@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
 import 'features/auth/cubit/auth_cubit.dart';
 import 'features/auth/cubit/language_cubit.dart';
 import 'features/auth/services/auth_gate.dart';
@@ -14,7 +15,7 @@ class NaviSanteApp extends StatelessWidget {
         BlocProvider(create: (_) => AuthCubit()),
         BlocProvider(create: (_) => LanguageCubit()),
       ],
-      child: MaterialApp(
+      child: GetMaterialApp(
         title: 'NaviSanté',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(

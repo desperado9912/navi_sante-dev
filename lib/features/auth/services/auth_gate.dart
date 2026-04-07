@@ -9,6 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:navi_sante/features/auth/cubit/auth_cubit.dart';
 import 'package:navi_sante/features/auth/screens/login.dart';
 import 'package:navi_sante/features/home/home_screen.dart';
+import 'package:navi_sante/features/navigation_menu.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 class AuthGate extends StatefulWidget {
@@ -90,7 +91,7 @@ class _AuthGateState extends State<AuthGate> {
         final session = snapshot.data?.session;
 
         if (session != null) {
-          return HomeScreen();
+          return NavigationMenu();
         } else {
           return LoginScreen();
         }

@@ -28,7 +28,11 @@ dependencies:
   
   supabase_flutter: ^2.12.2
   
-  cupertino_icons: ^1.0.8
+  cupertino_icons: ^1.0.9
+
+  lucide_icons_flutter: ^3.1.12
+
+  flutter_lucide: ^1.8.2
 
   flutter_dotenv: ^6.0.0
 
@@ -46,6 +50,7 @@ dependencies:
   
   flutter_svg: ^2.2.4
 
+  get: ^4.7.3
 
 dev_dependencies:
   flutter_test:
