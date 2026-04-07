@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:navi_sante/features/auth/cubit/auth_cubit.dart';
 import 'package:navi_sante/features/auth/screens/login.dart';
-import 'package:navi_sante/features/home/home_screen.dart';
 import 'package:navi_sante/features/navigation_menu.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
