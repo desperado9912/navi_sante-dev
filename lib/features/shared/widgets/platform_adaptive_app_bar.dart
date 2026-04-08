@@ -1,6 +1,9 @@
+// An app bar that is consistent accross all screens
+
 import 'package:flutter/material.dart';
 
-class PlatformAdaptiveAppBar extends StatelessWidget implements PreferredSizeWidget {
+class PlatformAdaptiveAppBar extends StatelessWidget
+    implements PreferredSizeWidget {
   const PlatformAdaptiveAppBar({
     super.key,
     required this.title,

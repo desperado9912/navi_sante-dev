@@ -24,7 +24,7 @@ class NaviSanteApp extends StatelessWidget {
           scaffoldBackgroundColor: const Color(0xFFF5F5F5),
         ),
        
-        //authgate decides routing to home
+        //authgate decides auth state routing
         home: const AuthGate(),
       ),
     );

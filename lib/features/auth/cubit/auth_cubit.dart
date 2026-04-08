@@ -18,7 +18,6 @@ class AuthCubit extends Cubit<AuthState> {
     r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$',
   );
 
-
   // ── Login ──────────────────────────────────────────────────────
   Future<void> login({required String email, required String password}) async {
     emit(const AuthLoading());
@@ -69,9 +68,8 @@ class AuthCubit extends Cubit<AuthState> {
       final normalizedEmail = email.trim().toLowerCase();
       final sanitizedFullName = _sanitizeMetadata(fullName.trim());
 
-      // ── Email Validation (MUST happen BEFORE signup) ────────────
-      // Validate: format + disposable domains + DNS reachability
-      // This runs BEFORE creating the account to prevent orphaned records
+      // Email Validation before signup
+      // Calls AppEmailValidator function that checks email structure
       final emailError = await AppEmailValidator.validate(normalizedEmail);
       if (emailError != null) {
         emit(AuthError(emailError));
@@ -90,9 +88,9 @@ class AuthCubit extends Cubit<AuthState> {
         return;
       }
 
-      // ── Duplicate Email Check (Enumeration Protection) ──────────
+      // Duplicate Email Check (Enumeration Protection)
       // When "Enable email enumerations protection" is ON in Supabase,
-      // signUp returns a 200 OK but with no identities if the email exists.
+      // signUp returns a 200 if the email exists.
       final identities = user.identities;
       if (identities != null && identities.isEmpty) {
         emit(
@@ -127,41 +125,37 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  // ── Forgot Password ────────────────────────────────────────────
+  // Request password-reset edge function from supabase
+  // Sends reset email to user
+  Future<void> sendPasswordReset({required String email}) async {
+    emit(const AuthLoading());
+    final normalizedEmail = email.trim().toLowerCase();
+    try {
+      await Supabase.instance.client.functions.invoke(
+        'request-password-reset',
+        body: {'email': normalizedEmail},
+      );
 
-// ── Forgot Password ────────────────────────────────────────────
-// Calls our Edge Function which generates a secure one-time token,
-// stores it with a 30-minute expiry, and sends the reset email.
-// The email link goes to our secure Vercel page — not directly to Supabase.
-Future<void> sendPasswordReset({required String email}) async {
-  emit(const AuthLoading());
-  final normalizedEmail = email.trim().toLowerCase();
-  try {
-    await Supabase.instance.client.functions.invoke(
-      'request-password-reset',
-      body: {'email': normalizedEmail},
-    );
-    // Always emit success regardless of server response.
-    // Prevents email enumeration — user never knows if email exists.
-    await SecurityLogger.log(
-      eventType: SecurityLogger.passwordResetRequest,
-      email: normalizedEmail,
-    );
+      await SecurityLogger.log(
+        eventType: SecurityLogger.passwordResetRequest,
+        email: normalizedEmail,
+      );
 
-    emit(const AuthSuccess());
-  } catch (_) {
-    // Swallow all errors — always show success
-    emit(const AuthSuccess());
+      emit(const AuthSuccess());
+    } catch (_) {
+      emit(const AuthSuccess());
+    }
   }
-}
 
   void reset() => emit(const AuthInitial());
 
-  // ── Sanitize metadata to prevent injection attacks ─────────────
+  // Sanitize metadata
   String _sanitizeMetadata(String input) {
     return input.replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '').trim();
   }
 
-  // ── Human-readable Supabase error messages ─────────────────────
+  // ── User interpreted Supabase error messages ─────────────────────
   String _mapAuthError(String raw) {
     final msg = raw.toLowerCase();
     if (msg.contains('invalid login credentials') ||

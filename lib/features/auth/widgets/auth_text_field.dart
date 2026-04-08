@@ -54,10 +54,7 @@ class AuthTextField extends StatelessWidget {
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(
-              color: Color(0xFFAAAAAA),
-              fontSize: 15,
-            ),
+            hintStyle: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 15),
             prefixIcon: Icon(
               prefixIcon,
               color: const Color(0xFF888780),
@@ -107,10 +104,7 @@ class AuthTextField extends StatelessWidget {
                 width: 1.8,
               ),
             ),
-            errorStyle: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFFC0392B),
-            ),
+            errorStyle: const TextStyle(fontSize: 12, color: Color(0xFFC0392B)),
           ),
         ),
       ],

@@ -1,4 +1,4 @@
-// Continously Listen For auth state changes.
+// Continously Listen For auth state changes and navigate accordingly.
 // Handles: initial routing, token rotation, session expiry, sign-out.
 //  # unauthenticated --> Login Page
 //  # authenticated --> Home page
@@ -35,37 +35,37 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   void _listenToAuthEvents() {
-    _authSubscription = supa.Supabase.instance.client.auth.onAuthStateChange.listen(
-      (data) {
-        final event = data.event;
+    _authSubscription = supa.Supabase.instance.client.auth.onAuthStateChange
+        .listen(
+          (data) {
+            final event = data.event;
 
-        switch (event) {
-          case supa.AuthChangeEvent.signedIn:
-            debugPrint('[AuthGate] User signed in.');
-            break;
-          case supa.AuthChangeEvent.tokenRefreshed:
-            debugPrint('[AuthGate] Token rotated successfully.');
-            break;
-          case supa.AuthChangeEvent.signedOut:
-            debugPrint('[AuthGate] User signed out — resetting state.');
+            switch (event) {
+              case supa.AuthChangeEvent.signedIn:
+                debugPrint('[AuthGate] User signed in.');
+                break;
+              case supa.AuthChangeEvent.tokenRefreshed:
+                debugPrint('[AuthGate] Token rotated successfully.');
+                break;
+              case supa.AuthChangeEvent.signedOut:
+                debugPrint('[AuthGate] User signed out — resetting state.');
+                if (mounted) context.read<AuthCubit>().reset();
+                break;
+              case supa.AuthChangeEvent.userUpdated:
+                debugPrint('[AuthGate] User record updated.');
+                break;
+              case supa.AuthChangeEvent.passwordRecovery:
+                debugPrint('[AuthGate] Password recovery triggered.');
+                break;
+              default:
+                break;
+            }
+          },
+          onError: (error) {
+            debugPrint('[AuthGate] Auth stream error: $error');
             if (mounted) context.read<AuthCubit>().reset();
-            break;
-          case supa.AuthChangeEvent.userUpdated:
-            debugPrint('[AuthGate] User record updated.');
-            break;
-          case supa.AuthChangeEvent.passwordRecovery:
-            debugPrint('[AuthGate] Password recovery triggered.');
-            break;
-          default:
-            break;
-        }
-      },
-      onError: (error) {
-        debugPrint('[AuthGate] Auth stream error: $error');
-        // If a major error occurs, safety-reset the cubit
-        if (mounted) context.read<AuthCubit>().reset();
-      },
-    );
+          },
+        );
   }
 
   @override
@@ -73,9 +73,7 @@ class _AuthGateState extends State<AuthGate> {
     return StreamBuilder<supa.AuthState>(
       //Listen to auth state changes
       stream: supa.Supabase.instance.client.auth.onAuthStateChange.distinct(
-        (prev, next) =>
-            (prev.session != null) ==
-            (next.session != null),
+        (prev, next) => (prev.session != null) == (next.session != null),
       ),
 
       //Build the right page based on auth state

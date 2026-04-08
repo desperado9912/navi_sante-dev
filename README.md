@@ -1,6 +1,6 @@
 # navi_sante
 
-A new Flutter project.
+A Health Navigation App.
 
 ## Getting Started
 

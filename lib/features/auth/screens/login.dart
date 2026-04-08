@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubit/auth_cubit.dart';
@@ -29,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // ── Validators ─────────────────────────────────────────────────
+  // ── Validators: Validates user Inputs───────────────────────────────
   String? _validateEmail(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'Email address is required';
@@ -49,7 +50,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _onLogin() {
     FocusScope.of(context).unfocus();
-    //check button spamming and lock
     if (!_formKey.currentState!.validate() || _isSubmitting) return;
     setState(() => _isSubmitting = true);
 
@@ -59,7 +59,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
     _passwordCtrl.clear();
 
-    //unlock after delay
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) setState(() => _isSubmitting = false);
     });
@@ -73,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  //Login page UI
+  //-- Login page UI------------------------------------------
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
@@ -88,8 +87,8 @@ class _LoginScreenState extends State<LoginScreen> {
           _showErrorSnackbar(context, state.message);
         }
       },
+
       child: Scaffold(
-        //page bg
         backgroundColor: const Color(0xFFF8F9F8),
         body: SafeArea(
           child: GestureDetector(
@@ -143,15 +142,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             ? 'Enter Email Address'
                             : 'Adresse e-mail',
                         hint: 'john@example.com',
-                        prefixIcon: Icons.mail_outline_rounded,
+                        prefixIcon: CupertinoIcons.mail,
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
                         validator: _validateEmail,
                       ),
                     ),
+                    const SizedBox(height: 20),
 
                     // ── Password field ────────────────────────────
-                    const SizedBox(height: 20),
                     BlocBuilder<LanguageCubit, LanguageState>(
                       builder: (context, lang) => AuthTextField(
                         controller: _passwordCtrl,
@@ -159,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ? 'Enter Password'
                             : 'Mot de passe',
                         hint: '••••••••',
-                        prefixIcon: Icons.lock_outline_rounded,
+                        prefixIcon: CupertinoIcons.lock,
                         isPassword: true,
                         obscureText: _obscurePassword,
                         onToggleObscure: () => setState(
@@ -311,7 +310,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // ── Social buttons (stubbed) ───────────────────
+                    // ── Social buttons ───────────────────
                     Row(
                       children: [
                         Expanded(
@@ -325,7 +324,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             onTap: () {
                               /* TODO: Google auth */
                               // => context.read<AuthCubit>().signInWithGoogle(),
-                            }
+                            },
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -392,6 +391,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ],
           ),
+
           //verification link sent message
           backgroundColor: const Color(0xFFF39C12),
           behavior: SnackBarBehavior.floating,
@@ -443,14 +443,13 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 // ── Internal sub-widgets ───────────────────────────────────────────────────────
-
 class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Logo text
+        // Logo || Logo text
         const Text(
           'NaviSanté',
           style: TextStyle(
@@ -483,9 +482,7 @@ class _SocialButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 14),
         side: const BorderSide(color: Color(0xFFE0E0E0)),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         backgroundColor: Colors.white,
       ),
       child: Row(
@@ -555,7 +552,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                 'If this email is registered, you will receive '
                 'a password reset link shortly. '
                 'Please follow the steps in the link to reset your password, '
-                 'then try to login again',
+                'then try to login again',
               )
             : Column(
                 mainAxisSize: MainAxisSize.min,
@@ -628,6 +625,3 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
     );
   }
 }
-
-
-

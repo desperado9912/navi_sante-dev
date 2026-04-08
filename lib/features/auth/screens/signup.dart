@@ -41,7 +41,7 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  // ── Validators ─────────────────────────────────────────────────
+  // Validators
   String? _validateName(String? value) {
     if (value == null || value.trim().isEmpty) return 'Full name is required';
     if (value.trim().length < 8) return 'Enter your full name';
@@ -65,7 +65,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   void _onSignup() {
     FocusScope.of(context).unfocus();
-    //check button spamming and lock
+    // check button spamming and lock
     if (!_formKey.currentState!.validate() || _isSubmitting) return;
     setState(() => _isSubmitting = true);
 
@@ -82,7 +82,7 @@ class _SignupScreenState extends State<SignupScreen> {
     });
   }
 
-  //signup page UI
+  //--- Signup page UI------------------------------------------
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
@@ -124,7 +124,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
               );
           }
-          return; // Don't show verification popup if there's an error
+          return;
         }
 
         // Then check for email verification (only if no errors)
@@ -138,6 +138,7 @@ class _SignupScreenState extends State<SignupScreen> {
           );
         }
       },
+
       child: Scaffold(
         backgroundColor: const Color(0xFFF8F9F8),
         body: SafeArea(

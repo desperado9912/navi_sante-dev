@@ -62,8 +62,7 @@ class LanguagePicker extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 14,
-              fontWeight:
-                  isSelected ? FontWeight.w600 : FontWeight.w400,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
               color: isSelected
                   ? const Color(0xFF2A7D8F)
                   : const Color(0xFF1A1A1A),
@@ -71,11 +70,7 @@ class LanguagePicker extends StatelessWidget {
           ),
           const Spacer(),
           if (isSelected)
-            const Icon(
-              Icons.check_rounded,
-              color: Color(0xFF2A7D8F),
-              size: 18,
-            ),
+            const Icon(Icons.check_rounded, color: Color(0xFF2A7D8F), size: 18),
         ],
       ),
     );

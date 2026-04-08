@@ -7,7 +7,6 @@ import 'package:navi_sante/features/pharmacy/pharmacy.dart';
 import 'package:navi_sante/features/profile_settings/profile.dart';
 import 'package:navi_sante/features/shared/widgets/platform_adaptive_app_bar.dart';
 
-
 class NavigationMenu extends StatelessWidget {
   const NavigationMenu({super.key});
 
@@ -24,7 +23,7 @@ class NavigationMenu extends StatelessWidget {
       () => Scaffold(
         extendBody: true,
         //all screens bg color
-        backgroundColor: const Color.fromARGB(255, 37, 168, 37),
+        backgroundColor: const Color(0xFFF8F9F8),
         appBar: PlatformAdaptiveAppBar(
           title: controller.titles[controller.selectedIndex.value],
         ),
@@ -63,8 +62,9 @@ class NavigationMenu extends StatelessWidget {
                     final isSelected = states.contains(WidgetState.selected);
                     return TextStyle(
                       color: isSelected ? _activeColor : _inactiveColor,
-                      fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                       fontSize: 11,
                     );
                   }),
@@ -133,10 +133,5 @@ class NavigationController extends GetxController {
     const Profile(),
   ];
 
-  List<String> get titles => [
-    'Home',
-    'Find Sanctuary',
-    'Pharmacy',
-    'Profile',
-  ];
+  List<String> get titles => ['Home', 'Find Sanctuary', 'Pharmacy', 'Profile'];
 }

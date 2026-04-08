@@ -1,31 +1,50 @@
+// Multi-layer email validation.
+
+// Layer 1: RFC-compliant regex format check.
+// Catches obvious malformed emails and typos.
+
+// Layer 2: Disposable email domain blocklist.
+// Curated list of common disposable email providers.
+// Expand this list over time as new providers emerge.
+
+// Layer 3: MX record proxy — DNS and TCP reachability check on port 25.
+// Checks if email is valid with active mail Inbox.
+// Called from AuthCubit before any Supabase call.
+
 import 'dart:io';
 import 'dart:async';
-
-
-//Multi-layer email validation.
-
-//Layer 1: RFC-compliant regex format check.
-  //Catches obvious malformed emails and typos. Not exhaustive by design.
-  //Supabase validates server-side too.
-  
-//Layer 2: Disposable email domain blocklist.
-  //Curated list of the most common temporary/disposable email providers.
-  //Expand this list over time as new providers emerge.
-
-//Layer 3: MX record proxy — DNS and TCP reachability check on port 25.
-  //Called from AuthCubit before any Supabase call.
 
 class AppEmailValidator {
   AppEmailValidator._();
 
-  //Layer 1: RFC 5322 regex check
+  //validation entry point
+  static Future<String?> validate(String email) async {
+    final trimmed = email.trim().toLowerCase();
+
+    if (!_emailRegex.hasMatch(trimmed)) {
+      return 'Please enter a valid email address.';
+    }
+
+    final domain = trimmed.split('@').last;
+    if (_disposableDomains.contains(domain)) {
+      return 'Disposable email addresses are not allowed.';
+    }
+
+    final domainReachable = await _isDomainReachable(domain);
+    if (!domainReachable) {
+      return 'This email domain does not appear to be valid.';
+    }
+    return null;
+  }
+
+  // Layer 1: RFC-compliant regex format check.
   static final _emailRegex = RegExp(
     r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$',
   );
 
-  //Layer 2: Disposable email domain blocklist
+  // Layer 2: Disposable email domain blocklist.
   static const _disposableDomains = <String>{
-    // 10-minute mail variants
+    // 10-minute mail
     '10minutemail.com', '10minutemail.net', '10minutemail.org',
     '10minemail.com', '10minutemail.de', '10minutemail.be',
     'tenminutemail.com', 'tenminutemail.org',
@@ -64,40 +83,18 @@ class AppEmailValidator {
     'discard.email', 'spamgon.com',
   };
 
-  //validation entry point
-  static Future<String?> validate(String email) async {
-    final trimmed = email.trim().toLowerCase();
-
-    if (!_emailRegex.hasMatch(trimmed)) {
-      return 'Please enter a valid email address.';
-    }
-
-    final domain = trimmed.split('@').last;
-    if (_disposableDomains.contains(domain)) {
-      return 'Disposable email addresses are not allowed.';
-    }
-
-    final domainReachable = await _isDomainReachable(domain);
-    if (!domainReachable) {
-      return 'This email domain does not appear to be valid.';
-    }
-    return null;
-  }
-
-  //Layer3: Attempt dns record lookup
+  // Layer 3: MX record proxy — DNS and TCP reachability check.
   static Future<bool> _isDomainReachable(String domain) async {
     try {
-      final addresses = await InternetAddress.lookup(domain)
-          .timeout(const Duration(seconds: 5));
+      final addresses = await InternetAddress.lookup(
+        domain,
+      ).timeout(const Duration(seconds: 5));
       return addresses.isNotEmpty;
-    } 
-    on SocketException {
+    } on SocketException {
       return false;
-    } 
-    on TimeoutException {
+    } on TimeoutException {
       return true;
-    }
-     catch (_) {
+    } catch (_) {
       return true;
     }
   }
