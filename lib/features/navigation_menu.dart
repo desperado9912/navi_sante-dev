@@ -18,19 +18,18 @@ class NavigationMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(NavigationController());
-    const floatingBottom = 26.0;
+    const floatingBottom = 22.0;
 
     return Obx(
       () => Scaffold(
         extendBody: true,
         //all screens bg color
-        // backgroundColor: const Color(0xFFF8F9F8),
-        backgroundColor: const Color(0xFF7FBBC8),
+        backgroundColor: const Color.fromARGB(255, 37, 168, 37),
         appBar: PlatformAdaptiveAppBar(
           title: controller.titles[controller.selectedIndex.value],
         ),
         bottomNavigationBar: Padding(
-          padding: EdgeInsets.fromLTRB(15, 0, 15, floatingBottom),
+          padding: EdgeInsets.fromLTRB(20, 0, 20, floatingBottom),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(_barRadius),
@@ -53,7 +52,7 @@ class NavigationMenu extends StatelessWidget {
               borderRadius: BorderRadius.circular(_barRadius),
               child: NavigationBarTheme(
                 data: NavigationBarThemeData(
-                  height: 62,
+                  height: 58,
                   elevation: 0,
                   backgroundColor: Colors.white,
                   indicatorColor: const Color(0x332A7D8F),
@@ -66,7 +65,7 @@ class NavigationMenu extends StatelessWidget {
                       color: isSelected ? _activeColor : _inactiveColor,
                       fontWeight:
                           isSelected ? FontWeight.w700 : FontWeight.w500,
-                      fontSize: 11.5,
+                      fontSize: 11,
                     );
                   }),
                   iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((
@@ -134,5 +133,10 @@ class NavigationController extends GetxController {
     const Profile(),
   ];
 
-  final List<String> titles = ['Home', 'Hospitals', 'Pharmacy', 'Profile'];
+  List<String> get titles => [
+    'Home',
+    'Find Sanctuary',
+    'Pharmacy',
+    'Profile',
+  ];
 }
