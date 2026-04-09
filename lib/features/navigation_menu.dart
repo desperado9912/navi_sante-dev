@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:navi_sante/features/home/home_screen.dart';
 import 'package:navi_sante/features/hospitals/hospitals.dart';
 import 'package:navi_sante/features/pharmacy/pharmacy.dart';
-import 'package:navi_sante/features/profile_settings/profile.dart';
+import 'package:navi_sante/features/profile/screens/profile.dart';
 import 'package:navi_sante/features/shared/widgets/platform_adaptive_app_bar.dart';
 
 class NavigationMenu extends StatelessWidget {
@@ -17,8 +17,6 @@ class NavigationMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(NavigationController());
-    const floatingBottom = 22.0;
-
     return Obx(
       () => Scaffold(
         extendBody: true,
@@ -27,31 +25,28 @@ class NavigationMenu extends StatelessWidget {
         appBar: PlatformAdaptiveAppBar(
           title: controller.titles[controller.selectedIndex.value],
         ),
-        bottomNavigationBar: Padding(
-          padding: EdgeInsets.fromLTRB(20, 0, 20, floatingBottom),
+
+        // Bottom  navbar container
+        bottomNavigationBar: SafeArea(
           child: Container(
+            padding: EdgeInsets.fromLTRB(24, 0, 24, 0),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(_barRadius),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.12),
-                  blurRadius: 20,
+                  color: Colors.black.withValues(alpha: 0.10),
+                  blurRadius: 25,
                   spreadRadius: 0,
                   offset: const Offset(0, 4),
                 ),
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 6,
-                  spreadRadius: 0,
-                  offset: const Offset(0, 1),
-                ),
               ],
             ),
+            // Navbar design
             child: ClipRRect(
               borderRadius: BorderRadius.circular(_barRadius),
               child: NavigationBarTheme(
                 data: NavigationBarThemeData(
-                  height: 58,
+                  height: 68,
                   elevation: 0,
                   backgroundColor: Colors.white,
                   indicatorColor: const Color(0x332A7D8F),
@@ -65,7 +60,7 @@ class NavigationMenu extends StatelessWidget {
                       fontWeight: isSelected
                           ? FontWeight.w700
                           : FontWeight.w500,
-                      fontSize: 11,
+                      fontSize: 10,
                     );
                   }),
                   iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((
@@ -74,7 +69,7 @@ class NavigationMenu extends StatelessWidget {
                     final isSelected = states.contains(WidgetState.selected);
                     return IconThemeData(
                       color: isSelected ? _activeColor : _inactiveColor,
-                      size: 24,
+                      size: 26,
                     );
                   }),
                 ),
@@ -110,6 +105,7 @@ class NavigationMenu extends StatelessWidget {
             ),
           ),
         ),
+        // Body elements scroll behind navbar
         body: SafeArea(
           top: true,
           bottom: false,
@@ -123,15 +119,32 @@ class NavigationMenu extends StatelessWidget {
   }
 }
 
+// Index for screens
 class NavigationController extends GetxController {
   final RxInt selectedIndex = 0.obs;
 
   final List<Widget> screens = [
-    const HomeScreen(),
-    const Hospitals(),
-    const Pharmacy(),
-    const Profile(),
+    const ScreenWrapper(child: HomeScreen()),
+    const ScreenWrapper(child: Hospitals()),
+    const ScreenWrapper(child: Pharmacy()),
+    const ScreenWrapper(child: Profile()),
   ];
 
   List<String> get titles => ['Home', 'Find Sanctuary', 'Pharmacy', 'Profile'];
+}
+
+// Fix screen bottom clipping
+// Adding a padding so screen items dont get stuck behind navbar
+class ScreenWrapper extends StatelessWidget {
+  final Widget child;
+  const ScreenWrapper({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    // navbar height + a padding/safe area buffer
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 100.0, left: 24.0, right: 24.0),
+      child: child,
+    );
+  }
 }

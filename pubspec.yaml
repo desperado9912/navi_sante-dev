@@ -50,6 +50,8 @@ dependencies:
 
   get: ^4.7.3
 
+  url_launcher: ^6.3.2
+
 
 
 dev_dependencies:

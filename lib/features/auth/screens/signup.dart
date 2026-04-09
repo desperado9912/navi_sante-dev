@@ -5,6 +5,7 @@ import '../cubit/language_cubit.dart';
 import '../widgets/auth_text_field.dart';
 import '../widgets/language_picker.dart';
 import '../../home/home_screen.dart';
+import 'package:flutter/cupertino.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -101,7 +102,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   content: Row(
                     children: [
                       const Icon(
-                        Icons.error_outline_rounded,
+                        CupertinoIcons.exclamationmark_circle,
                         color: Colors.white,
                         size: 18,
                       ),
@@ -206,7 +207,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             ? 'Enter Full Name'
                             : 'Nom complet',
                         hint: 'John Doe',
-                        prefixIcon: Icons.person_outline_rounded,
+                        prefixIcon: CupertinoIcons.person,
                         textInputAction: TextInputAction.next,
                         validator: _validateName,
                       ),
@@ -221,7 +222,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             ? 'Enter Email Address'
                             : 'Adresse e-mail',
                         hint: 'john@example.com',
-                        prefixIcon: Icons.mail_outline_rounded,
+                        prefixIcon: CupertinoIcons.mail,
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
                         validator: _validateEmail,
@@ -237,7 +238,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             ? 'Enter Password'
                             : 'Mot de passe',
                         hint: '••••••••',
-                        prefixIcon: Icons.lock_outline_rounded,
+                        prefixIcon: CupertinoIcons.lock,
                         isPassword: true,
                         obscureText: _obscurePassword,
                         onToggleObscure: () => setState(
