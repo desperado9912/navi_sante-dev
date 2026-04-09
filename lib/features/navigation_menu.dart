@@ -4,19 +4,33 @@ import 'package:flutter/cupertino.dart';
 import 'package:navi_sante/features/home/home_screen.dart';
 import 'package:navi_sante/features/hospitals/hospitals.dart';
 import 'package:navi_sante/features/pharmacy/pharmacy.dart';
-import 'package:navi_sante/features/profile/screens/profile.dart';
+import 'package:navi_sante/features/profile/screens/profile_screen.dart';
 import 'package:navi_sante/features/shared/widgets/platform_adaptive_app_bar.dart';
 
-class NavigationMenu extends StatelessWidget {
+class NavigationMenu extends StatefulWidget {
   const NavigationMenu({super.key});
+
+  @override
+  State<NavigationMenu> createState() => _NavigationMenuState();
+}
+
+class _NavigationMenuState extends State<NavigationMenu> {
+  late final NavigationController controller;
 
   static const _inactiveColor = Color(0xFF5F6368);
   static const _activeColor = Color(0xFF2A7D8F);
   static const _barRadius = 26.0;
 
   @override
+  void initState() {
+    super.initState();
+    controller = Get.put(NavigationController());
+    // Always start a new signed-in session on Home tab.
+    controller.selectedIndex.value = 0;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final controller = Get.put(NavigationController());
     return Obx(
       () => Scaffold(
         extendBody: true,
@@ -29,15 +43,15 @@ class NavigationMenu extends StatelessWidget {
         // Bottom  navbar container
         bottomNavigationBar: SafeArea(
           child: Container(
-            padding: EdgeInsets.fromLTRB(24, 0, 24, 0),
+            padding: EdgeInsets.fromLTRB(24, 0, 24, 16),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(_barRadius),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.10),
-                  blurRadius: 25,
+                  color: Colors.black.withValues(alpha: 0.300),
+                  blurRadius: 38,
                   spreadRadius: 0,
-                  offset: const Offset(0, 4),
+                  offset: const Offset(0, 10),
                 ),
               ],
             ),
@@ -127,7 +141,7 @@ class NavigationController extends GetxController {
     const ScreenWrapper(child: HomeScreen()),
     const ScreenWrapper(child: Hospitals()),
     const ScreenWrapper(child: Pharmacy()),
-    const ScreenWrapper(child: Profile()),
+    const ScreenWrapper(child: ProfileScreen()),
   ];
 
   List<String> get titles => ['Home', 'Find Sanctuary', 'Pharmacy', 'Profile'];
@@ -142,9 +156,6 @@ class ScreenWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // navbar height + a padding/safe area buffer
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 100.0, left: 24.0, right: 24.0),
-      child: child,
-    );
+    return child;
   }
 }

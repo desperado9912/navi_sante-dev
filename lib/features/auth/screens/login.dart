@@ -78,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is AuthSuccess) {
-          Navigator.of(context).pushReplacementNamed('/home');
+          // AuthGate handles routing based on current session state.
         }
         if (state is AuthEmailNotVerified) {
           _showEmailVerificationMessage(context);

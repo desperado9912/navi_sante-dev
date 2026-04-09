@@ -6,6 +6,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
 import 'package:navi_sante/features/auth/cubit/auth_cubit.dart';
 import 'package:navi_sante/features/auth/screens/login.dart';
 import 'package:navi_sante/features/navigation_menu.dart';
@@ -50,6 +51,9 @@ class _AuthGateState extends State<AuthGate> {
               case supa.AuthChangeEvent.signedOut:
                 debugPrint('[AuthGate] User signed out — resetting state.');
                 if (mounted) context.read<AuthCubit>().reset();
+                if (Get.isRegistered<NavigationController>()) {
+                  Get.delete<NavigationController>(force: true);
+                }
                 break;
               case supa.AuthChangeEvent.userUpdated:
                 debugPrint('[AuthGate] User record updated.');
@@ -88,9 +92,11 @@ class _AuthGateState extends State<AuthGate> {
         final session = snapshot.data?.session;
 
         if (session != null) {
-          return NavigationMenu();
+          return NavigationMenu(
+            key: ValueKey(session.user.id),
+          );
         } else {
-          return LoginScreen();
+          return const LoginScreen();
         }
       },
     );
