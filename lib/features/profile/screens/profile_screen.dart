@@ -1,13 +1,13 @@
 import 'dart:io' show Platform;
 
+import 'package:navi_sante/features/navigation_menu.dart' show navBottomPadding;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:navi_sante/features/profile/screens/account_info.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 import '../../../features/auth/cubit/auth_cubit.dart';
-import '../../../features/auth/services/auth_services.dart';
 import '../controllers/profile_controller.dart';
 import '../widgets/language_sheet.dart';
 import '../widgets/profile_header.dart';
@@ -22,26 +22,24 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _profileController = ProfileController();
-  final _authServices      = AuthServices();
 
   // ── Language state ───────────────────────────────────────────────
   // Local state only — app-level LanguageCubit will replace this in a
   // future sprint when full localisation is implemented.
   String _langCode = 'en';
-
   String get _langLabel => _langCode == 'en' ? 'English' : 'Français';
 
   // ── App metadata ─────────────────────────────────────────────────
   // Will be read from package_info_plus when version management is set up.
   static const _appVersion = 'V2.4.0.';
-  static const _copyright  = 'Copyright © 2026 NaviSanté';
+  static const _copyright = 'Copyright © 2026 NaviSanté';
 
   // ── Store URL placeholders ────────────────────────────────────────
   // Replace with real store URLs when the app is published.
   static const _androidStoreUrl =
       'https://play.google.com/store/apps'; // TODO: replace with real URL
   static const _iosStoreUrl =
-      'https://apps.apple.com/app';         // TODO: replace with real URL
+      'https://apps.apple.com/app'; // TODO: replace with real URL
 
   @override
   void initState() {
@@ -105,8 +103,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Log Out',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
@@ -144,9 +141,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await _performLogout();
   }
 
+  //logout function
   Future<void> _performLogout() async {
-    final rootNavigator = Navigator.of(context, rootNavigator: true);
-
     // Show non-dismissible loading overlay to prevent any interaction
     showDialog<void>(
       context: context,
@@ -161,31 +157,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    try {
-      // 1. Sign out — local scope (clears session on this device only)
-      await _authServices.signOut();
+    final navigator = Navigator.of(context, rootNavigator: true);
 
-      // 2. Clear all Hive caches safely
+    try {
+      // 1. Clear all Hive caches before signout
       for (final name in ['app_cache', 'news_cache']) {
         if (Hive.isBoxOpen(name)) {
           await Hive.box(name).clear();
         }
       }
 
-      // 3. Reset AuthCubit to AuthInitial
-      if (mounted) context.read<AuthCubit>().reset();
+      // 2. Sign out — local scope (clears session on this device only)
+      if (mounted) await context.read<AuthCubit>().logout();
+
+      // AuthGate automatically redirects to /login after state change.
+      navigator.pop(); // dismiss loader safely
     } catch (e) {
+      //dismiss loader on error
+      navigator.pop();
       if (mounted) {
         _showErrorSnackBar('Sign out failed. Please try again.');
-      }
-    } finally {
-      // Always dismiss loader if still present.
-      if (rootNavigator.canPop()) {
-        rootNavigator.pop();
-      }
-      // Re-enter root route so AuthGate owns post-logout routing.
-      if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
       }
     }
   }
@@ -202,7 +193,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           backgroundColor: const Color(0xFF2A7D8F),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10)),
+            borderRadius: BorderRadius.circular(10),
+          ),
           margin: const EdgeInsets.all(16),
           duration: const Duration(seconds: 2),
         ),
@@ -218,7 +210,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           backgroundColor: const Color(0xFFC0392B),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10)),
+            borderRadius: BorderRadius.circular(10),
+          ),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -229,35 +222,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // ────────────────────────────────────────────────────────────────
 
   Widget get _langTrailing => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF2A7D8F).withOpacity(0.10),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              _langLabel,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF2A7D8F),
-              ),
-            ),
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2A7D8F).withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          _langLabel,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF2A7D8F),
           ),
-          const SizedBox(width: 6),
-          const Icon(
-            CupertinoIcons.chevron_right,
-            size: 16,
-            color: Color(0xFF888780),
-          ),
-        ],
-      );
+        ),
+      ),
+      const SizedBox(width: 6),
+      const Icon(
+        CupertinoIcons.chevron_right,
+        size: 16,
+        color: Color(0xFF888780),
+      ),
+    ],
+  );
 
   // ────────────────────────────────────────────────────────────────
-  // Build
+  // page Builder
   // ────────────────────────────────────────────────────────────────
 
   @override
@@ -265,154 +257,157 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return SafeArea(
       bottom: false,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.only(top: 20, bottom: 120),
+        padding: const EdgeInsets.only(top: 20, bottom: navBottomPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-              // ── Profile header ──────────────────────────────
-              ProfileHeader(controller: _profileController),
-              const SizedBox(height: 24),
+            // ── Profile header ──────────────────────────────
+            ProfileHeader(controller: _profileController),
+            const SizedBox(height: 24),
 
-              // ── Section label ───────────────────────────────
-              const Padding(
-                padding: EdgeInsets.only(left: 24, bottom: 10),
-                child: Text(
-                  'Settings',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF888780),
-                    letterSpacing: 0.5,
-                  ),
+            // ── Section label ───────────────────────────────
+            const Padding(
+              padding: EdgeInsets.only(left: 24, bottom: 10),
+              child: Text(
+                'Settings',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF888780),
+                  letterSpacing: 0.5,
                 ),
               ),
+            ),
 
-              // ── Group 1 ─────────────────────────────────────
-              _TileGroup(
-                children: [
-                  SettingsTile(
-                    icon: CupertinoIcons.person,
-                    title: 'Account Information',
-                    onTap: () => _showComingSoon('Account Information'),
-                  ),
-                  SettingsTile(
-                    icon: CupertinoIcons.bookmark,
-                    title: 'Saved facilities',
-                    onTap: () => _showComingSoon('Saved Facilities'),
-                  ),
-                  SettingsTile(
-                    icon: CupertinoIcons.lock,
-                    title: 'Security',
-                    onTap: () => _showComingSoon('Security'),
-                  ),
-                  
-                ],
-              ),
-              const SizedBox(height: 30),
+            // ── Group 1 ─────────────────────────────────────
+            _TileGroup(
+              children: [
+                SettingsTile(
+                  icon: CupertinoIcons.person,
+                  title: 'Account Information',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(
+                        builder: (context) => const AccountInfo(),
+                      ),
+                    );
+                  },
+                ),
+                SettingsTile(
+                  icon: CupertinoIcons.bookmark,
+                  title: 'Saved facilities',
+                  onTap: () => _showComingSoon('Saved Facilities'),
+                ),
+                SettingsTile(
+                  icon: CupertinoIcons.lock,
+                  title: 'Security',
+                  onTap: () => _showComingSoon('Security'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 30),
 
-              // ── Group 2 ─────────────────────────────────────
-              _TileGroup(
-                children: [
-                  SettingsTile(
-                    icon: CupertinoIcons.bell,
-                    title: 'Notifications',
-                    onTap: () => _showComingSoon('Notifications'),
-                  ),
-                  SettingsTile(
-                    icon: CupertinoIcons.globe,
-                    title: 'Language',
-                    onTap: _openLanguagePicker,
-                    trailing: _langTrailing,
-                  ),
-                  
-                ],
-              ),
-              const SizedBox(height: 30),
+            // ── Group 2 ─────────────────────────────────────
+            _TileGroup(
+              children: [
+                SettingsTile(
+                  icon: CupertinoIcons.bell,
+                  title: 'Notifications',
+                  onTap: () => _showComingSoon('Notifications'),
+                ),
+                SettingsTile(
+                  icon: CupertinoIcons.globe,
+                  title: 'Language',
+                  onTap: _openLanguagePicker,
+                  trailing: _langTrailing,
+                ),
+              ],
+            ),
+            const SizedBox(height: 30),
 
-              // ── Group 3 ─────────────────────────────────────
-              _TileGroup(
-                children: [
-                  SettingsTile(
-                    icon: CupertinoIcons.question_circle,
-                    title: 'Help & support',
-                    onTap: () => _showComingSoon('Help & Support'),
-                  ),
-                  SettingsTile(
-                    icon: CupertinoIcons.doc_text,
-                    title: 'Terms of use & privacy policy',
-                    onTap: () => _showComingSoon('Terms & Privacy Policy'),
-                  ),
-                  SettingsTile(
-                    icon: CupertinoIcons.share,
-                    title: 'Share NaviSanté',
-                    onTap: _shareApp,
-                  ),
-                  SettingsTile(
-                    icon: CupertinoIcons.chat_bubble_text,
-                    title: 'Love the app? Rate us',
-                    onTap: _rateApp,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 30),
+            // ── Group 3 ─────────────────────────────────────
+            _TileGroup(
+              children: [
+                SettingsTile(
+                  icon: CupertinoIcons.question_circle,
+                  title: 'Help & support',
+                  onTap: () => _showComingSoon('Help & Support'),
+                ),
+                SettingsTile(
+                  icon: CupertinoIcons.doc_text,
+                  title: 'Terms of use & privacy policy',
+                  onTap: () => _showComingSoon('Terms & Privacy Policy'),
+                ),
+                SettingsTile(
+                  icon: CupertinoIcons.share,
+                  title: 'Share NaviSanté',
+                  onTap: _shareApp,
+                ),
+                SettingsTile(
+                  icon: CupertinoIcons.chat_bubble_text,
+                  title: 'Love the app? Rate us',
+                  onTap: _rateApp,
+                ),
+              ],
+            ),
+            const SizedBox(height: 30),
 
-              // ── Logout button ────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: OutlinedButton(
-                  onPressed: _confirmLogout,
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFFC0392B),
-                    side: const BorderSide(
-                        color: Color(0xFFC0392B), width: 1.5),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30)),
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    minimumSize: const Size(double.infinity, 52),
+            // ── Logout button ────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: OutlinedButton(
+                onPressed: _confirmLogout,
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFFC0392B),
+                  side: const BorderSide(color: Color(0xFFC0392B), width: 1.5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
                   ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        CupertinoIcons.square_arrow_right,
-                        size: 20,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  minimumSize: const Size(double.infinity, 52),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      CupertinoIcons.square_arrow_right,
+                      size: 20,
+                      color: Color(0xFFC0392B),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Log Out',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                         color: Color(0xFFC0392B),
                       ),
-                      SizedBox(width: 8),
-                      Text(
-                        'Log Out',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFFC0392B),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // ── Footer ───────────────────────────────────────
-              Center(
-                child: Column(
-                  children: const [
-                    Text(
-                      _copyright,
-                      style: TextStyle(
-                          fontSize: 12, color: Color(0xFF888780)),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      _appVersion,
-                      style: TextStyle(
-                          fontSize: 12, color: Color(0xFF888780)),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+            ),
+            const SizedBox(height: 20),
+
+            // ── Footer ───────────────────────────────────────
+            Center(
+              child: Column(
+                children: const [
+                  Text(
+                    _copyright,
+                    style: TextStyle(fontSize: 12, color: Color(0xFF888780)),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    _appVersion,
+                    style: TextStyle(fontSize: 12, color: Color(0xFF888780)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -431,7 +426,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 /// has no meaning outside the settings screen context.
 class _TileGroup extends StatelessWidget {
   final List<Widget> children;
-
   const _TileGroup({required this.children});
 
   @override
@@ -441,9 +435,7 @@ class _TileGroup extends StatelessWidget {
       child: Column(
         children: List.generate(
           children.length * 2 - 1,
-          (i) => i.isOdd
-              ? const SizedBox(height: 8)
-              : children[i ~/ 2],
+          (i) => i.isOdd ? const SizedBox(height: 8) : children[i ~/ 2],
         ),
       ),
     );

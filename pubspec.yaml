@@ -52,11 +52,9 @@ dependencies:
 
   url_launcher: ^6.3.2
 
-  hive_ce_flutter: ^2.3.4
-
   hive_flutter: ^1.1.0
 
-  flutter_launcher_icons: ^0.14.4
+  
 
 
 
@@ -70,12 +68,16 @@ dev_dependencies:
 
   flutter_lints: ^6.0.0
 
+  flutter_launcher_icons: ^0.14.4
+
 
 
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/navisante_logo_1024.png"
+  adaptive_icon_foreground: "assets/navisante_adapt_logo_fg.png"
+  adaptive_icon_background: "assets/navisante_adapt_logo_bg.png"
 
 # The following section is specific to Flutter packages.
 flutter:

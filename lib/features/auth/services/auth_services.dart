@@ -35,9 +35,14 @@ class AuthServices {
 
   //sign up with Apple
 
-  //sign out
+  //sign out with local scope
   Future<void> signOut() async {
-    await _supabase.auth.signOut();
+    await _supabase.auth.signOut(scope: SignOutScope.local);
+  }
+
+  //signout with global scope
+  Future<void> signOutGlobal() async {
+    await _supabase.auth.signOut(scope: SignOutScope.global);
   }
 
   //current session check

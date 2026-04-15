@@ -21,7 +21,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _obscurePassword = true;
-  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -48,27 +47,25 @@ class _LoginScreenState extends State<LoginScreen> {
     return null;
   }
 
-  void _onLogin() {
+  void _onLogin(BuildContext context) {
     FocusScope.of(context).unfocus();
-    if (!_formKey.currentState!.validate() || _isSubmitting) return;
-    setState(() => _isSubmitting = true);
+    if (!_formKey.currentState!.validate()) return;
 
     context.read<AuthCubit>().login(
       email: _emailCtrl.text.trim().toLowerCase(),
       password: _passwordCtrl.text,
     );
     _passwordCtrl.clear();
-
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) setState(() => _isSubmitting = false);
-    });
   }
 
   void _onForgotPassword() {
     final email = _emailCtrl.text.trim();
     showDialog<void>(
       context: context,
-      builder: (ctx) => _ForgotPasswordDialog(prefillEmail: email),
+      builder: (ctx) => BlocProvider.value(
+        value: context.read<AuthCubit>(),
+        child: _ForgotPasswordDialog(prefillEmail: email),
+      ),
     );
   }
 
@@ -77,11 +74,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
-        if (state is AuthSuccess) {
-          // AuthGate handles routing based on current session state.
-        }
+        // AuthGate handles routing based on current session state.
         if (state is AuthEmailNotVerified) {
           _showEmailVerificationMessage(context);
+          context.read<AuthCubit>().reset();
         }
         if (state is AuthError) {
           _showErrorSnackbar(context, state.message);
@@ -165,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           () => _obscurePassword = !_obscurePassword,
                         ),
                         textInputAction: TextInputAction.done,
-                        onEditingComplete: _onLogin,
+                        onEditingComplete: () => _onLogin(context),
                         validator: _validatePassword,
                       ),
                     ),
@@ -202,7 +198,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: double.infinity,
                             height: 50,
                             child: ElevatedButton(
-                              onPressed: isLoading ? null : _onLogin,
+                              onPressed: isLoading
+                                  ? null
+                                  : () => _onLogin(context),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF2A7D8F),
                                 foregroundColor: Colors.white,
@@ -354,7 +352,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ── Dialogs ────────────────────────────────────────────────────
+  // ── Snackbar ────────────────────────────────────────────────────
   void _showEmailVerificationMessage(BuildContext context) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -399,7 +397,7 @@ class _LoginScreenState extends State<LoginScreen> {
             borderRadius: BorderRadius.circular(10),
           ),
           margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 5),
           action: SnackBarAction(
             label: 'OK',
             textColor: Colors.white,
@@ -458,7 +456,7 @@ class _TopBar extends StatelessWidget {
             color: Color(0xFF2A7D8F),
           ),
         ),
-        const LanguagePicker(),
+        LanguagePicker(),
       ],
     );
   }
@@ -504,6 +502,7 @@ class _SocialButton extends StatelessWidget {
   }
 }
 
+// Forgot password dialogue
 class _ForgotPasswordDialog extends StatefulWidget {
   final String prefillEmail;
   const _ForgotPasswordDialog({required this.prefillEmail});
@@ -532,7 +531,11 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
-        if (state is AuthSuccess) setState(() => _sent = true);
+        if (state is AuthPasswordResetSent) {
+          setState(() => _sent = true);
+          context.read<AuthCubit>().reset();
+        }
+
         if (state is AuthError) {
           Navigator.of(context).pop();
           ScaffoldMessenger.of(context).showSnackBar(

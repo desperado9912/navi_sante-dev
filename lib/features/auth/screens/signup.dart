@@ -20,7 +20,6 @@ class _SignupScreenState extends State<SignupScreen> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _obscurePassword = true;
-  bool _isSubmitting = false;
 
   // Password rule trackers
   bool get _hasUppercase => _passwordCtrl.text.contains(RegExp(r'[A-Z]'));
@@ -45,7 +44,10 @@ class _SignupScreenState extends State<SignupScreen> {
   // Validators
   String? _validateName(String? value) {
     if (value == null || value.trim().isEmpty) return 'Full name is required';
-    if (value.trim().length < 8) return 'Enter your full name';
+
+    final trimmed = value.trim();
+    if (trimmed.length < 2) return 'Please enter your full name';
+    if (!trimmed.contains(' ')) return 'Please enter your fist and last name';
     return null;
   }
 
@@ -67,8 +69,7 @@ class _SignupScreenState extends State<SignupScreen> {
   void _onSignup() {
     FocusScope.of(context).unfocus();
     // check button spamming and lock
-    if (!_formKey.currentState!.validate() || _isSubmitting) return;
-    setState(() => _isSubmitting = true);
+    if (!_formKey.currentState!.validate()) return;
 
     context.read<AuthCubit>().signUp(
       fullName: _nameCtrl.text,
@@ -76,11 +77,6 @@ class _SignupScreenState extends State<SignupScreen> {
       password: _passwordCtrl.text,
     );
     _passwordCtrl.clear();
-
-    //unlock after delay
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) setState(() => _isSubmitting = false);
-    });
   }
 
   //--- Signup page UI------------------------------------------
@@ -91,8 +87,7 @@ class _SignupScreenState extends State<SignupScreen> {
         // Check for errors FIRST (including duplicate emails)
         if (state is AuthError) {
           // Check if error is due to duplicate email
-          if (state.message.toLowerCase().contains('user already registered') ||
-              state.message.toLowerCase().contains('already exists')) {
+          if (state.message.toLowerCase().contains('already exists')) {
             _showDuplicateEmailError(context);
           } else {
             ScaffoldMessenger.of(context)
@@ -131,12 +126,6 @@ class _SignupScreenState extends State<SignupScreen> {
         // Then check for email verification (only if no errors)
         if (state is AuthEmailNotVerified) {
           _showVerificationSentDialog(context);
-        }
-        if (state is AuthSuccess) {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
-            (_) => false,
-          );
         }
       },
 
@@ -358,7 +347,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               WidgetSpan(
                                 child: GestureDetector(
                                   onTap: () {
-                                    /* TODO: Terms */
+                                    /* TODO:Launch Terms of Service URL */
                                   },
                                   child: Text(
                                     lang.isEnglish
@@ -376,7 +365,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               WidgetSpan(
                                 child: GestureDetector(
                                   onTap: () {
-                                    /* TODO: Privacy */
+                                    /* TODO: Launch Privacy Policy URL */
                                   },
                                   child: Text(
                                     lang.isEnglish
@@ -406,6 +395,7 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
+  // Dialogs / Snackbars
   void _showDuplicateEmailError(BuildContext context) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -465,9 +455,9 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ),
             onPressed: () {
-              Navigator.of(context).pop(); // close dialog
-              Navigator.of(context).pushReplacementNamed('/login');
               context.read<AuthCubit>().reset();
+              Navigator.of(context).pop(); // close dialog
+              Navigator.of(context).pop(); // redirect to login page
             },
             child: const Text(
               'Go to Login',

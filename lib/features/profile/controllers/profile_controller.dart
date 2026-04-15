@@ -6,9 +6,9 @@ import 'package:flutter/foundation.dart';
 ///
 /// Replace [loadHealthScore] implementation when the scoring feature is built.
 class ProfileController extends ChangeNotifier {
-  double _healthScore      = 84.0;
-  double _healthScoreTrend = 4.3;
-  bool   _isTrendPositive  = true;
+  final double _healthScore      = 84.0;
+  final double _healthScoreTrend = 4.3;
+  final bool   _isTrendPositive  = true;
 
   double get healthScore       => _healthScore;
   double get healthScoreTrend  => _healthScoreTrend;

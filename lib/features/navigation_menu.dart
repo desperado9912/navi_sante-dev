@@ -7,6 +7,7 @@ import 'package:navi_sante/features/pharmacy/pharmacy.dart';
 import 'package:navi_sante/features/profile/screens/profile_screen.dart';
 import 'package:navi_sante/features/shared/widgets/platform_adaptive_app_bar.dart';
 
+
 class NavigationMenu extends StatefulWidget {
   const NavigationMenu({super.key});
 
@@ -24,9 +25,9 @@ class _NavigationMenuState extends State<NavigationMenu> {
   @override
   void initState() {
     super.initState();
-    controller = Get.put(NavigationController());
-    // Always start a new signed-in session on Home tab.
-    controller.selectedIndex.value = 0;
+    controller = Get.isRegistered<NavigationController>()
+        ? Get.find<NavigationController>()
+        : Get.put(NavigationController());
   }
 
   @override
@@ -43,7 +44,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
         // Bottom  navbar container
         bottomNavigationBar: SafeArea(
           child: Container(
-            padding: EdgeInsets.fromLTRB(24, 0, 24, 16),
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(_barRadius),
               boxShadow: [
@@ -63,7 +64,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
                   height: 68,
                   elevation: 0,
                   backgroundColor: Colors.white,
-                  indicatorColor: const Color(0x332A7D8F),
+                  indicatorColor: const Color(0xFFD8F6FF),
                   indicatorShape: const StadiumBorder(),
                   labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((
                     states,
@@ -133,10 +134,11 @@ class _NavigationMenuState extends State<NavigationMenu> {
   }
 }
 
-// Index for screens
+// NAVIGATION CONTROLLER
 class NavigationController extends GetxController {
   final RxInt selectedIndex = 0.obs;
 
+  //Index for screens
   final List<Widget> screens = [
     const ScreenWrapper(child: HomeScreen()),
     const ScreenWrapper(child: Hospitals()),
@@ -147,15 +149,16 @@ class NavigationController extends GetxController {
   List<String> get titles => ['Home', 'Find Sanctuary', 'Pharmacy', 'Profile'];
 }
 
-// Fix screen bottom clipping
-// Adding a padding so screen items dont get stuck behind navbar
+
+// Adding a bottom padding so screen content dont get stuck behind navbar.
+const double navBottomPadding = 150.0;
+
 class ScreenWrapper extends StatelessWidget {
   final Widget child;
   const ScreenWrapper({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    // navbar height + a padding/safe area buffer
     return child;
   }
 }

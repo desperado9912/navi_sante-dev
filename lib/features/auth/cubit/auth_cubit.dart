@@ -14,24 +14,20 @@ class AuthCubit extends Cubit<AuthState> {
     : _authServices = authServices ?? AuthServices(),
       super(const AuthInitial());
 
-  static final _emailRegex = RegExp(
-    r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$',
-  );
-
   // ── Login ──────────────────────────────────────────────────────
   Future<void> login({required String email, required String password}) async {
     emit(const AuthLoading());
-    final formatError = _emailRegex.hasMatch(email.trim().toLowerCase())
-        ? null
-        : 'Please enter a valid email address.';
 
-    if (formatError != null) {
-      emit(AuthError(formatError));
+    final normalizedEmail = email.trim().toLowerCase();
+
+    if (!emailRegex.hasMatch(normalizedEmail)) {
+      emit(const AuthError('Please enter a valid email address.'));
       return;
     }
+
     try {
       final response = await _authServices.signInWithEmailPassword(
-        email.trim().toLowerCase(),
+        normalizedEmail,
         password,
       );
 
@@ -45,6 +41,11 @@ class AuthCubit extends Cubit<AuthState> {
         emit(const AuthEmailNotVerified());
         return;
       }
+
+      await SecurityLogger.log(
+        eventType: SecurityLogger.loginSuccess,
+        email: normalizedEmail,
+      );
 
       emit(const AuthSuccess());
     } on AuthException catch (e) {
@@ -68,8 +69,7 @@ class AuthCubit extends Cubit<AuthState> {
       final normalizedEmail = email.trim().toLowerCase();
       final sanitizedFullName = _sanitizeMetadata(fullName.trim());
 
-      // Email Validation before signup
-      // Calls AppEmailValidator function that checks email structure
+      // Email Validation before signup calls AppEmailValidator file
       final emailError = await AppEmailValidator.validate(normalizedEmail);
       if (emailError != null) {
         emit(AuthError(emailError));
@@ -89,7 +89,6 @@ class AuthCubit extends Cubit<AuthState> {
       }
 
       // Duplicate Email Check (Enumeration Protection)
-      // When "Enable email enumerations protection" is ON in Supabase,
       // signUp returns a 200 if the email exists.
       final identities = user.identities;
       if (identities != null && identities.isEmpty) {
@@ -125,6 +124,11 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  // Sanitize metadata
+  String _sanitizeMetadata(String input) {
+    return input.replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '').trim();
+  }
+
   // ── Forgot Password ────────────────────────────────────────────
   // Request password-reset edge function from supabase
   // Sends reset email to user
@@ -142,18 +146,23 @@ class AuthCubit extends Cubit<AuthState> {
         email: normalizedEmail,
       );
 
-      emit(const AuthSuccess());
+      emit(const AuthPasswordResetSent());
     } catch (_) {
-      emit(const AuthSuccess());
+      emit(const AuthPasswordResetSent());
+    }
+  }
+
+  // ── Logout ─────────────────────────────────────────────────────
+  Future<void> logout() async {
+    try {
+      await _authServices.signOut();
+    } catch (e) {
+      debugPrint('[AuthCubit] Logout error: $e');
+      rethrow; // let the UI handle showing an error snackbar
     }
   }
 
   void reset() => emit(const AuthInitial());
-
-  // Sanitize metadata
-  String _sanitizeMetadata(String input) {
-    return input.replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '').trim();
-  }
 
   // ── User interpreted Supabase error messages ─────────────────────
   String _mapAuthError(String raw) {

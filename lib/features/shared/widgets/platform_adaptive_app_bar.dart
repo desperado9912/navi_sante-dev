@@ -44,7 +44,6 @@ class PlatformAdaptiveAppBar extends StatelessWidget
         ),
       ),
       backgroundColor: backgroundColor,
-      foregroundColor: Colors.white,
       elevation: 0,
       scrolledUnderElevation: 0,
     );
