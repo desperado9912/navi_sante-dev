@@ -4,7 +4,6 @@ import '../cubit/auth_cubit.dart';
 import '../cubit/language_cubit.dart';
 import '../widgets/auth_text_field.dart';
 import '../widgets/language_picker.dart';
-import '../../home/home_screen.dart';
 import 'package:flutter/cupertino.dart';
 
 class SignupScreen extends StatefulWidget {
