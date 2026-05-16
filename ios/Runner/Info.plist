@@ -48,14 +48,33 @@
 		<key>UIStatusBarHidden</key>
 		<false/>
 
+		<!-- Google Sign-In (must match GOOGLE_IOS_CLIENT_ID / GOOGLE_WEB_CLIENT_ID in .env) -->
+		<key>GIDClientID</key>
+		<string>692742796179-le2hgmlo6nrctn46ruhur4mbgrjt16fr.apps.googleusercontent.com</string>
+		<key>GIDServerClientID</key>
+		<string>692742796179-t1jpnngktg3klip41u6q8i8sl6p8ajon.apps.googleusercontent.com</string>
+
 		<key>CFBundleURLTypes</key>
 		<array>
 			<dict>
 				<key>CFBundleTypeRole</key>
 				<string>Editor</string>
+				<key>CFBundleURLName</key>
+				<string>supabase-auth</string>
 				<key>CFBundleURLSchemes</key>
 				<array>
 					<string>io.supabase.navisante</string>
+				</array>
+			</dict>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLName</key>
+				<string>google-sign-in</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<!-- Reversed iOS client ID (REVERSED_CLIENT_ID) -->
+					<string>com.googleusercontent.apps.692742796179-le2hgmlo6nrctn46ruhur4mbgrjt16fr</string>
 				</array>
 			</dict>
 		</array>

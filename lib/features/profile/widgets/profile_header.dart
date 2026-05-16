@@ -6,7 +6,7 @@ import '../controllers/profile_controller.dart';
 ///
 /// Displays:
 /// - Avatar with initials fallback (image upload wired in future sprint)
-/// - Display name from [user_metadata.full_name]
+/// - Display name from [user_metadata.custom_display_name] (fallback: [full_name])
 /// - Email verified badge (derived from [emailConfirmedAt])
 /// - Health score with trend indicator (placeholder via [ProfileController])
 class ProfileHeader extends StatelessWidget {
@@ -27,11 +27,14 @@ class ProfileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
+    final customName =
+        (user?.userMetadata?['custom_display_name'] as String?) ?? '';
     final fullName = (user?.userMetadata?['full_name'] as String?) ?? '';
+    final resolvedName = customName.isNotEmpty ? customName : fullName;
     final email = user?.email ?? '';
-    final displayName = fullName.isNotEmpty ? fullName : email;
+    final displayName = resolvedName.isNotEmpty ? resolvedName : email;
     final isVerified = user?.emailConfirmedAt != null;
-    final initials = _initials(fullName.isNotEmpty ? fullName : email);
+    final initials = _initials(resolvedName.isNotEmpty ? resolvedName : email);
 
     return Container(
       width: double.infinity,

@@ -9,7 +9,11 @@ class AccountInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = supa.Supabase.instance.client.auth.currentUser;
 
-    final fullName = user?.userMetadata?['full_name'] ?? 'Not set';
+    final customName = user?.userMetadata?['custom_display_name'] as String?;
+    final fullName = user?.userMetadata?['full_name'] as String?;
+    final displayName = (customName != null && customName.trim().isNotEmpty)
+        ? customName
+        : (fullName ?? 'Not set');
     final country = user?.userMetadata?['country'] ?? 'Not set';
     final isEmailVerified = user?.emailConfirmedAt != null;
 

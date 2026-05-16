@@ -29,6 +29,10 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  void _handleGoogleLogin(BuildContext context) {
+    context.read<AuthCubit>().signInWithGoogle();
+  }
+
   // ── Validators: Validates user Inputs───────────────────────────────
   String? _validateEmail(String? value) {
     if (value == null || value.trim().isEmpty) {
@@ -309,37 +313,43 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 20),
 
                     // ── Social buttons ───────────────────
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _SocialButton(
-                            label: 'Google',
-                            icon: SvgPicture.asset(
-                              'assets/google_logo.svg',
-                              height: 20,
-                              width: 20,
+                    BlocBuilder<AuthCubit, AuthState>(
+                      builder: (context, state) {
+                        final isLoading = state is AuthLoading;
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: _SocialButton(
+                                label: 'Google',
+                                icon: SvgPicture.asset(
+                                  'assets/google_logo.svg',
+                                  height: 20,
+                                  width: 20,
+                                ),
+                                onPressed: isLoading
+                                    ? null
+                                    : () => _handleGoogleLogin(context),
+                              ),
                             ),
-                            onTap: () {
-                              /* TODO: Google auth */
-                              // => context.read<AuthCubit>().signInWithGoogle(),
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _SocialButton(
-                            label: 'Apple',
-                            icon: const FaIcon(
-                              FontAwesomeIcons.apple,
-                              size: 22,
-                              color: Color(0xFF1A1A1A),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _SocialButton(
+                                label: 'Apple',
+                                icon: const FaIcon(
+                                  FontAwesomeIcons.apple,
+                                  size: 22,
+                                  color: Color(0xFF1A1A1A),
+                                ),
+                                onPressed: isLoading
+                                    ? null
+                                    : () {
+                                        /* TODO: Apple auth */
+                                      },
+                              ),
                             ),
-                            onTap: () {
-                              /* TODO: Apple auth */
-                            },
-                          ),
-                        ),
-                      ],
+                          ],
+                        );
+                      },
                     ),
                     const SizedBox(height: 32),
                   ],
@@ -465,18 +475,18 @@ class _TopBar extends StatelessWidget {
 class _SocialButton extends StatelessWidget {
   final String label;
   final Widget icon;
-  final VoidCallback onTap;
+  final VoidCallback? onPressed;
 
   const _SocialButton({
     required this.label,
     required this.icon,
-    required this.onTap,
+    required this.onPressed,
   });
 
   @override
   Widget build(BuildContext context) {
     return OutlinedButton(
-      onPressed: onTap,
+      onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 14),
         side: const BorderSide(color: Color(0xFFE0E0E0)),

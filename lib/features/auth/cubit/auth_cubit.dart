@@ -152,6 +152,34 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  // ── Google Sign In ─────────────────────────────────────────────
+  Future<void> signInWithGoogle() async {
+    emit(const AuthLoading());
+    try {
+      final response = await _authServices.nativeGoogleSignIn();
+
+      if (response.user == null) {
+        emit(const AuthError('Google sign in failed. Please try again.'));
+        return;
+      }
+
+      await SecurityLogger.log(eventType: SecurityLogger.loginSuccess);
+
+      emit(const AuthSuccess());
+    } on AuthException catch (e) {
+      emit(AuthError(_mapAuthError(e.message)));
+    } catch (error, stackTrace) {
+      final message = error.toString();
+      if (message.contains('Sign In process aborted')) {
+        emit(const AuthInitial());
+        return;
+      }
+      debugPrint('Unexpected Google Auth Error: $error');
+      debugPrint('Stack Trace: $stackTrace');
+      emit(const AuthError('Google sign in failed. Please try again.'));
+    }
+  }
+
   // ── Logout ─────────────────────────────────────────────────────
   Future<void> logout() async {
     try {
