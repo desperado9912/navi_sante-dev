@@ -28,6 +28,15 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Google Sign-In — keep in sync with .env (GOOGLE_WEB_CLIENT_ID, iOS REVERSED_CLIENT_ID)
+        val googleWebClientId =
+            "692742796179-t1jpnngktg3klip41u6q8i8sl6p8ajon.apps.googleusercontent.com"
+        val googleRedirectScheme =
+            "com.googleusercontent.apps.692742796179-le2hgmlo6nrctn46ruhur4mbgrjt16fr"
+
+        resValue("string", "default_web_client_id", googleWebClientId)
+        manifestPlaceholders["googleRedirectScheme"] = googleRedirectScheme
     }
 
     buildTypes {
