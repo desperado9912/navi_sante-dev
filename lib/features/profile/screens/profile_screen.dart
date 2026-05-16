@@ -1,11 +1,14 @@
 import 'dart:io' show Platform;
-
 import 'package:navi_sante/features/navigation_menu.dart' show navBottomPadding;
+import 'package:share_plus/share_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:navi_sante/features/profile/screens/account_info.dart';
+import 'package:navi_sante/features/profile/screens/saved_facilities.dart';
+import 'package:navi_sante/features/profile/screens/security_screen.dart';
+import 'package:navi_sante/features/profile/screens/notifications_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../features/auth/cubit/auth_cubit.dart';
 import '../controllers/profile_controller.dart';
@@ -23,23 +26,14 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _profileController = ProfileController();
 
-  // ── Language state ───────────────────────────────────────────────
-  // Local state only — app-level LanguageCubit will replace this in a
-  // future sprint when full localisation is implemented.
+  // Local language state only — app-level LanguageCubit will replace this.
   String _langCode = 'en';
   String get _langLabel => _langCode == 'en' ? 'English' : 'Français';
 
-  // ── App metadata ─────────────────────────────────────────────────
+  // App metadata
   // Will be read from package_info_plus when version management is set up.
   static const _appVersion = 'V2.4.0.';
   static const _copyright = 'Copyright © 2026 NaviSanté';
-
-  // ── Store URL placeholders ────────────────────────────────────────
-  // Replace with real store URLs when the app is published.
-  static const _androidStoreUrl =
-      'https://play.google.com/store/apps'; // TODO: replace with real URL
-  static const _iosStoreUrl =
-      'https://apps.apple.com/app'; // TODO: replace with real URL
 
   @override
   void initState() {
@@ -54,9 +48,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // ────────────────────────────────────────────────────────────────
-  // Language picker
+  // Tiles Button Functions
   // ────────────────────────────────────────────────────────────────
 
+  //language picker
   Future<void> _openLanguagePicker() async {
     final selected = await showModalBottomSheet<String>(
       context: context,
@@ -70,10 +65,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // ────────────────────────────────────────────────────────────────
-  // URL launcher
-  // ────────────────────────────────────────────────────────────────
-
+  //URL launcher
   Future<void> _launchUrl(String url) async {
     final uri = Uri.parse(url);
     final canOpen = await canLaunchUrl(uri);
@@ -84,20 +76,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
+  // Store URL placeholders
+  static const _androidStoreUrl =
+      'https://play.google.com/store/apps'; // TODO: replace with real URL
+  static const _iosStoreUrl =
+      'https://apps.apple.com/app'; // TODO: replace with real URL
+
+  //Share app button
   Future<void> _shareApp() async {
+    final String appLink = Platform.isIOS ? _iosStoreUrl : _androidStoreUrl;
+
+    await SharePlus.instance.share(
+      ShareParams(
+        text: 'NaviSanté Application: $appLink',
+      )
+    ); 
+  }
+
+  //Rate app button
+  Future<void> _rateApp() async {
     final url = Platform.isIOS ? _iosStoreUrl : _androidStoreUrl;
     await _launchUrl(url);
   }
 
-  Future<void> _rateApp() async {
-    final url = Platform.isIOS ? _iosStoreUrl : _androidStoreUrl;
-    await _launchUrl(url);
+  //help & support button
+  Future<void> _helpAndSupport(BuildContext context) async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: 'contact@navisante.com', //TODO: Add real contact email.
+      queryParameters: {'subject': 'NaviSanté Contact'},
+    );
+
+    if (await canLaunchUrl(emailUri)) {
+      await launchUrl(emailUri);
+    } else {
+      // Show error message
+      if (!context.mounted) return;
+      _showErrorSnackBar('No email app found. Please contact contact@navisante.com directly.');
+    }
+  }
+
+  //About Navisante button
+  Future<void> _aboutNavisante(BuildContext context) async {
+    final Uri webUri = Uri.parse('https://navisante.com/about'); //TODO: Replace with real about link
+
+    if (await canLaunchUrl(webUri)) {
+      await launchUrl(webUri, mode: LaunchMode.inAppWebView);
+    } else{
+      if (!context.mounted) return;
+      _showErrorSnackBar('Could not open the link.');
+    }
   }
 
   // ────────────────────────────────────────────────────────────────
   // Logout
   // ────────────────────────────────────────────────────────────────
 
+  //logout button
   Future<void> _confirmLogout() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -141,7 +176,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await _performLogout();
   }
 
-  //logout function
+  //perform logout Function
   Future<void> _performLogout() async {
     // Show non-dismissible loading overlay to prevent any interaction
     showDialog<void>(
@@ -184,12 +219,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // ────────────────────────────────────────────────────────────────
   // Navigation helpers
   // ────────────────────────────────────────────────────────────────
-  void _showComingSoon(String feature) {
+
+  void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text('$feature — Coming Soon'),
+          content: Text(message),
           backgroundColor: const Color(0xFF2A7D8F),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -201,26 +237,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
   }
 
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: const Color(0xFFC0392B),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          margin: const EdgeInsets.all(16),
-        ),
-      );
-  }
-
   // ────────────────────────────────────────────────────────────────
   // Language tile trailing widget
   // ────────────────────────────────────────────────────────────────
-
   Widget get _langTrailing => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
@@ -251,7 +270,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // ────────────────────────────────────────────────────────────────
   // page Builder
   // ────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -294,15 +312,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     );
                   },
                 ),
+
                 SettingsTile(
                   icon: CupertinoIcons.bookmark,
                   title: 'Saved facilities',
-                  onTap: () => _showComingSoon('Saved Facilities'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(
+                        builder: (context) => const SavedFacilities(),
+                      ),
+                    );
+                  },
                 ),
+
                 SettingsTile(
                   icon: CupertinoIcons.lock,
                   title: 'Security',
-                  onTap: () => _showComingSoon('Security'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(
+                        builder: (context) => const SecurityScreen(),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -314,8 +348,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 SettingsTile(
                   icon: CupertinoIcons.bell,
                   title: 'Notifications',
-                  onTap: () => _showComingSoon('Notifications'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(
+                        builder: (context) => const NotificationsScreen(),
+                      ),
+                    );
+                  },
                 ),
+
                 SettingsTile(
                   icon: CupertinoIcons.globe,
                   title: 'Language',
@@ -332,18 +374,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 SettingsTile(
                   icon: CupertinoIcons.question_circle,
                   title: 'Help & support',
-                  onTap: () => _showComingSoon('Help & Support'),
+                  onTap: () => _helpAndSupport(context),
                 ),
+
                 SettingsTile(
                   icon: CupertinoIcons.doc_text,
-                  title: 'Terms of use & privacy policy',
-                  onTap: () => _showComingSoon('Terms & Privacy Policy'),
+                  title: 'About NaviSanté',
+                  onTap: () => _aboutNavisante(context),
                 ),
+
                 SettingsTile(
                   icon: CupertinoIcons.share,
                   title: 'Share NaviSanté',
                   onTap: _shareApp,
                 ),
+
                 SettingsTile(
                   icon: CupertinoIcons.chat_bubble_text,
                   title: 'Love the app? Rate us',

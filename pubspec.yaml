@@ -52,11 +52,14 @@ dependencies:
 
   url_launcher: ^6.3.2
 
+  share_plus: ^13.1.0
+
   hive_flutter: ^1.1.0
 
   google_sign_in: ^7.2.0
 
   crypto: ^3.0.6
+
 
   
 
