@@ -6,10 +6,14 @@ class SavedFacilities extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Saved Facilities')),
+      appBar: const PlatformAdaptiveAppBar(title: 'Saved Facilities'),
+      backgroundColor: Color(0xFFF8F9F8),
+
       body: const Center(
-        child: Text('Saved Facilities'),
+        
       ),
     );
   }

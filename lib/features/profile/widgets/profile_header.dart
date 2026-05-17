@@ -51,10 +51,10 @@ class ProfileHeader extends StatelessWidget {
             width: 84,
             height: 84,
             decoration: BoxDecoration(
-              color: const Color(0xFF2A7D8F).withOpacity(0.12),
+              color: const Color(0xFF2A7D8F).withValues(alpha: 0.12),
               shape: BoxShape.circle,
               border: Border.all(
-                color: const Color(0xFF2A7D8F).withOpacity(0.25),
+                color: const Color(0xFF2A7D8F).withValues(alpha: 0.25),
                 width: 2,
               ),
             ),
