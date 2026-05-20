@@ -104,7 +104,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final Uri emailUri = Uri(
       scheme: 'mailto',
       path: 'contact@navisante.com', //TODO: Add real contact email.
-      queryParameters: {'subject': 'NaviSanté Contact'},
+      queryParameters: {'subject': 'NaviSanté%20Contact'},
     );
 
     if (await canLaunchUrl(emailUri)) {
@@ -326,18 +326,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   },
                 ),
 
-                SettingsTile(
-                  icon: CupertinoIcons.lock,
-                  title: 'Security',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      CupertinoPageRoute(
-                        builder: (context) => const SecurityScreen(),
-                      ),
-                    );
-                  },
-                ),
+                
               ],
             ),
             const SizedBox(height: 30),
