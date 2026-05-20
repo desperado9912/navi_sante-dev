@@ -6,6 +6,7 @@ import 'package:navi_sante/features/hospitals/hospitals.dart';
 import 'package:navi_sante/features/pharmacy/pharmacy.dart';
 import 'package:navi_sante/features/profile/screens/profile_screen.dart';
 import 'package:navi_sante/features/shared/widgets/platform_adaptive_app_bar.dart';
+import 'package:navi_sante/core/performance/fade_indexed_stack.dart';
 
 
 class NavigationMenu extends StatefulWidget {
@@ -124,7 +125,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
         body: SafeArea(
           top: true,
           bottom: false,
-          child: IndexedStack(
+          child: FadeIndexedStack(
             index: controller.selectedIndex.value,
             children: controller.screens,
           ),
@@ -140,10 +141,10 @@ class NavigationController extends GetxController {
 
   //Index for screens
   final List<Widget> screens = [
-    const ScreenWrapper(child: HomeScreen()),
-    const ScreenWrapper(child: Hospitals()),
-    const ScreenWrapper(child: Pharmacy()),
-    const ScreenWrapper(child: ProfileScreen()),
+    const RepaintBoundary(child: ScreenWrapper(child: HomeScreen())),
+    const RepaintBoundary(child: ScreenWrapper(child: Hospitals())),
+    const RepaintBoundary(child: ScreenWrapper(child: Pharmacy())),
+    const RepaintBoundary(child: ScreenWrapper(child: ProfileScreen())),
   ];
 
   List<String> get titles => ['Home', 'Find Sanctuary', 'Pharmacy', 'Profile'];

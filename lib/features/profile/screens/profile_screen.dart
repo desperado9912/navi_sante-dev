@@ -7,7 +7,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:navi_sante/features/profile/screens/account_info.dart';
 import 'package:navi_sante/features/profile/screens/saved_facilities.dart';
-import 'package:navi_sante/features/profile/screens/security_screen.dart';
 import 'package:navi_sante/features/profile/screens/notifications_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../features/auth/cubit/auth_cubit.dart';
@@ -15,6 +14,7 @@ import '../controllers/profile_controller.dart';
 import '../widgets/language_sheet.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/settings_tiles.dart';
+import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -38,11 +38,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    MemoryLeakTracker.logInit(this);
+    MemoryLeakTracker.logInit(_profileController);
     _profileController.loadHealthScore();
   }
 
   @override
   void dispose() {
+    MemoryLeakTracker.logDispose(this);
+    MemoryLeakTracker.logDispose(_profileController);
     _profileController.dispose();
     super.dispose();
   }
@@ -298,92 +302,98 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
 
             // ── Group 1 ─────────────────────────────────────
-            _TileGroup(
-              children: [
-                SettingsTile(
-                  icon: CupertinoIcons.person,
-                  title: 'Account Information',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      CupertinoPageRoute(
-                        builder: (context) => const AccountInfo(),
-                      ),
-                    );
-                  },
-                ),
+            RepaintBoundary(
+              child: _TileGroup(
+                children: [
+                  SettingsTile(
+                    icon: CupertinoIcons.person,
+                    title: 'Account Information',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                          builder: (context) => const AccountInfo(),
+                        ),
+                      );
+                    },
+                  ),
 
-                SettingsTile(
-                  icon: CupertinoIcons.bookmark,
-                  title: 'Saved facilities',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      CupertinoPageRoute(
-                        builder: (context) => const SavedFacilities(),
-                      ),
-                    );
-                  },
-                ),
+                  SettingsTile(
+                    icon: CupertinoIcons.bookmark,
+                    title: 'Saved facilities',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                          builder: (context) => const SavedFacilities(),
+                        ),
+                      );
+                    },
+                  ),
 
-                
-              ],
+                  
+                ],
+              ),
             ),
             const SizedBox(height: 30),
 
             // ── Group 2 ─────────────────────────────────────
-            _TileGroup(
-              children: [
-                SettingsTile(
-                  icon: CupertinoIcons.bell,
-                  title: 'Notifications',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      CupertinoPageRoute(
-                        builder: (context) => const NotificationsScreen(),
-                      ),
-                    );
-                  },
-                ),
+            RepaintBoundary(
+              child: _TileGroup(
+                children: [
+                  SettingsTile(
+                    icon: CupertinoIcons.bell,
+                    title: 'Notifications',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                          builder: (context) => const NotificationsScreen(),
+                        ),
+                      );
+                    },
+                  ),
 
-                SettingsTile(
-                  icon: CupertinoIcons.globe,
-                  title: 'Language',
-                  onTap: _openLanguagePicker,
-                  trailing: _langTrailing,
-                ),
-              ],
+                  SettingsTile(
+                    icon: CupertinoIcons.globe,
+                    title: 'Language',
+                    onTap: _openLanguagePicker,
+                    trailing: _langTrailing,
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 30),
 
             // ── Group 3 ─────────────────────────────────────
-            _TileGroup(
-              children: [
-                SettingsTile(
-                  icon: CupertinoIcons.question_circle,
-                  title: 'Help & support',
-                  onTap: () => _helpAndSupport(context),
-                ),
+            RepaintBoundary(
+              child: _TileGroup(
+                children: [
+                  SettingsTile(
+                    icon: CupertinoIcons.question_circle,
+                    title: 'Help & support',
+                    onTap: () => _helpAndSupport(context),
+                  ),
 
-                SettingsTile(
-                  icon: CupertinoIcons.doc_text,
-                  title: 'About NaviSanté',
-                  onTap: () => _aboutNavisante(context),
-                ),
+                  SettingsTile(
+                    icon: CupertinoIcons.doc_text,
+                    title: 'About NaviSanté',
+                    onTap: () => _aboutNavisante(context),
+                  ),
 
-                SettingsTile(
-                  icon: CupertinoIcons.share,
-                  title: 'Share NaviSanté',
-                  onTap: _shareApp,
-                ),
+                  SettingsTile(
+                    icon: CupertinoIcons.share,
+                    title: 'Share NaviSanté',
+                    onTap: _shareApp,
+                  ),
 
-                SettingsTile(
-                  icon: CupertinoIcons.chat_bubble_text,
-                  title: 'Love the app? Rate us',
-                  onTap: _rateApp,
-                ),
-              ],
+                  SettingsTile(
+                    icon: CupertinoIcons.chat_bubble_text,
+                    title: 'Love the app? Rate us',
+                    onTap: _rateApp,
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 30),
 

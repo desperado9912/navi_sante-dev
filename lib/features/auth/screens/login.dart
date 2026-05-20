@@ -8,6 +8,7 @@ import '../widgets/language_picker.dart';
 import 'signup.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,7 +24,18 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    MemoryLeakTracker.logInit(this);
+    MemoryLeakTracker.logInit(_emailCtrl);
+    MemoryLeakTracker.logInit(_passwordCtrl);
+  }
+
+  @override
   void dispose() {
+    MemoryLeakTracker.logDispose(this);
+    MemoryLeakTracker.logDispose(_emailCtrl);
+    MemoryLeakTracker.logDispose(_passwordCtrl);
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
@@ -103,33 +115,35 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 16),
 
                     // ── Top bar: logo + language picker ───────────
-                    _TopBar(),
+                    RepaintBoundary(child: _TopBar()),
                     const SizedBox(height: 25),
 
                     // ── Welcome heading ───────────────────────────
-                    BlocBuilder<LanguageCubit, LanguageState>(
-                      builder: (context, lang) => Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            lang.isEnglish ? 'Welcome Back' : 'Bon Retour',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A1A1A),
+                    RepaintBoundary(
+                      child: BlocBuilder<LanguageCubit, LanguageState>(
+                        builder: (context, lang) => Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              lang.isEnglish ? 'Welcome Back' : 'Bon Retour',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1A1A1A),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            lang.isEnglish
-                                ? 'Please login to your account'
-                                : 'Connectez-vous à votre compte',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF5F6368),
+                            const SizedBox(height: 6),
+                            Text(
+                              lang.isEnglish
+                                  ? 'Please login to your account'
+                                  : 'Connectez-vous à votre compte',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF5F6368),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -285,71 +299,77 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 30),
 
-                    // ── Divider ───────────────────────────────────
-                    BlocBuilder<LanguageCubit, LanguageState>(
-                      builder: (context, lang) => Row(
+                    // ── Divider & Social buttons ──────────────────
+                    RepaintBoundary(
+                      child: Column(
                         children: [
-                          const Expanded(
-                            child: Divider(color: Color(0xFFCCCCCC)),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: Text(
-                              lang.isEnglish
-                                  ? 'Or Continue With'
-                                  : 'Ou continuer avec',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Color(0xFF5F6368),
-                              ),
+                          BlocBuilder<LanguageCubit, LanguageState>(
+                            builder: (context, lang) => Row(
+                              children: [
+                                const Expanded(
+                                  child: Divider(color: Color(0xFFCCCCCC)),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  child: Text(
+                                    lang.isEnglish
+                                        ? 'Or Continue With'
+                                        : 'Ou continuer avec',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xFF5F6368),
+                                    ),
+                                  ),
+                                ),
+                                const Expanded(
+                                  child: Divider(color: Color(0xFFCCCCCC)),
+                                ),
+                              ],
                             ),
                           ),
-                          const Expanded(
-                            child: Divider(color: Color(0xFFCCCCCC)),
+                          const SizedBox(height: 20),
+
+                          // ── Social buttons ───────────────────
+                          BlocBuilder<AuthCubit, AuthState>(
+                            builder: (context, state) {
+                              final isLoading = state is AuthLoading;
+                              return Row(
+                                children: [
+                                  Expanded(
+                                    child: _SocialButton(
+                                      label: 'Google',
+                                      icon: SvgPicture.asset(
+                                        'assets/google_logo.svg',
+                                        height: 20,
+                                        width: 20,
+                                      ),
+                                      onPressed: isLoading
+                                          ? null
+                                          : () => _handleGoogleLogin(context),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: _SocialButton(
+                                      label: 'Apple',
+                                      icon: const FaIcon(
+                                        FontAwesomeIcons.apple,
+                                        size: 22,
+                                        color: Color(0xFF1A1A1A),
+                                      ),
+                                      onPressed: isLoading
+                                          ? null
+                                          : () {
+                                              /* TODO: Apple auth */
+                                            },
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── Social buttons ───────────────────
-                    BlocBuilder<AuthCubit, AuthState>(
-                      builder: (context, state) {
-                        final isLoading = state is AuthLoading;
-                        return Row(
-                          children: [
-                            Expanded(
-                              child: _SocialButton(
-                                label: 'Google',
-                                icon: SvgPicture.asset(
-                                  'assets/google_logo.svg',
-                                  height: 20,
-                                  width: 20,
-                                ),
-                                onPressed: isLoading
-                                    ? null
-                                    : () => _handleGoogleLogin(context),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _SocialButton(
-                                label: 'Apple',
-                                icon: const FaIcon(
-                                  FontAwesomeIcons.apple,
-                                  size: 22,
-                                  color: Color(0xFF1A1A1A),
-                                ),
-                                onPressed: isLoading
-                                    ? null
-                                    : () {
-                                        /* TODO: Apple auth */
-                                      },
-                              ),
-                            ),
-                          ],
-                        );
-                      },
                     ),
                     const SizedBox(height: 32),
                   ],
@@ -529,10 +549,14 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
   void initState() {
     super.initState();
     _ctrl = TextEditingController(text: widget.prefillEmail);
+    MemoryLeakTracker.logInit(this);
+    MemoryLeakTracker.logInit(_ctrl);
   }
 
   @override
   void dispose() {
+    MemoryLeakTracker.logDispose(this);
+    MemoryLeakTracker.logDispose(_ctrl);
     _ctrl.dispose();
     super.dispose();
   }

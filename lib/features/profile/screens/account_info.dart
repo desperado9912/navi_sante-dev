@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:navi_sante/features/shared/widgets/platform_adaptive_app_bar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 import 'package:navi_sante/features/profile/controllers/security_controller.dart';
+import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
 
 class AccountInfo extends StatefulWidget {
   const AccountInfo({super.key});
@@ -20,6 +21,9 @@ class _AccountInfoState extends State<AccountInfo> {
   @override
   void initState() {
     super.initState();
+    MemoryLeakTracker.logInit(this);
+    MemoryLeakTracker.logInit(_nameController);
+    MemoryLeakTracker.logInit(_securityController);
     final initialName = supa
         .Supabase
         .instance
@@ -32,6 +36,9 @@ class _AccountInfoState extends State<AccountInfo> {
 
   @override
   void dispose() {
+    MemoryLeakTracker.logDispose(this);
+    MemoryLeakTracker.logDispose(_nameController);
+    MemoryLeakTracker.logDispose(_securityController);
     _nameController.dispose();
     _securityController.dispose();
     super.dispose();
@@ -508,9 +515,6 @@ class _AccountInfoState extends State<AccountInfo> {
     bool isSheetLoading = false;
     String? sheetError;
 
-    final currentUser = supa.Supabase.instance.client.auth.currentUser;
-    final email = currentUser?.email ?? '';
-
     showCupertinoModalPopup(
       context: context,
       barrierDismissible: !isSheetLoading,
@@ -612,7 +616,7 @@ class _AccountInfoState extends State<AccountInfo> {
                                                 );
                                           }
 
-                                          if (context.mounted) {
+                                          if (mounted && context.mounted) {
                                             Navigator.pop(
                                               context,
                                             ); // close sheet
@@ -962,7 +966,7 @@ class _AccountInfoState extends State<AccountInfo> {
                                                 );
                                           }
 
-                                          if (context.mounted) {
+                                          if (mounted && context.mounted) {
                                             Navigator.pop(
                                               context,
                                             ); // close sheet
@@ -1410,180 +1414,181 @@ class _AccountInfoState extends State<AccountInfo> {
         return Scaffold(
           appBar: const PlatformAdaptiveAppBar(title: 'Account Information'),
           backgroundColor: const Color(0xFFF8F9F8),
-
           body: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
             child: Column(
               children: [
                 // Primary User Details Container
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(color: const Color(0xFFE4E7EB)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Fullname Field Row with edit button
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Full name',
-                                  style: TextStyle(
-                                    color: Color(0xFF1A1A1A),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  displayName,
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          GestureDetector(
-                            onTap: () => _openEditSheet(displayName),
-                            child: const Padding(
-                              padding: EdgeInsets.only(right: 8.0),
-                              child: Icon(
-                                CupertinoIcons.pencil,
-                                color: Color(0xFF2A7D8F),
-                                size: 24,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      // Email Address field row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Text(
-                                      'Email address',
-                                      style: TextStyle(
-                                        color: Color(0xFF1A1A1A),
-                                        fontSize: 14,
-                                      ),
+                RepaintBoundary(
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: const Color(0xFFE4E7EB)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Fullname Field Row with edit button
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Full name',
+                                    style: TextStyle(
+                                      color: Color(0xFF1A1A1A),
+                                      fontSize: 14,
                                     ),
-                                    if (isEmailVerified) ...[
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFE8F8F0),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          verificationStatus,
-                                          style: const TextStyle(
-                                            color: Colors.green,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-
-                                const SizedBox(height: 4),
-
-                                Text(
-                                  email,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      //Phone number field row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Phone number',
-                                  style: TextStyle(
-                                    color: Color(0xFF1A1A1A),
-                                    fontSize: 14,
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    displayName,
+                                    style: const TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                ),
-
-                                const SizedBox(height: 4),
-                                Text(
-                                  '+237 123 45 67 89',
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          GestureDetector(
-                            onTap: () => {},
-                            child: Padding(
-                              padding: EdgeInsets.only(right: 8.0),
-                              child: Icon(
-                                CupertinoIcons.pencil,
-                                color: Color(0xFF2A7D8F),
-                                size: 24,
+                                ],
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                  
+                            GestureDetector(
+                              onTap: () => _openEditSheet(displayName),
+                              child: const Padding(
+                                padding: EdgeInsets.only(right: 8.0),
+                                child: Icon(
+                                  CupertinoIcons.pencil,
+                                  color: Color(0xFF2A7D8F),
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                  
+                        const SizedBox(height: 14),
+                  
+                        // Email Address field row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Text(
+                                        'Email address',
+                                        style: TextStyle(
+                                          color: Color(0xFF1A1A1A),
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      if (isEmailVerified) ...[
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFE8F8F0),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            verificationStatus,
+                                            style: const TextStyle(
+                                              color: Colors.green,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                  
+                                  const SizedBox(height: 4),
+                  
+                                  Text(
+                                    email,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                  
+                        const SizedBox(height: 14),
+                  
+                        //Phone number field row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Phone number',
+                                    style: TextStyle(
+                                      color: Color(0xFF1A1A1A),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                  
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '+237 123 45 67 89',
+                                    style: const TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                  
+                            GestureDetector(
+                              onTap: () => {},
+                              child: Padding(
+                                padding: EdgeInsets.only(right: 8.0),
+                                child: Icon(
+                                  CupertinoIcons.pencil,
+                                  color: Color(0xFF2A7D8F),
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
@@ -1598,7 +1603,7 @@ class _AccountInfoState extends State<AccountInfo> {
                   },
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 60),
 
                 // Delete Account outlined button
                 _buildDeleteAccountButton(),

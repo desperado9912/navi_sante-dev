@@ -12,6 +12,7 @@
 
 import 'dart:io';
 import 'dart:async';
+import 'package:navi_sante/core/performance/isolate_runner.dart';
 
 // Layer 1: RFC-compliant regex format check.
 const String emailRegexPattern =
@@ -55,7 +56,7 @@ class AppEmailValidator {
     }
 
     // Layer 3 check
-    final domainReachable = await _isDomainReachable(domain);
+    final domainReachable = await IsolateRunner.run(_isDomainReachable, domain);
     if (!domainReachable) {
       return 'This email domain does not appear to be valid.';
     }

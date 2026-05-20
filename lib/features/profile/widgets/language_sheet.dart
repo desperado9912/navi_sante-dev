@@ -124,7 +124,7 @@ class LanguageBottomSheet extends StatelessWidget {
                               height: 44,
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? const Color(0xFF2A7D8F).withOpacity(0.12)
+                                    ? const Color(0xFF2A7D8F).withValues(alpha: 0.12)
                                     : const Color(0xFFEEEEEE),
                                 borderRadius: BorderRadius.circular(22),
                               ),
