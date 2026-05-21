@@ -24,6 +24,9 @@ GoogleService-Info.plist
 .swiftpm/
 migrate_working_dir/
 
+#folders
+supabase/
+
 # IntelliJ related
 *.iml
 *.ipr
