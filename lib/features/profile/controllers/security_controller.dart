@@ -160,7 +160,7 @@ class SecurityController extends ChangeNotifier {
           await _supabase.rpc('delete_user_account');
         } catch (e2) {
           debugPrint('[SecurityController] delete_user_account RPC failed: $e2');
-          throw Exception('Backend account deletion function is missing in Supabase. Account was not deleted.');
+          throw Exception('Account deletion failed. Please contact support.');
         }
       }
 

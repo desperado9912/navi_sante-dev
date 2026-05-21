@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:navi_sante/features/shared/widgets/platform_adaptive_app_bar.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
@@ -6,11 +7,11 @@ class NotificationsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notifications'),
-      ),
+      appBar: const PlatformAdaptiveAppBar(title: 'Notifications settings'),
+      backgroundColor:  Color(0xFFF8F9F8),
+
       body: const Center(
-        child: Text('Notifications Settings'),
+        
       ),
     );
   }

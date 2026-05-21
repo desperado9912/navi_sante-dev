@@ -113,7 +113,9 @@ class _AccountInfoState extends State<AccountInfo> {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
-            return Container(
+            return _SwipeDismissibleSheet(
+              canDismiss: !_isLoading,
+              child: Container(
               height: 300 + MediaQuery.of(context).viewInsets.bottom,
               padding: EdgeInsets.fromLTRB(
                 20,
@@ -129,6 +131,18 @@ class _AccountInfoState extends State<AccountInfo> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Center(
+                    // ── Drag handle ──────────────────────────────────────
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0E0E0),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
                   // Action Header Configuration Row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -304,6 +318,7 @@ class _AccountInfoState extends State<AccountInfo> {
                   ],
                 ],
               ),
+            ),
             );
           },
         );
@@ -337,6 +352,18 @@ class _AccountInfoState extends State<AccountInfo> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ── Drag handle ──────────────────────────────────────
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0E0E0),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -539,7 +566,9 @@ class _AccountInfoState extends State<AccountInfo> {
                 hasNumber &&
                 passwordsMatch;
 
-            return Container(
+            return _SwipeDismissibleSheet(
+              canDismiss: !isSheetLoading,
+              child: Container(
               height: 520 + MediaQuery.of(context).viewInsets.bottom,
               padding: EdgeInsets.fromLTRB(
                 20,
@@ -556,6 +585,18 @@ class _AccountInfoState extends State<AccountInfo> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // ── Drag handle ──────────────────────────────────────
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE0E0E0),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
                     // Header Row
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -837,6 +878,7 @@ class _AccountInfoState extends State<AccountInfo> {
                   ],
                 ),
               ),
+            ),
             );
           },
         );
@@ -900,6 +942,18 @@ class _AccountInfoState extends State<AccountInfo> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // ── Drag handle ──────────────────────────────────────
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE0E0E0),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
                     // Header Row
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1465,7 +1519,7 @@ class _AccountInfoState extends State<AccountInfo> {
                                 ],
                               ),
                             ),
-                  
+
                             GestureDetector(
                               onTap: () => _openEditSheet(displayName),
                               child: const Padding(
@@ -1479,9 +1533,9 @@ class _AccountInfoState extends State<AccountInfo> {
                             ),
                           ],
                         ),
-                  
+
                         const SizedBox(height: 14),
-                  
+
                         // Email Address field row
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1525,9 +1579,9 @@ class _AccountInfoState extends State<AccountInfo> {
                                       ],
                                     ],
                                   ),
-                  
+
                                   const SizedBox(height: 4),
-                  
+
                                   Text(
                                     email,
                                     style: const TextStyle(
@@ -1541,9 +1595,9 @@ class _AccountInfoState extends State<AccountInfo> {
                             ),
                           ],
                         ),
-                  
+
                         const SizedBox(height: 14),
-                  
+
                         //Phone number field row
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1560,7 +1614,7 @@ class _AccountInfoState extends State<AccountInfo> {
                                       fontSize: 14,
                                     ),
                                   ),
-                  
+
                                   const SizedBox(height: 4),
                                   Text(
                                     '+237 123 45 67 89',
@@ -1573,7 +1627,7 @@ class _AccountInfoState extends State<AccountInfo> {
                                 ],
                               ),
                             ),
-                  
+
                             GestureDetector(
                               onTap: () => {},
                               child: Padding(
@@ -1612,6 +1666,105 @@ class _AccountInfoState extends State<AccountInfo> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Interactive swipe-to-dismiss wrapper for Cupertino-style bottom sheets.
+/// The sheet follows the user's finger downward and dismisses when dragged
+/// past a threshold distance or released with sufficient velocity.
+class _SwipeDismissibleSheet extends StatefulWidget {
+  final Widget child;
+  final bool canDismiss;
+
+  const _SwipeDismissibleSheet({
+    required this.child,
+    this.canDismiss = true,
+  });
+
+  @override
+  State<_SwipeDismissibleSheet> createState() => _SwipeDismissibleSheetState();
+}
+
+class _SwipeDismissibleSheetState extends State<_SwipeDismissibleSheet>
+    with SingleTickerProviderStateMixin {
+  double _dragOffset = 0;
+  double _animStart = 0;
+  double _animTarget = 0;
+  late final AnimationController _animController;
+  bool _isDismissing = false;
+
+  /// Distance the sheet must be dragged before it dismisses on release.
+  static const _dismissThreshold = 100.0;
+
+  /// Fling velocity (px/s) that triggers an immediate dismiss.
+  static const _dismissVelocity = 700.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    )..addListener(() {
+        final curved = Curves.easeOut.transform(_animController.value);
+        setState(() {
+          _dragOffset = _animStart + (_animTarget - _animStart) * curved;
+        });
+      });
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    if (!widget.canDismiss || _isDismissing) return;
+    setState(() {
+      // Only allow dragging downward (clamp at 0)
+      _dragOffset =
+          (_dragOffset + (details.primaryDelta ?? 0)).clamp(0.0, double.infinity);
+    });
+  }
+
+  void _onDragEnd(DragEndDetails details) {
+    if (!widget.canDismiss || _isDismissing) return;
+
+    final velocity = details.primaryVelocity ?? 0;
+
+    if (_dragOffset > _dismissThreshold || velocity > _dismissVelocity) {
+      // ── Dismiss: slide the rest of the way off-screen ──
+      _isDismissing = true;
+      _animStart = _dragOffset;
+      _animTarget = MediaQuery.of(context).size.height;
+      _animController
+        ..reset()
+        ..duration = const Duration(milliseconds: 200)
+        ..forward().then((_) {
+          if (mounted) Navigator.of(context).pop();
+        });
+    } else {
+      // ── Snap back to original position ──
+      _animStart = _dragOffset;
+      _animTarget = 0;
+      _animController
+        ..reset()
+        ..duration = const Duration(milliseconds: 250)
+        ..forward();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onVerticalDragUpdate: _onDragUpdate,
+      onVerticalDragEnd: _onDragEnd,
+      child: Transform.translate(
+        offset: Offset(0, _dragOffset),
+        child: widget.child,
+      ),
     );
   }
 }
