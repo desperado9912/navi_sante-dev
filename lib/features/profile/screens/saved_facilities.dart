@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:navi_sante/features/shared/widgets/platform_adaptive_app_bar.dart';
+import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
 
 class SavedFacilities extends StatelessWidget {
   const SavedFacilities({super.key});

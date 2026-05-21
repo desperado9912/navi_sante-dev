@@ -1,5 +1,6 @@
 import 'dart:io' show Platform;
-import 'package:navi_sante/features/navigation_menu.dart' show navBottomPadding;
+import 'package:navi_sante/core/utils/navigation_menu.dart'
+    show navBottomPadding;
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -32,7 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // App metadata
   // Will be read from package_info_plus when version management is set up.
-  static const _appVersion = 'V2.4.0.';
+  static const _appVersion = 'V1.0.0.';
   static const _copyright = 'Copyright © 2026 NaviSanté';
 
   @override
@@ -91,10 +92,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final String appLink = Platform.isIOS ? _iosStoreUrl : _androidStoreUrl;
 
     await SharePlus.instance.share(
-      ShareParams(
-        text: 'NaviSanté Application: $appLink',
-      )
-    ); 
+      ShareParams(text: 'NaviSanté Application: $appLink'),
+    );
   }
 
   //Rate app button
@@ -116,27 +115,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } else {
       // Show error message
       if (!context.mounted) return;
-      _showErrorSnackBar('No email app found. Please contact contact@navisante.com directly.');
+      _showErrorSnackBar(
+        'No email app found. Please contact contact@navisante.com directly.',
+      );
     }
   }
 
   //About Navisante button
   Future<void> _aboutNavisante(BuildContext context) async {
-    final Uri webUri = Uri.parse('https://navisante.com/about'); //TODO: Replace with real about link
+    final Uri webUri = Uri.parse(
+      'https://navisante.com/about',
+    ); //TODO: Replace with real about link
 
     if (await canLaunchUrl(webUri)) {
       await launchUrl(webUri, mode: LaunchMode.inAppWebView);
-    } else{
+    } else {
       if (!context.mounted) return;
       _showErrorSnackBar('Could not open the link.');
     }
   }
 
-  // ────────────────────────────────────────────────────────────────
-  // Logout
-  // ────────────────────────────────────────────────────────────────
-
-  //logout button
+  //logout button dialogue
   Future<void> _confirmLogout() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -191,7 +190,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (_) => const PopScope(
         canPop: false,
         child: Center(
-          child: CircularProgressIndicator(color: Color(0xFF2A7D8F)),
+          child: CircularProgressIndicator(color: Color(0xFF1A1A1A)),
         ),
       ),
     );
@@ -330,8 +329,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       );
                     },
                   ),
-
-                  
                 ],
               ),
             ),
@@ -395,7 +392,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 40),
 
             // ── Logout button ────────────────────────────────
             Padding(
@@ -405,27 +402,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: OutlinedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: const Color(0xFFC0392B),
-                  side: const BorderSide(color: Color(0xFFC0392B), width: 1.5),
+                  side: const BorderSide(color: Color(0xFFC0392B), width: 0.5),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  minimumSize: const Size(double.infinity, 52),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  minimumSize: const Size(double.infinity, 40),
                 ),
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      CupertinoIcons.square_arrow_right,
-                      size: 20,
-                      color: Color(0xFFC0392B),
-                    ),
+                    Icon(Icons.logout, size: 20, color: Color(0xFFC0392B)),
                     SizedBox(width: 8),
                     Text(
                       'Log Out',
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                         color: Color(0xFFC0392B),
                       ),
                     ),
@@ -459,15 +452,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Internal grouping widget
-// ────────────────────────────────────────────────────────────────────────────
-
-/// Wraps a list of [SettingsTile] widgets with consistent horizontal padding
-/// and an 8px gap between each tile.
-///
-/// Private to this file — not exported as a reusable widget because it
-/// has no meaning outside the settings screen context.
+/// Settings tile grouping widget
+/// Wraps [SettingsTile] widgets with a consistent horizontal padding.
 class _TileGroup extends StatelessWidget {
   final List<Widget> children;
   const _TileGroup({required this.children});
@@ -479,6 +465,7 @@ class _TileGroup extends StatelessWidget {
       child: Column(
         children: List.generate(
           children.length * 2 - 1,
+          // and an 8px gap between each tile.
           (i) => i.isOdd ? const SizedBox(height: 8) : children[i ~/ 2],
         ),
       ),

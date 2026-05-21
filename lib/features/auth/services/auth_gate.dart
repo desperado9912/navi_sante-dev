@@ -9,7 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:navi_sante/features/auth/cubit/auth_cubit.dart';
 import 'package:navi_sante/features/auth/screens/login.dart';
-import 'package:navi_sante/features/navigation_menu.dart';
+import 'package:navi_sante/core/utils/navigation_menu.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 class AuthGate extends StatefulWidget {

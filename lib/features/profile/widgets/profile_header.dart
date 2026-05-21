@@ -1,14 +1,15 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../controllers/profile_controller.dart';
 
 /// Profile header section.
-///
 /// Displays:
-/// - Avatar with initials fallback (image upload wired in future sprint)
-/// - Display name from [user_metadata.custom_display_name] (fallback: [full_name])
-/// - Email verified badge (derived from [emailConfirmedAt])
-/// - Health score with trend indicator (placeholder via [ProfileController])
+/// - Avatar or initials fallback
+/// - Display name and email from user metadata
+/// - Email verified badge
+/// - Health score with trend indicator (via [ProfileController])
+
 class ProfileHeader extends StatelessWidget {
   final ProfileController controller;
 
@@ -37,7 +38,9 @@ class ProfileHeader extends StatelessWidget {
         final email = user?.email ?? '';
         final displayName = resolvedName.isNotEmpty ? resolvedName : email;
         final isVerified = user?.emailConfirmedAt != null;
-        final initials = _initials(resolvedName.isNotEmpty ? resolvedName : email);
+        final initials = _initials(
+          resolvedName.isNotEmpty ? resolvedName : email,
+        );
 
         return Container(
           width: double.infinity,
@@ -49,7 +52,7 @@ class ProfileHeader extends StatelessWidget {
           ),
           child: Column(
             children: [
-              // ── Avatar ────────────────────────────────────────────
+              // Avatar container
               Container(
                 width: 84,
                 height: 84,
@@ -74,7 +77,7 @@ class ProfileHeader extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              // ── Display name ────────────────────────────────────────
+              // Username container
               Text(
                 displayName,
                 style: const TextStyle(
@@ -88,24 +91,20 @@ class ProfileHeader extends StatelessWidget {
               ),
               const SizedBox(height: 6),
 
-              // ── Email verified badge ────────────────────────────────
+              // Email verified badge
               if (isVerified)
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: const [
                     Icon(
                       Icons.verified_rounded,
-                      color: Color(0xFF2A7D8F),
+                      color: CupertinoColors.systemBlue,
                       size: 15,
                     ),
                     SizedBox(width: 4),
                     Text(
                       'Email Verified',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF2A7D8F),
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: TextStyle(fontSize: 13, color: Color(0xFF5F6368)),
                     ),
                   ],
                 ),
@@ -114,7 +113,7 @@ class ProfileHeader extends StatelessWidget {
               const Divider(color: Color(0xFFF0F0F0), height: 1),
               const SizedBox(height: 18),
 
-              // ── Health Score ────────────────────────────────────────
+              // Health Score
               ListenableBuilder(
                 listenable: controller,
                 builder: (context, _) => Column(
@@ -122,8 +121,8 @@ class ProfileHeader extends StatelessWidget {
                     const Text(
                       'Health Score',
                       style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
                         color: Color(0xFF5F6368),
                         letterSpacing: 0.2,
                       ),
@@ -137,7 +136,7 @@ class ProfileHeader extends StatelessWidget {
                         Text(
                           controller.healthScore.toStringAsFixed(0),
                           style: const TextStyle(
-                            fontSize: 46,
+                            fontSize: 40,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF2A7D8F),
                             height: 1,
@@ -155,7 +154,7 @@ class ProfileHeader extends StatelessWidget {
                                     ? Icons.trending_up_rounded
                                     : Icons.trending_down_rounded,
                                 color: controller.isTrendPositive
-                                    ? const Color(0xFF2A7D8F)
+                                    ? Colors.green
                                     : const Color(0xFFC0392B),
                                 size: 18,
                               ),
@@ -167,7 +166,7 @@ class ProfileHeader extends StatelessWidget {
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
                                   color: controller.isTrendPositive
-                                      ? const Color(0xFF2A7D8F)
+                                      ? Colors.green
                                       : const Color(0xFFC0392B),
                                 ),
                               ),
@@ -182,7 +181,7 @@ class ProfileHeader extends StatelessWidget {
             ],
           ),
         );
-      }
+      },
     );
   }
 }

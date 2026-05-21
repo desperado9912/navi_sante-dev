@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:navi_sante/features/shared/widgets/platform_adaptive_app_bar.dart';
+import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 import 'package:navi_sante/features/profile/controllers/security_controller.dart';
 import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
@@ -43,6 +43,10 @@ class _AccountInfoState extends State<AccountInfo> {
     _securityController.dispose();
     super.dispose();
   }
+
+  //----------------------------------------
+  //SUPABASE FUNCTIONS
+  //----------------------------------------
 
   //Supabase update username function
   Future<bool> _updateUserName(String newName) async {
@@ -90,6 +94,135 @@ class _AccountInfoState extends State<AccountInfo> {
     }
   }
 
+  // Platform adaptive 'account delete' confirmation dialogue
+  void _confirmDeleteAccount() {
+    final isAndroid = Theme.of(context).platform == TargetPlatform.android;
+
+    if (isAndroid) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Delete Account'),
+          content: const Text(
+            'This action is permanent and cannot be undone. All your personal data, saved facilities, and settings will be permanently erased. Are you sure you want to proceed?',
+            style: TextStyle(color: Color(0xFF5F6368), fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  color: CupertinoColors.activeBlue,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _performDeleteAccount();
+              },
+              child: const Text(
+                'Delete',
+                style: TextStyle(
+                  color: Color(0xFFC0392B),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      showCupertinoDialog(
+        context: context,
+        builder: (ctx) => CupertinoAlertDialog(
+          title: const Text('Delete Account'),
+          content: const Text(
+            'This action is permanent and cannot be undone. All your personal data, saved facilities, and settings will be permanently erased. Are you sure you want to proceed?',
+          ),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.pop(ctx),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              child: const Text('Delete'),
+              onPressed: () {
+                Navigator.pop(ctx);
+                _performDeleteAccount();
+              },
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  // Executes secure user deletion process and update app state
+  Future<void> _performDeleteAccount() async {
+    // Show non-dismissible loading overlay to prevent interaction
+    showDialog<void>(
+      context: context,
+      useRootNavigator: true,
+      barrierDismissible: false,
+      barrierColor: Colors.black26,
+      builder: (_) => const PopScope(
+        canPop: false,
+        child: Center(
+          child: CircularProgressIndicator(color: Color(0xFFC0392B)),
+        ),
+      ),
+    );
+
+    final navigator = Navigator.of(context, rootNavigator: true);
+
+    try {
+      await _securityController.deleteAccount();
+      // AuthGate automatically redirects to /login after token and session are wiped
+      // Pop all pushed screens (including this one and the loader) to reveal the root LoginScreen
+      navigator.popUntil((route) => route.isFirst);
+    } catch (e) {
+      navigator.pop(); // dismiss loader safely
+
+      final errorMsg = e.toString().replaceAll('Exception:', '').trim();
+
+      if (mounted) {
+        if (Theme.of(context).platform == TargetPlatform.iOS) {
+          showCupertinoDialog(
+            context: context,
+            builder: (ctx) => CupertinoAlertDialog(
+              title: const Text('Error'),
+              content: Text('Failed to delete account: $errorMsg'),
+              actions: [
+                CupertinoDialogAction(
+                  child: const Text('OK'),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+          );
+        } else {
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Error'),
+              content: Text('Failed to delete account: $errorMsg'),
+              actions: [
+                TextButton(
+                  child: const Text('OK'),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+    }
+  }
+
   // Platform adaptive username edit sheet entry point/launcher
   void _openEditSheet(String currentName) {
     _nameController.text = currentName == 'Not set' ? '' : currentName;
@@ -102,6 +235,10 @@ class _AccountInfoState extends State<AccountInfo> {
       _showCupertinoBottomSheet();
     }
   }
+
+  //----------------------------------------
+  //UI PAGES
+  //----------------------------------------
 
   //iOS cupertino style username edit sheet
   void _showCupertinoBottomSheet() {
@@ -116,209 +253,210 @@ class _AccountInfoState extends State<AccountInfo> {
             return _SwipeDismissibleSheet(
               canDismiss: !_isLoading,
               child: Container(
-              height: 300 + MediaQuery.of(context).viewInsets.bottom,
-              padding: EdgeInsets.fromLTRB(
-                20,
-                16,
-                20,
-                16 + MediaQuery.of(context).viewInsets.bottom,
-              ),
-              decoration: const BoxDecoration(
-                color: CupertinoColors.systemBackground,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    // ── Drag handle ──────────────────────────────────────
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE0E0E0),
-                        borderRadius: BorderRadius.circular(2),
+                height: 300 + MediaQuery.of(context).viewInsets.bottom,
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  16,
+                  20,
+                  16 + MediaQuery.of(context).viewInsets.bottom,
+                ),
+                decoration: const BoxDecoration(
+                  color: CupertinoColors.systemBackground,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      // ── Drag handle ──────────────────────────────────────
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE0E0E0),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
                     ),
-                  ),
-                  // Action Header Configuration Row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      CupertinoButton(
-                        padding: EdgeInsets.zero,
-                        onPressed: _isLoading
-                            ? null
-                            : () => Navigator.pop(context),
-                        child: const Icon(
-                          CupertinoIcons.xmark,
-                          color: CupertinoColors.label,
-                          size: 24,
+                    // Action Header Configuration Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          onPressed: _isLoading
+                              ? null
+                              : () => Navigator.pop(context),
+                          child: const Icon(
+                            CupertinoIcons.xmark,
+                            color: CupertinoColors.label,
+                            size: 24,
+                          ),
                         ),
-                      ),
-                      const Text(
-                        'Edit Name',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 17,
-                          color: Colors.black,
-                          decoration: TextDecoration.none,
+                        const Text(
+                          'Edit Name',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 17,
+                            color: Colors.black,
+                            decoration: TextDecoration.none,
+                          ),
                         ),
-                      ),
-                      ValueListenableBuilder<TextEditingValue>(
-                        valueListenable: _nameController,
-                        builder: (context, value, child) {
-                          final isValid =
-                              value.text.trim().isNotEmpty &&
-                              RegExp(
-                                r"^[a-zA-Z\s\-']+$",
-                              ).hasMatch(value.text) &&
-                              validationError == null;
-                          return _isLoading
-                              ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CupertinoActivityIndicator(),
-                                )
-                              : CupertinoButton(
-                                  padding: EdgeInsets.zero,
-                                  onPressed: !isValid
-                                      ? null
-                                      : () async {
-                                          final input = _nameController.text
-                                              .trim();
+                        ValueListenableBuilder<TextEditingValue>(
+                          valueListenable: _nameController,
+                          builder: (context, value, child) {
+                            final isValid =
+                                value.text.trim().isNotEmpty &&
+                                RegExp(
+                                  r"^[a-zA-Z\s\-']+$",
+                                ).hasMatch(value.text) &&
+                                validationError == null;
+                            return _isLoading
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CupertinoActivityIndicator(),
+                                  )
+                                : CupertinoButton(
+                                    padding: EdgeInsets.zero,
+                                    onPressed: !isValid
+                                        ? null
+                                        : () async {
+                                            final input = _nameController.text
+                                                .trim();
 
-                                          setSheetState(() {
-                                            _isLoading = true;
-                                          });
-
-                                          final success = await _updateUserName(
-                                            input,
-                                          );
-
-                                          if (context.mounted) {
                                             setSheetState(() {
-                                              _isLoading = false;
+                                              _isLoading = true;
                                             });
-                                            if (success) {
-                                              showCupertinoDialog(
-                                                context: context,
-                                                builder: (context) =>
-                                                    CupertinoAlertDialog(
-                                                      title: const Text(
-                                                        'Success',
-                                                      ),
-                                                      content: const Text(
-                                                        'Name updated successfully.',
-                                                      ),
-                                                      actions: [
-                                                        CupertinoDialogAction(
-                                                          child: const Text(
-                                                            'OK',
-                                                          ),
-                                                          onPressed: () {
-                                                            Navigator.pop(
-                                                              context,
-                                                            ); // close dialog
-                                                            Navigator.pop(
-                                                              context,
-                                                            ); // close sheet
-                                                          },
+
+                                            final success =
+                                                await _updateUserName(input);
+
+                                            if (context.mounted) {
+                                              setSheetState(() {
+                                                _isLoading = false;
+                                              });
+                                              if (success) {
+                                                showCupertinoDialog(
+                                                  context: context,
+                                                  builder: (context) =>
+                                                      CupertinoAlertDialog(
+                                                        title: const Text(
+                                                          'Success',
                                                         ),
-                                                      ],
-                                                    ),
-                                              );
-                                            } else {
-                                              showCupertinoDialog(
-                                                context: context,
-                                                builder: (context) =>
-                                                    CupertinoAlertDialog(
-                                                      title: const Text(
-                                                        'Error',
-                                                      ),
-                                                      content: const Text(
-                                                        'Failed to update your name. Please try again.',
-                                                      ),
-                                                      actions: [
-                                                        CupertinoDialogAction(
-                                                          child: const Text(
-                                                            'OK',
-                                                          ),
-                                                          onPressed: () =>
+                                                        content: const Text(
+                                                          'Name updated successfully.',
+                                                        ),
+                                                        actions: [
+                                                          CupertinoDialogAction(
+                                                            child: const Text(
+                                                              'OK',
+                                                            ),
+                                                            onPressed: () {
                                                               Navigator.pop(
                                                                 context,
-                                                              ),
+                                                              ); // close dialog
+                                                              Navigator.pop(
+                                                                context,
+                                                              ); // close sheet
+                                                            },
+                                                          ),
+                                                        ],
+                                                      ),
+                                                );
+                                              } else {
+                                                showCupertinoDialog(
+                                                  context: context,
+                                                  builder: (context) =>
+                                                      CupertinoAlertDialog(
+                                                        title: const Text(
+                                                          'Error',
                                                         ),
-                                                      ],
-                                                    ),
-                                              );
+                                                        content: const Text(
+                                                          'Failed to update your name. Please try again.',
+                                                        ),
+                                                        actions: [
+                                                          CupertinoDialogAction(
+                                                            child: const Text(
+                                                              'OK',
+                                                            ),
+                                                            onPressed: () =>
+                                                                Navigator.pop(
+                                                                  context,
+                                                                ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                );
+                                              }
                                             }
-                                          }
-                                        },
-                                  child: Icon(
-                                    CupertinoIcons.checkmark,
-                                    color: isValid
-                                        ? CupertinoColors.systemBlue
-                                        : CupertinoColors.inactiveGray,
-                                    size: 24,
-                                  ),
-                                );
-                        },
+                                          },
+                                    child: Icon(
+                                      CupertinoIcons.checkmark,
+                                      color: isValid
+                                          ? CupertinoColors.systemBlue
+                                          : CupertinoColors.inactiveGray,
+                                      size: 24,
+                                    ),
+                                  );
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    CupertinoTextField(
+                      controller: _nameController,
+                      autofocus: true,
+                      maxLength: 30, // Hardware enforced constraint max length
+                      inputFormatters: [LengthLimitingTextInputFormatter(30)],
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: CupertinoColors.extraLightBackgroundGray,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: validationError != null
+                              ? CupertinoColors.destructiveRed
+                              : Colors.transparent,
+                          width: 1,
+                        ),
+                      ),
+                      placeholder: "Enter full name",
+                      enabled: !_isLoading,
+                      onChanged: (text) {
+                        String? error;
+                        if (text.trim().isEmpty) {
+                          error = null;
+                        } else if (!RegExp(
+                          r"^[a-zA-Z\s\-']+$",
+                        ).hasMatch(text)) {
+                          error = "Special characters are not allowed";
+                        }
+
+                        if (validationError != error) {
+                          setSheetState(() => validationError = error);
+                        }
+                      },
+                    ),
+                    if (validationError != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        validationError!,
+                        style: const TextStyle(
+                          color: CupertinoColors.destructiveRed,
+                          fontSize: 12,
+                          decoration: TextDecoration.none,
+                          fontWeight: FontWeight.normal,
+                        ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 24),
-                  CupertinoTextField(
-                    controller: _nameController,
-                    autofocus: true,
-                    maxLength: 30, // Hardware enforced constraint max length
-                    inputFormatters: [LengthLimitingTextInputFormatter(30)],
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color: CupertinoColors.extraLightBackgroundGray,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: validationError != null
-                            ? CupertinoColors.destructiveRed
-                            : Colors.transparent,
-                        width: 1,
-                      ),
-                    ),
-                    placeholder: "Enter full name",
-                    enabled: !_isLoading,
-                    onChanged: (text) {
-                      String? error;
-                      if (text.trim().isEmpty) {
-                        error = null;
-                      } else if (!RegExp(r"^[a-zA-Z\s\-']+$").hasMatch(text)) {
-                        error = "Special characters are not allowed";
-                      }
-
-                      if (validationError != error) {
-                        setSheetState(() => validationError = error);
-                      }
-                    },
-                  ),
-                  if (validationError != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      validationError!,
-                      style: const TextStyle(
-                        color: CupertinoColors.destructiveRed,
-                        fontSize: 12,
-                        decoration: TextDecoration.none,
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
                   ],
-                ],
+                ),
               ),
-            ),
             );
           },
         );
@@ -520,7 +658,7 @@ class _AccountInfoState extends State<AccountInfo> {
     );
   }
 
-  // Launcher for platform adaptive password update/linking bottom sheets
+  // Launcher for platform adaptive password update bottom sheets
   void _openPasswordSheet(bool hasPassword) {
     final isAndroid = Theme.of(context).platform == TargetPlatform.android;
     if (isAndroid) {
@@ -530,7 +668,56 @@ class _AccountInfoState extends State<AccountInfo> {
     }
   }
 
-  // iOS Cupertino style bottom sheet for password changing/linking
+  // Renders the Change/Create Password security tile
+  Widget _buildPasswordTile(bool hasPassword) {
+    return GestureDetector(
+      onTap: () => _openPasswordSheet(hasPassword),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE4E7EB)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F1F1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                CupertinoIcons.lock,
+                color: Color(0xFF1A1A1A),
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                'Change Password',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+            ),
+            const Icon(
+              CupertinoIcons.chevron_right,
+              size: 18,
+              color: Color(0xFF5F6368),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // iOS Cupertino style password update bottom sheet
   void _showCupertinoPasswordSheet(bool hasPassword) {
     final currentPasswordController = TextEditingController();
     final newPasswordController = TextEditingController();
@@ -569,164 +756,207 @@ class _AccountInfoState extends State<AccountInfo> {
             return _SwipeDismissibleSheet(
               canDismiss: !isSheetLoading,
               child: Container(
-              height: 520 + MediaQuery.of(context).viewInsets.bottom,
-              padding: EdgeInsets.fromLTRB(
-                20,
-                16,
-                20,
-                16 + MediaQuery.of(context).viewInsets.bottom,
-              ),
-              decoration: const BoxDecoration(
-                color: CupertinoColors.systemBackground,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ── Drag handle ──────────────────────────────────────
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        margin: const EdgeInsets.only(bottom: 20),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE0E0E0),
-                          borderRadius: BorderRadius.circular(2),
+                height: 520 + MediaQuery.of(context).viewInsets.bottom,
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  16,
+                  20,
+                  16 + MediaQuery.of(context).viewInsets.bottom,
+                ),
+                decoration: const BoxDecoration(
+                  color: CupertinoColors.systemBackground,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ── Drag handle ──────────────────────────────────────
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          margin: const EdgeInsets.only(bottom: 20),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE0E0E0),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
                       ),
-                    ),
-                    // Header Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        CupertinoButton(
-                          padding: EdgeInsets.zero,
-                          onPressed: isSheetLoading
-                              ? null
-                              : () => Navigator.pop(context),
-                          child: const Icon(
-                            CupertinoIcons.xmark,
-                            color: CupertinoColors.label,
-                            size: 24,
+                      // Header Row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          CupertinoButton(
+                            padding: EdgeInsets.zero,
+                            onPressed: isSheetLoading
+                                ? null
+                                : () => Navigator.pop(context),
+                            child: const Icon(
+                              CupertinoIcons.xmark,
+                              color: CupertinoColors.label,
+                              size: 24,
+                            ),
                           ),
-                        ),
-                        Text(
-                          hasPassword ? 'Change Password' : 'Create Password',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 17,
-                            color: Colors.black,
-                            decoration: TextDecoration.none,
+                          Text(
+                            hasPassword ? 'Change Password' : 'Create Password',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 17,
+                              color: Colors.black,
+                              decoration: TextDecoration.none,
+                            ),
                           ),
-                        ),
-                        isSheetLoading
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CupertinoActivityIndicator(),
-                              )
-                            : CupertinoButton(
-                                padding: EdgeInsets.zero,
-                                onPressed: !isFormValid
-                                    ? null
-                                    : () async {
-                                        setSheetState(() {
-                                          isSheetLoading = true;
-                                          sheetError = null;
-                                        });
-
-                                        try {
-                                          if (hasPassword) {
-                                            await _securityController
-                                                .updatePassword(
-                                                  currentPassword:
-                                                      currentPasswordController
-                                                          .text,
-                                                  newPassword:
-                                                      newPasswordController
-                                                          .text,
-                                                );
-                                          } else {
-                                            await _securityController
-                                                .linkPassword(
-                                                  newPassword:
-                                                      newPasswordController
-                                                          .text,
-                                                );
-                                          }
-
-                                          if (mounted && context.mounted) {
-                                            Navigator.pop(
-                                              context,
-                                            ); // close sheet
-                                            showCupertinoDialog(
-                                              context: this.context,
-                                              builder: (ctx) => CupertinoAlertDialog(
-                                                title: const Text('Success'),
-                                                content: Text(
-                                                  hasPassword
-                                                      ? 'Your password has been changed successfully.'
-                                                      : 'Password created successfully! You can now log in with your email and password.',
-                                                ),
-                                                actions: [
-                                                  CupertinoDialogAction(
-                                                    child: const Text('OK'),
-                                                    onPressed: () =>
-                                                        Navigator.pop(ctx),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          }
-                                        } catch (error) {
+                          isSheetLoading
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CupertinoActivityIndicator(),
+                                )
+                              : CupertinoButton(
+                                  padding: EdgeInsets.zero,
+                                  onPressed: !isFormValid
+                                      ? null
+                                      : () async {
                                           setSheetState(() {
-                                            isSheetLoading = false;
-                                            sheetError = error
-                                                .toString()
-                                                .replaceAll('Exception:', '')
-                                                .trim();
+                                            isSheetLoading = true;
+                                            sheetError = null;
                                           });
-                                        }
-                                      },
-                                child: Icon(
-                                  CupertinoIcons.checkmark,
-                                  color: isFormValid
-                                      ? CupertinoColors.systemBlue
-                                      : CupertinoColors.inactiveGray,
-                                  size: 24,
-                                ),
-                              ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
 
-                    if (!hasPassword) ...[
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: CupertinoColors.activeBlue.withValues(
-                            alpha: 0.1,
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          'Setting a password allows you to log in with your email in the future.',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: CupertinoColors.activeBlue,
-                            decoration: TextDecoration.none,
-                            fontWeight: FontWeight.normal,
-                          ),
-                        ),
+                                          try {
+                                            if (hasPassword) {
+                                              await _securityController
+                                                  .updatePassword(
+                                                    currentPassword:
+                                                        currentPasswordController
+                                                            .text,
+                                                    newPassword:
+                                                        newPasswordController
+                                                            .text,
+                                                  );
+                                            } else {
+                                              await _securityController
+                                                  .linkPassword(
+                                                    newPassword:
+                                                        newPasswordController
+                                                            .text,
+                                                  );
+                                            }
+
+                                            if (mounted && context.mounted) {
+                                              Navigator.pop(
+                                                context,
+                                              ); // close sheet
+                                              showCupertinoDialog(
+                                                context: this.context,
+                                                builder: (ctx) => CupertinoAlertDialog(
+                                                  title: const Text('Success'),
+                                                  content: Text(
+                                                    hasPassword
+                                                        ? 'Your password has been changed successfully.'
+                                                        : 'Password created successfully! You can now log in with your email and password.',
+                                                  ),
+                                                  actions: [
+                                                    CupertinoDialogAction(
+                                                      child: const Text('OK'),
+                                                      onPressed: () =>
+                                                          Navigator.pop(ctx),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            }
+                                          } catch (error) {
+                                            setSheetState(() {
+                                              isSheetLoading = false;
+                                              sheetError = error
+                                                  .toString()
+                                                  .replaceAll('Exception:', '')
+                                                  .trim();
+                                            });
+                                          }
+                                        },
+                                  child: Icon(
+                                    CupertinoIcons.checkmark,
+                                    color: isFormValid
+                                        ? CupertinoColors.systemBlue
+                                        : CupertinoColors.inactiveGray,
+                                    size: 24,
+                                  ),
+                                ),
+                        ],
                       ),
                       const SizedBox(height: 20),
-                    ],
 
-                    if (hasPassword) ...[
+                      if (!hasPassword) ...[
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: CupertinoColors.activeBlue.withValues(
+                              alpha: 0.1,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            'Setting a password allows you to log in with your email in the future.',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: CupertinoColors.activeBlue,
+                              decoration: TextDecoration.none,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+
+                      if (hasPassword) ...[
+                        const Text(
+                          'Current Password',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: CupertinoColors.label,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        CupertinoTextField(
+                          controller: currentPasswordController,
+                          obscureText: obscureCurrent,
+                          placeholder: "Enter current password",
+                          enabled: !isSheetLoading,
+                          decoration: BoxDecoration(
+                            color: CupertinoColors.extraLightBackgroundGray,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 14,
+                          ),
+                          suffix: CupertinoButton(
+                            padding: EdgeInsets.zero,
+                            child: Icon(
+                              obscureCurrent
+                                  ? CupertinoIcons.eye_slash
+                                  : CupertinoIcons.eye,
+                              color: CupertinoColors.secondaryLabel,
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              setSheetState(
+                                () => obscureCurrent = !obscureCurrent,
+                              );
+                            },
+                          ),
+                          onChanged: (_) => setSheetState(() {}),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
                       const Text(
-                        'Current Password',
+                        'New Password',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -736,9 +966,9 @@ class _AccountInfoState extends State<AccountInfo> {
                       ),
                       const SizedBox(height: 8),
                       CupertinoTextField(
-                        controller: currentPasswordController,
-                        obscureText: obscureCurrent,
-                        placeholder: "Enter current password",
+                        controller: newPasswordController,
+                        obscureText: obscureNew,
+                        placeholder: "Enter new password",
                         enabled: !isSheetLoading,
                         decoration: BoxDecoration(
                           color: CupertinoColors.extraLightBackgroundGray,
@@ -751,7 +981,47 @@ class _AccountInfoState extends State<AccountInfo> {
                         suffix: CupertinoButton(
                           padding: EdgeInsets.zero,
                           child: Icon(
-                            obscureCurrent
+                            obscureNew
+                                ? CupertinoIcons.eye_slash
+                                : CupertinoIcons.eye,
+                            color: CupertinoColors.secondaryLabel,
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            setSheetState(() => obscureNew = !obscureNew);
+                          },
+                        ),
+                        onChanged: (_) => setSheetState(() {}),
+                      ),
+                      const SizedBox(height: 16),
+
+                      const Text(
+                        'Confirm Password',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: CupertinoColors.label,
+                          decoration: TextDecoration.none,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      CupertinoTextField(
+                        controller: confirmPasswordController,
+                        obscureText: obscureConfirm,
+                        placeholder: "Confirm new password",
+                        enabled: !isSheetLoading,
+                        decoration: BoxDecoration(
+                          color: CupertinoColors.extraLightBackgroundGray,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 14,
+                        ),
+                        suffix: CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          child: Icon(
+                            obscureConfirm
                                 ? CupertinoIcons.eye_slash
                                 : CupertinoIcons.eye,
                             color: CupertinoColors.secondaryLabel,
@@ -759,126 +1029,45 @@ class _AccountInfoState extends State<AccountInfo> {
                           ),
                           onPressed: () {
                             setSheetState(
-                              () => obscureCurrent = !obscureCurrent,
+                              () => obscureConfirm = !obscureConfirm,
                             );
                           },
                         ),
                         onChanged: (_) => setSheetState(() {}),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
+
+                      // Validation checklist
+                      _buildValidationRule('At least 8 characters', isLengthOk),
+                      const SizedBox(height: 8),
+                      _buildValidationRule(
+                        'At least one uppercase letter (A-Z)',
+                        hasUppercase,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildValidationRule(
+                        'At least one number (0-9)',
+                        hasNumber,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildValidationRule('Passwords match', passwordsMatch),
+
+                      if (sheetError != null) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          sheetError!,
+                          style: const TextStyle(
+                            color: CupertinoColors.destructiveRed,
+                            fontSize: 13,
+                            decoration: TextDecoration.none,
+                            fontWeight: FontWeight.normal,
+                          ),
+                        ),
+                      ],
                     ],
-
-                    const Text(
-                      'New Password',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: CupertinoColors.label,
-                        decoration: TextDecoration.none,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    CupertinoTextField(
-                      controller: newPasswordController,
-                      obscureText: obscureNew,
-                      placeholder: "Enter new password",
-                      enabled: !isSheetLoading,
-                      decoration: BoxDecoration(
-                        color: CupertinoColors.extraLightBackgroundGray,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 14,
-                      ),
-                      suffix: CupertinoButton(
-                        padding: EdgeInsets.zero,
-                        child: Icon(
-                          obscureNew
-                              ? CupertinoIcons.eye_slash
-                              : CupertinoIcons.eye,
-                          color: CupertinoColors.secondaryLabel,
-                          size: 20,
-                        ),
-                        onPressed: () {
-                          setSheetState(() => obscureNew = !obscureNew);
-                        },
-                      ),
-                      onChanged: (_) => setSheetState(() {}),
-                    ),
-                    const SizedBox(height: 16),
-
-                    const Text(
-                      'Confirm Password',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: CupertinoColors.label,
-                        decoration: TextDecoration.none,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    CupertinoTextField(
-                      controller: confirmPasswordController,
-                      obscureText: obscureConfirm,
-                      placeholder: "Confirm new password",
-                      enabled: !isSheetLoading,
-                      decoration: BoxDecoration(
-                        color: CupertinoColors.extraLightBackgroundGray,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 14,
-                      ),
-                      suffix: CupertinoButton(
-                        padding: EdgeInsets.zero,
-                        child: Icon(
-                          obscureConfirm
-                              ? CupertinoIcons.eye_slash
-                              : CupertinoIcons.eye,
-                          color: CupertinoColors.secondaryLabel,
-                          size: 20,
-                        ),
-                        onPressed: () {
-                          setSheetState(() => obscureConfirm = !obscureConfirm);
-                        },
-                      ),
-                      onChanged: (_) => setSheetState(() {}),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Validation checklist
-                    _buildValidationRule('At least 8 characters', isLengthOk),
-                    const SizedBox(height: 8),
-                    _buildValidationRule(
-                      'At least one uppercase letter (A-Z)',
-                      hasUppercase,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildValidationRule(
-                      'At least one number (0-9)',
-                      hasNumber,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildValidationRule('Passwords match', passwordsMatch),
-
-                    if (sheetError != null) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        sheetError!,
-                        style: const TextStyle(
-                          color: CupertinoColors.destructiveRed,
-                          fontSize: 13,
-                          decoration: TextDecoration.none,
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
               ),
-            ),
             );
           },
         );
@@ -886,7 +1075,7 @@ class _AccountInfoState extends State<AccountInfo> {
     );
   }
 
-  // Android Material style bottom sheet for password changing/linking
+  // Android Material style password update bottom sheet
   void _showMaterialPasswordSheet(bool hasPassword) {
     final currentPasswordController = TextEditingController();
     final newPasswordController = TextEditingController();
@@ -1202,7 +1391,7 @@ class _AccountInfoState extends State<AccountInfo> {
     );
   }
 
-  // Atomic dynamic checklist element generator
+  // Atomic dynamic password rule checklist element generator
   Widget _buildValidationRule(String text, bool isMet) {
     return Row(
       children: [
@@ -1222,184 +1411,6 @@ class _AccountInfoState extends State<AccountInfo> {
           ),
         ),
       ],
-    );
-  }
-
-  // Platform adaptive confirmation before deleting the user account
-  void _confirmDeleteAccount() {
-    final isAndroid = Theme.of(context).platform == TargetPlatform.android;
-
-    if (isAndroid) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Delete Account'),
-          content: const Text(
-            'This action is permanent and cannot be undone. All your personal data, saved facilities, and settings will be permanently erased. Are you sure you want to proceed?',
-            style: TextStyle(color: Color(0xFF5F6368), fontSize: 14),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(
-                  color: CupertinoColors.activeBlue,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                _performDeleteAccount();
-              },
-              child: const Text(
-                'Delete',
-                style: TextStyle(
-                  color: Color(0xFFC0392B),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    } else {
-      showCupertinoDialog(
-        context: context,
-        builder: (ctx) => CupertinoAlertDialog(
-          title: const Text('Delete Account'),
-          content: const Text(
-            'This action is permanent and cannot be undone. All your personal data, saved facilities, and settings will be permanently erased. Are you sure you want to proceed?',
-          ),
-          actions: [
-            CupertinoDialogAction(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.pop(ctx),
-            ),
-            CupertinoDialogAction(
-              isDestructiveAction: true,
-              child: const Text('Delete'),
-              onPressed: () {
-                Navigator.pop(ctx);
-                _performDeleteAccount();
-              },
-            ),
-          ],
-        ),
-      );
-    }
-  }
-
-  // Executes secure user purge and updates the application state
-  Future<void> _performDeleteAccount() async {
-    // Show non-dismissible loading overlay to prevent interaction
-    showDialog<void>(
-      context: context,
-      useRootNavigator: true,
-      barrierDismissible: false,
-      barrierColor: Colors.black26,
-      builder: (_) => const PopScope(
-        canPop: false,
-        child: Center(
-          child: CircularProgressIndicator(color: Color(0xFFC0392B)),
-        ),
-      ),
-    );
-
-    final navigator = Navigator.of(context, rootNavigator: true);
-
-    try {
-      await _securityController.deleteAccount();
-      // AuthGate automatically redirects to /login after token and session are wiped
-      // Pop all pushed screens (including this one and the loader) to reveal the root LoginScreen
-      navigator.popUntil((route) => route.isFirst);
-    } catch (e) {
-      navigator.pop(); // dismiss loader safely
-
-      final errorMsg = e.toString().replaceAll('Exception:', '').trim();
-
-      if (mounted) {
-        if (Theme.of(context).platform == TargetPlatform.iOS) {
-          showCupertinoDialog(
-            context: context,
-            builder: (ctx) => CupertinoAlertDialog(
-              title: const Text('Error'),
-              content: Text('Failed to delete account: $errorMsg'),
-              actions: [
-                CupertinoDialogAction(
-                  child: const Text('OK'),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-          );
-        } else {
-          showDialog(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Error'),
-              content: Text('Failed to delete account: $errorMsg'),
-              actions: [
-                TextButton(
-                  child: const Text('OK'),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-          );
-        }
-      }
-    }
-  }
-
-  // Renders the Change/Create Password security tile
-  Widget _buildPasswordTile(bool hasPassword) {
-    return GestureDetector(
-      onTap: () => _openPasswordSheet(hasPassword),
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFE4E7EB)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F1F1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                CupertinoIcons.lock,
-                color: Color(0xFF1A1A1A),
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                'Change Password',
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF1A1A1A),
-                ),
-              ),
-            ),
-            const Icon(
-              CupertinoIcons.chevron_right,
-              size: 18,
-              color: Color(0xFF5F6368),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -1598,49 +1609,49 @@ class _AccountInfoState extends State<AccountInfo> {
 
                         const SizedBox(height: 14),
 
-                        //Phone number field row
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Phone number',
-                                    style: TextStyle(
-                                      color: Color(0xFF1A1A1A),
-                                      fontSize: 14,
-                                    ),
-                                  ),
+                        // //Phone number field row
+                        // Row(
+                        //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        //   crossAxisAlignment: CrossAxisAlignment.start,
+                        //   children: [
+                        //     Expanded(
+                        //       child: Column(
+                        //         crossAxisAlignment: CrossAxisAlignment.start,
+                        //         children: [
+                        //           const Text(
+                        //             'Phone number',
+                        //             style: TextStyle(
+                        //               color: Color(0xFF1A1A1A),
+                        //               fontSize: 14,
+                        //             ),
+                        //           ),
 
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '+237 123 45 67 89',
-                                    style: const TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                        //           const SizedBox(height: 4),
+                        //           Text(
+                        //             '+237 123 45 67 89',
+                        //             style: const TextStyle(
+                        //               color: Colors.black,
+                        //               fontSize: 16,
+                        //               fontWeight: FontWeight.bold,
+                        //             ),
+                        //           ),
+                        //         ],
+                        //       ),
+                        //     ),
 
-                            GestureDetector(
-                              onTap: () => {},
-                              child: Padding(
-                                padding: EdgeInsets.only(right: 8.0),
-                                child: Icon(
-                                  CupertinoIcons.pencil,
-                                  color: Color(0xFF2A7D8F),
-                                  size: 24,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                        //     GestureDetector(
+                        //       onTap: () => {},
+                        //       child: Padding(
+                        //         padding: EdgeInsets.only(right: 8.0),
+                        //         child: Icon(
+                        //           CupertinoIcons.pencil,
+                        //           color: Color(0xFF2A7D8F),
+                        //           size: 24,
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   ],
+                        // ),
                       ],
                     ),
                   ),
@@ -1670,17 +1681,12 @@ class _AccountInfoState extends State<AccountInfo> {
   }
 }
 
-/// Interactive swipe-to-dismiss wrapper for Cupertino-style bottom sheets.
-/// The sheet follows the user's finger downward and dismisses when dragged
-/// past a threshold distance or released with sufficient velocity.
+// Interactive swipe-to-dismiss wrapper for Cupertino-style bottom sheets.
 class _SwipeDismissibleSheet extends StatefulWidget {
   final Widget child;
   final bool canDismiss;
 
-  const _SwipeDismissibleSheet({
-    required this.child,
-    this.canDismiss = true,
-  });
+  const _SwipeDismissibleSheet({required this.child, this.canDismiss = true});
 
   @override
   State<_SwipeDismissibleSheet> createState() => _SwipeDismissibleSheetState();
@@ -1694,24 +1700,22 @@ class _SwipeDismissibleSheetState extends State<_SwipeDismissibleSheet>
   late final AnimationController _animController;
   bool _isDismissing = false;
 
-  /// Distance the sheet must be dragged before it dismisses on release.
   static const _dismissThreshold = 100.0;
-
-  /// Fling velocity (px/s) that triggers an immediate dismiss.
   static const _dismissVelocity = 700.0;
 
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 250),
-    )..addListener(() {
-        final curved = Curves.easeOut.transform(_animController.value);
-        setState(() {
-          _dragOffset = _animStart + (_animTarget - _animStart) * curved;
+    _animController =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 250),
+        )..addListener(() {
+          final curved = Curves.easeOut.transform(_animController.value);
+          setState(() {
+            _dragOffset = _animStart + (_animTarget - _animStart) * curved;
+          });
         });
-      });
   }
 
   @override
@@ -1724,8 +1728,10 @@ class _SwipeDismissibleSheetState extends State<_SwipeDismissibleSheet>
     if (!widget.canDismiss || _isDismissing) return;
     setState(() {
       // Only allow dragging downward (clamp at 0)
-      _dragOffset =
-          (_dragOffset + (details.primaryDelta ?? 0)).clamp(0.0, double.infinity);
+      _dragOffset = (_dragOffset + (details.primaryDelta ?? 0)).clamp(
+        0.0,
+        double.infinity,
+      );
     });
   }
 
@@ -1735,7 +1741,6 @@ class _SwipeDismissibleSheetState extends State<_SwipeDismissibleSheet>
     final velocity = details.primaryVelocity ?? 0;
 
     if (_dragOffset > _dismissThreshold || velocity > _dismissVelocity) {
-      // ── Dismiss: slide the rest of the way off-screen ──
       _isDismissing = true;
       _animStart = _dragOffset;
       _animTarget = MediaQuery.of(context).size.height;
@@ -1746,7 +1751,6 @@ class _SwipeDismissibleSheetState extends State<_SwipeDismissibleSheet>
           if (mounted) Navigator.of(context).pop();
         });
     } else {
-      // ── Snap back to original position ──
       _animStart = _dragOffset;
       _animTarget = 0;
       _animController

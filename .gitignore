@@ -26,6 +26,7 @@ migrate_working_dir/
 
 #folders
 supabase/
+node_modules
 
 # IntelliJ related
 *.iml

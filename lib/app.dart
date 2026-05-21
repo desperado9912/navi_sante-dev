@@ -5,7 +5,7 @@ import 'features/auth/cubit/auth_cubit.dart';
 import 'features/auth/cubit/language_cubit.dart';
 import 'features/auth/screens/login.dart';
 import 'features/auth/services/auth_gate.dart';
-import 'features/navigation_menu.dart';
+import 'core/utils/navigation_menu.dart';
 
 class NaviSanteApp extends StatelessWidget {
   const NaviSanteApp({super.key});

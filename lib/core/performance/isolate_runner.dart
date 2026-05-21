@@ -9,10 +9,7 @@ import 'package:flutter/foundation.dart';
 /// the frame rate consistent at 60-120 FPS.
 class IsolateRunner {
   IsolateRunner._();
-
-  /// Executes a top-level or static function [callback] with [message] in a background isolate.
-  ///
-  /// Returns the result of the computation.
+  
   static Future<R> run<M, R>(ComputeCallback<M, R> callback, M message) async {
     return await compute(callback, message);
   }

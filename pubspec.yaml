@@ -1,5 +1,6 @@
 name: navi_sante
 description: "A new Flutter project."
+
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -11,14 +12,13 @@ version: 1.0.0+1
 environment:
   sdk: ^3.10.0
 
+
 # Dependencies specify other packages that your package needs in order to work.
 # To upgrave dependencies to latest version: 'flutter pub upgrade --major-versions'
 # Check outdated dependencies: 'flutter pub outdated'
-
 dependencies:
   flutter:
     sdk: flutter
-
 
   json_annotation: ^4.8.1
 
@@ -61,10 +61,6 @@ dependencies:
   crypto: ^3.0.6
 
 
-  
-
-
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -78,7 +74,6 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
 
 
-
 flutter_launcher_icons:
   android: true
   ios: true
@@ -86,9 +81,10 @@ flutter_launcher_icons:
   adaptive_icon_foreground: "assets/navisante_adapt_logo_fg.png"
   adaptive_icon_background: "assets/navisante_adapt_logo_bg.png"
 
+
+
 # The following section is specific to Flutter packages.
 flutter:
-
 
   uses-material-design: true
 

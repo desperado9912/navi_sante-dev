@@ -6,6 +6,7 @@ import '../../../core/utils/security_logger.dart';
 /// Controller responsible for managing account security settings,
 /// including checking active login providers, changing passwords,
 /// linking credentials for OAuth users, and performing secure account deletion.
+
 class SecurityController extends ChangeNotifier {
   final SupabaseClient _supabase = Supabase.instance.client;
   bool _isLoading = false;
@@ -59,9 +60,7 @@ class SecurityController extends ChangeNotifier {
       );
 
       // Perform standard password update
-      await _supabase.auth.updateUser(
-        UserAttributes(password: newPassword),
-      );
+      await _supabase.auth.updateUser(UserAttributes(password: newPassword));
 
       // Refresh session to rotate tokens cleanly
       await _supabase.auth.refreshSession();
@@ -88,7 +87,7 @@ class SecurityController extends ChangeNotifier {
     }
   }
 
-  /// Binds/links a password credential to an OAuth-only user.
+  /// Links a password to OAuth users.
   /// Updates the password hash on the active social user account.
   Future<void> linkPassword({required String newPassword}) async {
     _setLoading(true);
@@ -101,10 +100,7 @@ class SecurityController extends ChangeNotifier {
       // Update password directly (binds email/password authentication capabilities)
       // Also set a metadata flag to persist UI state immediately
       await _supabase.auth.updateUser(
-        UserAttributes(
-          password: newPassword,
-          data: {'password_linked': true},
-        ),
+        UserAttributes(password: newPassword, data: {'password_linked': true}),
       );
 
       // Refresh session to rotate tokens cleanly and force providers sync
@@ -155,11 +151,15 @@ class SecurityController extends ChangeNotifier {
       try {
         await _supabase.rpc('delete_user');
       } catch (e) {
-        debugPrint('[SecurityController] delete_user RPC failed: $e. Retrying delete_user_account...');
+        debugPrint(
+          '[SecurityController] delete_user RPC failed: $e. Retrying delete_user_account...',
+        );
         try {
           await _supabase.rpc('delete_user_account');
         } catch (e2) {
-          debugPrint('[SecurityController] delete_user_account RPC failed: $e2');
+          debugPrint(
+            '[SecurityController] delete_user_account RPC failed: $e2',
+          );
           throw Exception('Account deletion failed. Please contact support.');
         }
       }
