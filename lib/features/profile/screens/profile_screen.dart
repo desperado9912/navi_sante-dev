@@ -16,6 +16,7 @@ import '../widgets/language_sheet.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/settings_tiles.dart';
 import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
+import 'package:navi_sante/core/utils/app_error_ui.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -75,7 +76,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final uri = Uri.parse(url);
     final canOpen = await canLaunchUrl(uri);
     if (!canOpen) {
-      _showErrorSnackBar('Could not open the link.');
+      if (!mounted) return;
+      AppFeedback.show(context, type: FeedbackType.info, message: 'Could not open the link.');
       return;
     }
     await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -115,8 +117,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } else {
       // Show error message
       if (!context.mounted) return;
-      _showErrorSnackBar(
-        'No email app found. Please contact contact@navisante.com directly.',
+      AppFeedback.show(
+        context,
+        type: FeedbackType.info,
+        message: 'No email app found. Please contact contact@navisante.com directly.',
       );
     }
   }
@@ -131,7 +135,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await launchUrl(webUri, mode: LaunchMode.inAppWebView);
     } else {
       if (!context.mounted) return;
-      _showErrorSnackBar('Could not open the link.');
+      AppFeedback.show(context, type: FeedbackType.info, message: 'Could not open the link.');
     }
   }
 
@@ -214,31 +218,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       //dismiss loader on error
       navigator.pop();
       if (mounted) {
-        _showErrorSnackBar('Sign out failed. Please try again.');
+        AppFeedback.show(
+          context,
+          type: FeedbackType.error,
+          message: 'Sign out failed. Please try again.',
+        );
       }
     }
   }
 
-  // ────────────────────────────────────────────────────────────────
-  // Navigation helpers
-  // ────────────────────────────────────────────────────────────────
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: const Color(0xFF2A7D8F),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-  }
 
   // ────────────────────────────────────────────────────────────────
   // Language tile trailing widget

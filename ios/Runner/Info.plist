@@ -85,6 +85,10 @@
 				</array>
 			</dict>
 		</array>
-
+		
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>NaviSanté requires your location to display map services and nearby medical facilities.</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>NaviSanté requires your location to display map services and nearby medical facilities.</string>
 	</dict>
 </plist>

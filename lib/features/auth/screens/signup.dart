@@ -5,6 +5,7 @@ import '../cubit/language_cubit.dart';
 import '../widgets/auth_text_field.dart';
 import '../widgets/language_picker.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:navi_sante/core/utils/app_error_ui.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -67,7 +68,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   void _onSignup() {
     FocusScope.of(context).unfocus();
-    // check button spamming and lock
+    // Form validation before signup
     if (!_formKey.currentState!.validate()) return;
 
     context.read<AuthCubit>().signUp(
@@ -86,38 +87,18 @@ class _SignupScreenState extends State<SignupScreen> {
         // Check for errors FIRST (including duplicate emails)
         if (state is AuthError) {
           // Check if error is due to duplicate email
-          if (state.message.toLowerCase().contains('already exists')) {
-            _showDuplicateEmailError(context);
+          if (state.message.toLowerCase().contains('already exist')) {
+            AppFeedback.show(
+              context,
+              type: FeedbackType.error,
+              message: 'An account with this email may already exist.',
+            );
           } else {
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      const Icon(
-                        CupertinoIcons.exclamationmark_circle,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          state.message,
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
-                    ],
-                  ),
-                  backgroundColor: const Color(0xFFC0392B),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  margin: const EdgeInsets.all(16),
-                  duration: const Duration(seconds: 3),
-                ),
-              );
+            AppFeedback.show(
+              context,
+              type: FeedbackType.error,
+              message: state.message,
+            );
           }
           return;
         }
@@ -392,39 +373,6 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
       ),
     );
-  }
-
-  // Dialogs / Snackbars
-  void _showDuplicateEmailError(BuildContext context) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.email_outlined, color: Colors.white, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Email address already exists. Please try with a different email address.',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: const Color(0xFFC0392B),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 4),
-        ),
-      );
   }
 
   void _showVerificationSentDialog(BuildContext context) {

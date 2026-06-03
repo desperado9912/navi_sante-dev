@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:navi_sante/features/home/home_screen.dart';
+import 'package:navi_sante/features/home/screens/home_screen.dart';
 import 'package:navi_sante/features/hospitals/hospitals.dart';
 import 'package:navi_sante/features/pharmacy/pharmacy.dart';
 import 'package:navi_sante/features/profile/screens/profile_screen.dart';
@@ -38,9 +38,11 @@ class _NavigationMenuState extends State<NavigationMenu> {
         extendBody: true,
         //all screens bg color
         backgroundColor: const Color(0xFFF8F9F8),
-        appBar: PlatformAdaptiveAppBar(
-          title: controller.titles[controller.selectedIndex.value],
-        ),
+        appBar: controller.selectedIndex.value == 0
+            ? null
+            : PlatformAdaptiveAppBar(
+                title: controller.titles[controller.selectedIndex.value],
+              ),
 
         // Bottom  navbar container
         bottomNavigationBar: SafeArea(
@@ -96,9 +98,9 @@ class _NavigationMenuState extends State<NavigationMenu> {
                       controller.selectedIndex.value = index,
                   destinations: const [
                     NavigationDestination(
-                      icon: Icon(CupertinoIcons.house),
-                      selectedIcon: Icon(CupertinoIcons.house_fill),
-                      label: 'Home',
+                      icon: Icon(CupertinoIcons.map),
+                      selectedIcon: Icon(CupertinoIcons.map_fill),
+                      label: 'Discover',
                     ),
                     NavigationDestination(
                       icon: Icon(CupertinoIcons.plus_app),
@@ -123,7 +125,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
         ),
         // Body elements scroll behind navbar
         body: SafeArea(
-          top: true,
+          top: controller.selectedIndex.value != 0,
           bottom: false,
           child: FadeIndexedStack(
             index: controller.selectedIndex.value,
@@ -147,7 +149,7 @@ class NavigationController extends GetxController {
     const RepaintBoundary(child: ScreenWrapper(child: ProfileScreen())),
   ];
 
-  List<String> get titles => ['Home', 'Find Sanctuary', 'Pharmacy', 'Profile'];
+  List<String> get titles => ['Discover', 'Find Sanctuary', 'Pharmacy', 'Profile'];
 }
 
 

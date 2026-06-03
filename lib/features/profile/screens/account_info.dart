@@ -5,6 +5,8 @@ import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 import 'package:navi_sante/features/profile/controllers/security_controller.dart';
 import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
+import 'package:navi_sante/core/utils/app_error_ui.dart';
+import 'package:navi_sante/core/utils/app_error_mapper.dart';
 
 class AccountInfo extends StatefulWidget {
   const AccountInfo({super.key});
@@ -185,40 +187,15 @@ class _AccountInfoState extends State<AccountInfo> {
       // Pop all pushed screens (including this one and the loader) to reveal the root LoginScreen
       navigator.popUntil((route) => route.isFirst);
     } catch (e) {
-      navigator.pop(); // dismiss loader safely
-
-      final errorMsg = e.toString().replaceAll('Exception:', '').trim();
+      navigator.pop();
+      final errorMsg = AppErrorMapper.mapDeleteAccountError(e);
 
       if (mounted) {
-        if (Theme.of(context).platform == TargetPlatform.iOS) {
-          showCupertinoDialog(
-            context: context,
-            builder: (ctx) => CupertinoAlertDialog(
-              title: const Text('Error'),
-              content: Text('Failed to delete account: $errorMsg'),
-              actions: [
-                CupertinoDialogAction(
-                  child: const Text('OK'),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-          );
-        } else {
-          showDialog(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Error'),
-              content: Text('Failed to delete account: $errorMsg'),
-              actions: [
-                TextButton(
-                  child: const Text('OK'),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-          );
-        }
+        AppFeedback.showErrorDialog(
+          context,
+          title: 'Error',
+          message: errorMsg,
+        );
       }
     }
   }
@@ -870,10 +847,8 @@ class _AccountInfoState extends State<AccountInfo> {
                                           } catch (error) {
                                             setSheetState(() {
                                               isSheetLoading = false;
-                                              sheetError = error
-                                                  .toString()
-                                                  .replaceAll('Exception:', '')
-                                                  .trim();
+                                              sheetError = AppErrorMapper
+                                                  .mapPasswordError(error);
                                             });
                                           }
                                         },
@@ -1054,15 +1029,7 @@ class _AccountInfoState extends State<AccountInfo> {
 
                       if (sheetError != null) ...[
                         const SizedBox(height: 16),
-                        Text(
-                          sheetError!,
-                          style: const TextStyle(
-                            color: CupertinoColors.destructiveRed,
-                            fontSize: 13,
-                            decoration: TextDecoration.none,
-                            fontWeight: FontWeight.normal,
-                          ),
-                        ),
+                        AppFeedback.inlineError(sheetError),
                       ],
                     ],
                   ),
@@ -1235,10 +1202,8 @@ class _AccountInfoState extends State<AccountInfo> {
                                         } catch (error) {
                                           setSheetState(() {
                                             isSheetLoading = false;
-                                            sheetError = error
-                                                .toString()
-                                                .replaceAll('Exception:', '')
-                                                .trim();
+                                            sheetError = AppErrorMapper
+                                                .mapPasswordError(error);
                                           });
                                         }
                                       },
@@ -1376,10 +1341,7 @@ class _AccountInfoState extends State<AccountInfo> {
 
                     if (sheetError != null) ...[
                       const SizedBox(height: 16),
-                      Text(
-                        sheetError!,
-                        style: const TextStyle(color: Colors.red, fontSize: 13),
-                      ),
+                      AppFeedback.inlineError(sheetError),
                     ],
                   ],
                 ),

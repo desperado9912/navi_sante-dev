@@ -9,6 +9,7 @@ import 'signup.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
+import 'package:navi_sante/core/utils/app_error_ui.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -92,11 +93,15 @@ class _LoginScreenState extends State<LoginScreen> {
       listener: (context, state) {
         // AuthGate handles routing based on current session state.
         if (state is AuthEmailNotVerified) {
-          _showEmailVerificationMessage(context);
+          _showEmailVerificationDialog(context);
           context.read<AuthCubit>().reset();
         }
         if (state is AuthError) {
-          _showErrorSnackbar(context, state.message);
+          AppFeedback.show(
+            context,
+            type: FeedbackType.error,
+            message: state.message,
+          );
         }
       },
 
@@ -382,91 +387,76 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ── Snackbar ────────────────────────────────────────────────────
-  void _showEmailVerificationMessage(BuildContext context) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Column(
+  // ── Email verification dialog ──────────────────────────────────
+  void _showEmailVerificationDialog(BuildContext context) {
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+
+    if (isIOS) {
+      showCupertinoDialog(
+        context: context,
+        builder: (ctx) => CupertinoAlertDialog(
+          title: const Row(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: const [
-                  Icon(
-                    Icons.mark_email_unread_outlined,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Verification Email Sent',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Please verify your email before attempting login. Check your inbox for the verification link.',
-                style: TextStyle(fontSize: 13, color: Colors.white),
-              ),
+              Icon(Icons.mark_email_unread_outlined,
+                  color: Color(0xFFE67E22), size: 22),
+              SizedBox(width: 8),
+              Expanded(child: Text('Verify Email')),
             ],
           ),
-
-          //verification link sent message
-          backgroundColor: const Color(0xFFF39C12),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+          content: const Text(
+            'Please verify your email before attempting login. '
+            'Check your inbox for the verification link.',
           ),
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 5),
-          action: SnackBarAction(
-            label: 'OK',
-            textColor: Colors.white,
-            onPressed: () {
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-              context.read<AuthCubit>().reset();
-            },
-          ),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.pop(ctx);
+                context.read<AuthCubit>().reset();
+              },
+            ),
+          ],
         ),
       );
-  }
-
-  void _showErrorSnackbar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Row(
+    } else {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Row(
             children: [
-              const Icon(
-                Icons.error_outline_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(message, style: const TextStyle(fontSize: 14)),
-              ),
+              Icon(Icons.mark_email_unread_outlined,
+                  color: Color(0xFFE67E22), size: 24),
+              SizedBox(width: 10),
+              Text('Verify Email'),
             ],
           ),
-          backgroundColor: const Color(0xFFC0392B),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+          content: const Text(
+            'Please verify your email before attempting login. '
+            'Check your inbox for the verification link.',
+            style: TextStyle(fontSize: 14, color: Color(0xFF5F6368)),
           ),
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 4),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                context.read<AuthCubit>().reset();
+              },
+              child: const Text(
+                'OK',
+                style: TextStyle(
+                  color: Color(0xFF2A7D8F),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ),
       );
+    }
   }
 }
 
@@ -572,12 +562,10 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
 
         if (state is AuthError) {
           Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: const Color(0xFFC0392B),
-              behavior: SnackBarBehavior.floating,
-            ),
+          AppFeedback.show(
+            context,
+            type: FeedbackType.error,
+            message: state.message,
           );
         }
       },

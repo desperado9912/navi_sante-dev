@@ -2,8 +2,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/auth_services.dart';
-import '../../../core/utils/auth_email_validator.dart';
+import '../widgets/auth_email_validator.dart';
 import '../../../core/utils/security_logger.dart';
+import '../../../core/utils/app_error_mapper.dart';
 
 part 'auth_state.dart';
 
@@ -49,11 +50,13 @@ class AuthCubit extends Cubit<AuthState> {
 
       emit(const AuthSuccess());
     } on AuthException catch (e) {
-      emit(AuthError(_mapAuthError(e.message)));
+      final mapped = AppErrorMapper.mapAuthError(e.message);
+      emit(AuthError(mapped.message));
     } catch (error, stackTrace) {
       debugPrint('Unexpected Auth Error: $error');
       debugPrint('Stack Trace: $stackTrace');
-      emit(const AuthError('An unexpected error occurred.'));
+      final mapped = AppErrorMapper.mapGeneral(error);
+      emit(AuthError(mapped.message));
     }
   }
 
@@ -88,14 +91,11 @@ class AuthCubit extends Cubit<AuthState> {
         return;
       }
 
-      // Duplicate Email Check (Enumeration Protection)
+      // Duplicate Email Check
       // signUp returns a 200 if the email exists.
       final identities = user.identities;
       if (identities != null && identities.isEmpty) {
-        emit(
-          const AuthError(
-            'Email address already exists. Please try with a different email address.',
-          ),
+        emit(const AuthError('An account with this email may already exist.'),
         );
         return;
       }
@@ -110,17 +110,17 @@ class AuthCubit extends Cubit<AuthState> {
           errorMsg.toLowerCase().contains('already exists') ||
           errorMsg.toLowerCase().contains('duplicate')) {
         emit(
-          const AuthError(
-            'Email address already exists. Please try with a different email address.',
-          ),
+          const AuthError('An account with this email may already exist.'),
         );
       } else {
-        emit(AuthError(_mapAuthError(errorMsg)));
+        final mapped = AppErrorMapper.mapAuthError(errorMsg);
+        emit(AuthError(mapped.message));
       }
     } catch (error, stackTrace) {
       debugPrint('Unexpected Auth Error: $error');
       debugPrint('Stack Trace: $stackTrace');
-      emit(const AuthError('An unexpected error occurred.'));
+      final mapped = AppErrorMapper.mapGeneral(error);
+      emit(AuthError(mapped.message));
     }
   }
 
@@ -166,8 +166,10 @@ class AuthCubit extends Cubit<AuthState> {
       await SecurityLogger.log(eventType: SecurityLogger.loginSuccess);
 
       emit(const AuthSuccess());
+
     } on AuthException catch (e) {
-      emit(AuthError(_mapAuthError(e.message)));
+      final mapped = AppErrorMapper.mapAuthError(e.message);
+      emit(AuthError(mapped.message));
     } catch (error, stackTrace) {
       final message = error.toString();
       if (message.contains('Sign In process aborted')) {
@@ -176,7 +178,8 @@ class AuthCubit extends Cubit<AuthState> {
       }
       debugPrint('Unexpected Google Auth Error: $error');
       debugPrint('Stack Trace: $stackTrace');
-      emit(const AuthError('Google sign in failed. Please try again.'));
+      final mapped = AppErrorMapper.mapGeneral(error);
+      emit(AuthError(mapped.message));
     }
   }
 
@@ -191,30 +194,4 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   void reset() => emit(const AuthInitial());
-
-  // ── User interpreted Supabase error messages ─────────────────────
-  String _mapAuthError(String raw) {
-    final msg = raw.toLowerCase();
-    if (msg.contains('invalid login credentials') ||
-        msg.contains('invalid credentials')) {
-      return 'Incorrect email or password.';
-    }
-    if (msg.contains('email not confirmed')) {
-      return 'Please verify your email before logging in.';
-    }
-    if (msg.contains('user already registered') ||
-        msg.contains('already exists')) {
-      return 'If an account exists with that email, a verification link has been sent.';
-    }
-    if (msg.contains('password should be at least')) {
-      return 'Password must be at least 8 characters.';
-    }
-    if (msg.contains('unable to validate email')) {
-      return 'Please enter a valid email address.';
-    }
-    if (msg.contains('email rate limit')) {
-      return 'Too many attempts. Please wait a moment.';
-    }
-    return raw;
-  }
 }
