@@ -1,15 +1,18 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_cache/flutter_map_cache.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../controller/map_cubit.dart';
 import '../maps/map_service.dart';
 import 'map_controls.dart';
 import 'header_search.dart';
+import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 
-/// A premium map widget that renders OpenStreetMap with the Carto Light tile layer,
+/// Map widget that renders OpenStreetMap with the Carto Light tile layer,
 /// displays a pulsing user location dot, and features smooth panning camera transitions.
 class HomeMapWidget extends StatefulWidget {
   const HomeMapWidget({super.key});
@@ -22,20 +25,32 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
     with TickerProviderStateMixin {
   late final MapController _mapController;
 
+  // Dio Instance for tiles request. Caching is handled by FlutterMapCache
+  late final Dio _tilesDio;
+
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
 
+    _tilesDio = Dio(
+      BaseOptions(
+        connectTimeout: const Duration(seconds: 8),
+        receiveTimeout: const Duration(seconds: 12),
+        headers: MapConfig.tileHeaders,
+      ),
+    );
+
     // Trigger map initialization
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<MapCubit>().initMap();
+      if (mounted) context.read<MapCubit>().initMap();
     });
   }
 
   @override
   void dispose() {
     _mapController.dispose();
+    _tilesDio.close(force: false);
     super.dispose();
   }
 
@@ -58,13 +73,13 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
     );
 
     animationController.addListener(() {
-      final double lat =
-          startLat + (destCenter.latitude - startLat) * curve.value;
-      final double lng =
-          startLng + (destCenter.longitude - startLng) * curve.value;
-      final double zoom = startZoom + (destZoom - startZoom) * curve.value;
-
-      _mapController.move(LatLng(lat, lng), zoom);
+      _mapController.move(
+        LatLng(
+          startLat + (destCenter.latitude - startLat) * curve.value,
+          startLng + (destCenter.longitude - startLng) * curve.value,
+        ),
+        startZoom + (destZoom - startZoom) * curve.value,
+      );
     });
 
     animationController.addStatusListener((status) {
@@ -100,12 +115,7 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
         ),
         backgroundColor: const Color(0xFF1E293B),
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(
-          24,
-          0,
-          24,
-          15,
-        ), // Elevated above navigation bar
+        margin: const EdgeInsets.fromLTRB(24, 0, 24, 15),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         duration: const Duration(seconds: 5), // Autodismisses after 5 seconds
         action: SnackBarAction(
@@ -121,9 +131,12 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
 
   @override
   Widget build(BuildContext context) {
+    final double statusBarHeight = MediaQuery.of(context).padding.top;
+    final double controlsTopOffset = statusBarHeight + 12 + 54 + 14;
+
     return BlocListener<MapCubit, MapState>(
       listenWhen: (previous, current) =>
-          previous.animateToState != current.animateToState ||
+          current.animateToState != previous.animateToState ||
           current.animateToState ||
           current.errorSignal != null,
       listener: (context, state) {
@@ -140,8 +153,6 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
       },
       child: BlocBuilder<MapCubit, MapState>(
         builder: (context, state) {
-          final LatLng? userLoc = state.userLocation;
-
           return Stack(
             children: [
               // Main Map Layer
@@ -161,20 +172,27 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
                     }
                   },
                 ),
+
                 children: [
                   // Tile Layer: Carto Light styling with caching
                   TileLayer(
                     urlTemplate: MapConfig.cartoLightUrl,
+                    fallbackUrl: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
                     subdomains: MapConfig.subdomains,
                     userAgentPackageName: MapConfig.userAgentPackageName,
+                    retinaMode: RetinaMode.isHighDensity(context),
+                    tileProvider: CachedTileProvider(
+                      dio: _tilesDio,
+                      store: MemCacheStore(),
+                    ),
                   ),
 
                   // Pulsing Marker for the User Position
-                  if (userLoc != null)
+                  if (state.userLocation != null)
                     MarkerLayer(
                       markers: [
                         Marker(
-                          point: userLoc,
+                          point: state.userLocation!,
                           width: 60,
                           height: 60,
                           alignment: Alignment.center,
@@ -184,7 +202,8 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
                     ),
                 ],
               ),
-              // Floating Premium Search Bar (Replaces AppBar)
+
+              // Floating Search Bar
               const Positioned(
                 top: 0,
                 left: 0,
@@ -192,13 +211,21 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
                 child: HeaderSearch(),
               ),
 
-              // Glassmorphic Map Control Panel Overlay
+              // Map Control Panel Overlay
               Positioned(
                 right: 16,
-                bottom:
-                    550, // Positioned above bottom navigation bar padding safely
+                top: controlsTopOffset, // Positioned below search bar
                 child: const MapControls(),
               ),
+
+              // //Gps Loading indicator
+              // if (state is MapLoadingState)
+              //   const Positioned(
+              //     bottom: 120,
+              //     left: 0,
+              //     right: 0,
+              //     child: Center(child: _LoadingChip()),
+              //   ),
             ],
           );
         },
@@ -256,11 +283,13 @@ class _PulsingUserLocationMarkerState extends State<PulsingUserLocationMarker>
               height: _pulseAnimation.value,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: CupertinoColors.activeBlue.withValues(alpha: opacity * 0.25),
+                color: CupertinoColors.activeBlue.withValues(
+                  alpha: opacity * 0.25,
+                ),
               ),
             ),
 
-            // White protective halo border
+            // White border ring
             Container(
               width: 16,
               height: 16,

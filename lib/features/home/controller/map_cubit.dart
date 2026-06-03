@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:latlong2/latlong.dart';
@@ -88,6 +89,7 @@ class MapErrorState extends MapState {
 class MapCubit extends Cubit<MapState> {
   final MapService _mapService;
   // bool _isCameraMoving = false;
+  StreamSubscription<LocationResult>? _locationStreamSub;
 
   MapCubit({MapService? mapService})
     : _mapService = mapService ?? MapService(),
@@ -101,14 +103,9 @@ class MapCubit extends Cubit<MapState> {
   /// Initializes the map. Attempts to locate the user immediately.
   /// If it fails or is denied, it falls back to Yaoundé and shows a snackbar.
   Future<void> initMap() async {
-    emit(
-      MapLoadingState(
-        center: state.center,
-        zoom: state.zoom,
-        userLocation: state.userLocation,
-      ),
-    );
+    emit(MapLoadingState(center: state.center, zoom: state.zoom));
     await locateUser(requestPermission: true, isInit: true);
+    _startLocationStream();
   }
 
   /// Attempts to fetch the user's location and animate the map to center on them.
@@ -126,10 +123,11 @@ class MapCubit extends Cubit<MapState> {
         ),
       );
     }
-
-    final result = await _mapService.getCurrentLocation(
+    LocationResult result = await _mapService.getCurrentLocation(
       requestIfNeeded: requestPermission,
     );
+
+    if (isClosed) return;
 
     switch (result) {
       case LocationSuccess(:final position):
@@ -150,7 +148,7 @@ class MapCubit extends Cubit<MapState> {
             userLocation: null,
             errorMessage: message,
             errorSignal: message,
-            animateToState: isInit ? false : true,
+            animateToState: !isInit,
           ),
         );
 
@@ -163,13 +161,51 @@ class MapCubit extends Cubit<MapState> {
             errorMessage: message,
             isNetworkError: isNetworkError,
             errorSignal: message,
-            animateToState: isInit ? false : true,
+            animateToState: !isInit,
           ),
         );
     }
   }
 
-  /// Increments the current map zoom level with bounds clamping.
+  /// Live User Location Stream function
+  void _startLocationStream() {
+    _locationStreamSub?.cancel();
+    _locationStreamSub = _mapService.getPositionStream().listen(
+      _onLiveLocationUpdate,
+      cancelOnError: false,
+    );
+  }
+
+  /// Live User Location Stream Listener
+  void _onLiveLocationUpdate(LocationResult result) {
+    if (isClosed) return;
+    if (result is! LocationSuccess) return; // Silently skip stream errors
+
+    final MapState current = state;
+
+    if (current is MapLocatedState) {
+      emit(
+        MapLocatedState(
+          center: current.center, // ← preserve camera position
+          zoom: current.zoom,
+          userLocation: result.position, // ← only the pin moves
+          animateToState: false,
+        ),
+      );
+    } else if (current is MapErrorState || current is MapLoadingState) {
+      emit(
+        MapLocatedState(
+          center: result.position,
+          zoom: MapConfig.initialZoom,
+          userLocation: result.position,
+          animateToState: true,
+        ),
+      );
+    }
+  }
+
+  /// Map zoom controlls
+  // Increments the current map zoom level with bounds clamping.
   void zoomIn() {
     final double targetZoom = (state.zoom + MapConfig.zoomStep).clamp(
       MapConfig.minZoom,
@@ -187,7 +223,7 @@ class MapCubit extends Cubit<MapState> {
     }
   }
 
-  /// Decrements the current map zoom level with bounds clamping.
+  // Decrements the current map zoom level with bounds clamping.
   void zoomOut() {
     final double targetZoom = (state.zoom - MapConfig.zoomStep).clamp(
       MapConfig.minZoom,
@@ -205,11 +241,8 @@ class MapCubit extends Cubit<MapState> {
     }
   }
 
-  /// Updates the internal viewport state when the user pans/zooms the map manually.
-  /// This prevents animated camera fighting while dragging.
+  /// Updates the internal viewport when user pans/zooms the map manually.
   void updateViewport(LatLng newCenter, double newZoom) {
-    // If the state is MapErrorState, keep it as MapErrorState but update coordinates.
-    // Otherwise, use MapLocatedState.
     final current = state;
     if (current is MapErrorState) {
       emit(
@@ -261,5 +294,12 @@ class MapCubit extends Cubit<MapState> {
         ),
       );
     }
+  }
+
+  /// Cleanup
+  @override
+  Future<void> close() async {
+    await _locationStreamSub?.cancel();
+    return super.close();
   }
 }

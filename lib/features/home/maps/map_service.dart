@@ -1,24 +1,33 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// Configuration constants for the OpenStreetMap (Carto Light style).
 class MapConfig {
-  static const String cartoLightUrl = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  static const String cartoLightUrl =
+      'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
   static const List<String> subdomains = ['a', 'b', 'c', 'd'];
   static const String userAgentPackageName = 'com.navisante.app';
-  
+
   static const Map<String, String> tileHeaders = {
     'User-Agent': 'NaviSante App (com.navisante.app)',
     'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
   };
 
   // Zoom parameters
-  static const double initialZoom = 16.0;
+  static const double initialZoom = 17.0;
   static const double minZoom = 3.0;
-  static const double maxZoom = 18.0;
+  static const double maxZoom = 19.0;
   static const double zoomStep = 1.0;
+
+  // Prevenet location pulse pin from misplacing location.
+  // Fires new user position only after 10 metres.
+  static const int trackingDistanceFilter = 10; //metres
+
+  // Fires new user position only after 10 seconds.
+  static const int trackingTimeFilter = 3; //seconds
 
   // Fallback Coordinates (Yaoundé, Cameroon)
   static final LatLng yaoundeLatLng = LatLng(3.8480, 11.5021);
@@ -71,19 +80,23 @@ class LocationFailure extends LocationResult {
 
 /// A service to cleanly handle permissions and GPS coordinates fetching.
 class MapService {
-  /// Requests permission and fetches the current device position.
+  // Requests permission and fetches the current device position.
   /// If [requestIfNeeded] is false, it only checks if already granted, and otherwise returns denied.
-  Future<LocationResult> getCurrentLocation({bool requestIfNeeded = true}) async {
+  Future<LocationResult> getCurrentLocation({
+    bool requestIfNeeded = true,
+  }) async {
     try {
       // 1. Check if location services are enabled on the device.
       final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        return const LocationFailure('Location services are disabled for this device.');
+        return const LocationFailure(
+          'Location services are disabled for this device.',
+        );
       }
 
       // 2. Check and request permission if needed
       PermissionStatus status = await Permission.locationWhenInUse.status;
-      
+
       if (status.isDenied && requestIfNeeded) {
         status = await Permission.locationWhenInUse.request();
       }
@@ -104,7 +117,7 @@ class MapService {
       // Setting a reasonable timeout to handle situations where GPS is slow or blocked.
       final Position position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
+          accuracy: LocationAccuracy.best,
           timeLimit: Duration(seconds: 10),
         ),
       );
@@ -120,11 +133,56 @@ class MapService {
     }
   }
 
+  // Continuous live tracking stream
+  /// getPositionStream() returns a continuous stream via
+  /// Geolocator.getPositionStream(). The cubit subscribes to it in initMap()
+  /// and silently updates userLocation without re-centering the camera.
+  Stream<LocationResult> getPositionStream() async* {
+    try {
+      final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        yield const LocationFailure('Location services are disabled.');
+        return;
+      }
+
+      final PermissionStatus status = await Permission.locationWhenInUse.status;
+      if (!status.isGranted && !status.isLimited) {
+        yield const LocationPermissionDenied(
+          'Location tracking permission not granted.',
+        );
+        return;
+      }
+
+      final LocationSettings settings = Platform.isAndroid
+          ? AndroidSettings(
+              accuracy: LocationAccuracy.high,
+              distanceFilter: MapConfig.trackingDistanceFilter,
+              // Minimum interval between updates — prevents battery drain
+              intervalDuration: const Duration(seconds: 4),
+            )
+          : AppleSettings(
+              accuracy: LocationAccuracy.bestForNavigation,
+              distanceFilter: MapConfig.trackingDistanceFilter,
+              activityType: ActivityType.fitness,
+              // Don't let iOS auto-pause tracking when the user is still
+              pauseLocationUpdatesAutomatically: false,
+            );
+
+      await for (final Position position in Geolocator.getPositionStream(
+        locationSettings: settings,
+      )) {
+        yield LocationSuccess(LatLng(position.latitude, position.longitude));
+      }
+    } catch (e) {
+      yield LocationFailure('Location tracking error: ${e.toString()}');
+    }
+  }
+
   // /// Triggers Apple Maps or Google Maps external intent frameworks cleanly based on device OS.
   // Future<void> launchExternalNavigation(LatLng destination, String title) async {
   //   final String lat = destination.latitude.toString();
   //   final String lng = destination.longitude.toString();
-    
+
   //   final Uri appleMapsUri = Uri.parse('maps://?q=${Uri.encodeComponent(title)}&ll=$lat,$lng');
   //   final Uri googleMapsUri = Uri.parse('https://google.com');
 

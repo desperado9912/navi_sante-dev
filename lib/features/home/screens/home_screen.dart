@@ -29,7 +29,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _mapCubit,
-      child: const HomeMapWidget(),
+      child: ScaffoldMessenger(
+        child: Scaffold(
+          resizeToAvoidBottomInset: false,
+          body: const HomeMapWidget(),
+        ),
+      ),
     );
   }
 }
