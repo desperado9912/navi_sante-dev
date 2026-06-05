@@ -140,8 +140,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             const SizedBox(height: 6),
                             Text(
                               lang.isEnglish
-                                  ? 'Please login to your account'
-                                  : 'Connectez-vous à votre compte',
+                                  ? 'Health navigation made easy'
+                                  : 'Navigation santé facilitée',
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: Color(0xFF5F6368),

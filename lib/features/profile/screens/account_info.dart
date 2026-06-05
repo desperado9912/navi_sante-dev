@@ -1498,9 +1498,9 @@ class _AccountInfoState extends State<AccountInfo> {
                               child: const Padding(
                                 padding: EdgeInsets.only(right: 8.0),
                                 child: Icon(
-                                  CupertinoIcons.pencil,
+                                  CupertinoIcons.pencil_circle,
                                   color: Color(0xFF2A7D8F),
-                                  size: 24,
+                                  size: 28,
                                 ),
                               ),
                             ),

@@ -7,7 +7,7 @@ class Pharmacy extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Center(
       child: Text(
-        "Pharmacy",
+        "Medications",
         style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
       ),
     );

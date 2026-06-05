@@ -12,6 +12,8 @@ import 'map_controls.dart';
 import 'header_search.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 
+// TODO: IMPLEMENT MAP CACHING WITH HIVE
+
 /// Map widget that renders OpenStreetMap with the Carto Light tile layer,
 /// displays a pulsing user location dot, and features smooth panning camera transitions.
 class HomeMapWidget extends StatefulWidget {
@@ -115,7 +117,7 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
         ),
         backgroundColor: const Color(0xFF1E293B),
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(24, 0, 24, 15),
+        margin: const EdgeInsets.fromLTRB(24, 0, 24, 128),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         duration: const Duration(seconds: 5), // Autodismisses after 5 seconds
         action: SnackBarAction(

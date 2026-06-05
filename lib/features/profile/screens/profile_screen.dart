@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 import 'package:navi_sante/core/utils/navigation_menu.dart'
     show navBottomPadding;
+import 'package:navi_sante/features/profile/screens/favourite_products.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -313,6 +314,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         context,
                         CupertinoPageRoute(
                           builder: (context) => const SavedFacilities(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  SettingsTile(
+                    icon: CupertinoIcons.heart,
+                    title: 'Favourite Products',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                          builder: (context) => const FavouriteProducts(),
                         ),
                       );
                     },

@@ -21,7 +21,6 @@ class _NavigationMenuState extends State<NavigationMenu> {
 
   static const _inactiveColor = Color(0xFF5F6368);
   static const _activeColor = Color(0xFF2A7D8F);
-  static const _barRadius = 26.0;
 
   @override
   void initState() {
@@ -49,7 +48,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
           child: Container(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(_barRadius),
+              borderRadius: BorderRadius.circular(26.0),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.300),
@@ -61,7 +60,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
             ),
             // Navbar design
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(_barRadius),
+              borderRadius: BorderRadius.circular(26.0),
               child: NavigationBarTheme(
                 data: NavigationBarThemeData(
                   height: 68,
@@ -77,7 +76,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
                       color: isSelected ? _activeColor : _inactiveColor,
                       fontWeight: isSelected
                           ? FontWeight.w700
-                          : FontWeight.w500,
+                          : FontWeight.w600,
                       fontSize: 10,
                     );
                   }),
@@ -110,7 +109,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
                     NavigationDestination(
                       icon: Icon(CupertinoIcons.capsule),
                       selectedIcon: Icon(CupertinoIcons.capsule_fill),
-                      label: 'Pharmacy',
+                      label: 'Medications',
                     ),
                     NavigationDestination(
                       icon: Icon(CupertinoIcons.person),
@@ -149,7 +148,7 @@ class NavigationController extends GetxController {
     const RepaintBoundary(child: ScreenWrapper(child: ProfileScreen())),
   ];
 
-  List<String> get titles => ['Discover', 'Find Sanctuary', 'Pharmacy', 'Profile'];
+  List<String> get titles => ['Discover', 'Find Sanctuary', 'Medications', 'Profile'];
 }
 
 

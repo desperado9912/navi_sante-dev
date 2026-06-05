@@ -45,7 +45,9 @@ class HeaderSearch extends StatelessWidget {
                         decoration: InputDecoration(
                           hintText: 'Search hospitals, pharmacies...',
                           hintStyle: TextStyle(
-                            color: const Color(0xFF5F6368).withValues(alpha: 0.7),
+                            color: const Color(
+                              0xFF5F6368,
+                            ).withValues(alpha: 0.7),
                             fontSize: 15,
                             fontWeight: FontWeight.w400,
                           ),
@@ -59,6 +61,8 @@ class HeaderSearch extends StatelessWidget {
                         ),
                       ),
                     ),
+                    
+                    // Filter icon
                     Container(
                       width: 36,
                       height: 36,
@@ -69,7 +73,23 @@ class HeaderSearch extends StatelessWidget {
                       child: const Icon(
                         CupertinoIcons.slider_horizontal_3,
                         color: Color(0xFF2A7D8F),
-                        size: 18,
+                        size: 20,
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+                    // Profile Icon
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2A7D8F).withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        CupertinoIcons.profile_circled,
+                        color: Color(0xFF5F6368),
+                        size: 30,
                       ),
                     ),
                   ],

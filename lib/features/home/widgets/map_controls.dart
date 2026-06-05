@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:navi_sante/features/home/screens/ai_chat.dart';
 import '../controller/map_cubit.dart';
 
 /// A sleek, glassmorphic column of map controls (zoom in, zoom out, center/locate).
@@ -42,6 +43,29 @@ class MapControls extends StatelessWidget {
               isLoading: false,
               onTap: () {
                 mapCubit.locateUser(requestPermission: true);
+              },
+            ),
+            const SizedBox(height: 10),
+
+            //Info button
+            _GlassmorphicButton(
+              icon: CupertinoIcons.info_circle,
+              tooltip: 'map info',
+              onTap: () {
+                // TODO: ADD INFO BOTTOM SHEET
+              },
+            ),
+            const SizedBox(height: 40),
+
+            //ai chat button
+            _GlassmorphicButton(
+              icon: CupertinoIcons.chat_bubble,
+              iconColor: const Color(0xFF2A7D8F),
+              tooltip: 'AI Chat',
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const AIChatPage()),
+                );
               },
             ),
           ],
@@ -123,8 +147,8 @@ class _GlassmorphicButtonState extends State<_GlassmorphicButton>
         child: Tooltip(
           message: widget.tooltip,
           child: Container(
-            width: 50,
-            height: 50,
+            width: 45,
+            height: 45,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               boxShadow: [
@@ -149,7 +173,7 @@ class _GlassmorphicButtonState extends State<_GlassmorphicButton>
                     child: Center(
                       child: Icon(
                         widget.icon,
-                        size: 20,
+                        size: 22,
                         color: widget.iconColor,
                       ),
                     ),
