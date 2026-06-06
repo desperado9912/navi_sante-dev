@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,12 +8,10 @@ import 'package:flutter_map_cache/flutter_map_cache.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../controller/map_cubit.dart';
+import '../controller/map_cache_manager.dart';
 import '../maps/map_service.dart';
 import 'map_controls.dart';
 import 'header_search.dart';
-import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
-
-// TODO: IMPLEMENT MAP CACHING WITH HIVE
 
 /// Map widget that renders OpenStreetMap with the Carto Light tile layer,
 /// displays a pulsing user location dot, and features smooth panning camera transitions.
@@ -26,13 +25,16 @@ class HomeMapWidget extends StatefulWidget {
 class _HomeMapWidgetState extends State<HomeMapWidget>
     with TickerProviderStateMixin {
   late final MapController _mapController;
-
-  // Dio Instance for tiles request. Caching is handled by FlutterMapCache
   late final Dio _tilesDio;
+
+  // Map tile request instance. Map caching is handled by cache manager with Hive storage.
+  final MapCacheManager _cacheManager = MapCacheManager();
+  CacheStore? _hiveCacheStore;
 
   @override
   void initState() {
     super.initState();
+
     _mapController = MapController();
 
     _tilesDio = Dio(
@@ -42,6 +44,11 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
         headers: MapConfig.tileHeaders,
       ),
     );
+
+    // Initialize Hive cache store
+    _cacheManager.initialize().then((store) {
+      if (mounted) setState(() => _hiveCacheStore = store);
+    });
 
     // Trigger map initialization
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -53,6 +60,7 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
   void dispose() {
     _mapController.dispose();
     _tilesDio.close(force: false);
+    _cacheManager.dispose();
     super.dispose();
   }
 
@@ -175,19 +183,34 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
                   },
                 ),
 
+                // Tile Layer: Carto Light styling with caching
                 children: [
-                  // Tile Layer: Carto Light styling with caching
-                  TileLayer(
-                    urlTemplate: MapConfig.cartoLightUrl,
-                    fallbackUrl: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-                    subdomains: MapConfig.subdomains,
-                    userAgentPackageName: MapConfig.userAgentPackageName,
-                    retinaMode: RetinaMode.isHighDensity(context),
-                    tileProvider: CachedTileProvider(
-                      dio: _tilesDio,
-                      store: MemCacheStore(),
+                  if (_hiveCacheStore != null)
+                    TileLayer(
+                      urlTemplate: MapConfig.cartoLightUrl,
+                      fallbackUrl:
+                          'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+                      subdomains: MapConfig.subdomains,
+                      userAgentPackageName: MapConfig.userAgentPackageName,
+                      retinaMode: RetinaMode.isHighDensity(context),
+                      tileProvider: CachedTileProvider(
+                        dio: _tilesDio,
+                        // Tiles stored in Hive cache
+                        store: _hiveCacheStore!,
+                        maxStale: MapCacheManager.cacheTtl,
+                      ),
+                    )
+                  else
+                    // If hive not ready render tiles without caching so
+                    // the map is immediately visible
+                    TileLayer(
+                      urlTemplate: MapConfig.cartoLightUrl,
+                      fallbackUrl:
+                          'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+                      subdomains: MapConfig.subdomains,
+                      userAgentPackageName: MapConfig.userAgentPackageName,
+                      retinaMode: RetinaMode.isHighDensity(context),
                     ),
-                  ),
 
                   // Pulsing Marker for the User Position
                   if (state.userLocation != null)
@@ -219,15 +242,6 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
                 top: controlsTopOffset, // Positioned below search bar
                 child: const MapControls(),
               ),
-
-              // //Gps Loading indicator
-              // if (state is MapLoadingState)
-              //   const Positioned(
-              //     bottom: 120,
-              //     left: 0,
-              //     right: 0,
-              //     child: Center(child: _LoadingChip()),
-              //   ),
             ],
           );
         },

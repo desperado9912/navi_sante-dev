@@ -15,8 +15,6 @@ class MyWidget extends StatelessWidget {
 // Bugs fixes:
 /// TODO: FIX MAP RENDERING ISSUES FOR IOS AND ANDROID
 /// 
-/// TODO: IMPLEMENT MAP CACHING WITH HIVE (home_map_widget.dart).
-/// 
 /// TODO: Fix MAP LOCATION PERMISSION ERROR SNACKBAR position to display above navbar (home_map_widget.dart) line: 120.
 
 
