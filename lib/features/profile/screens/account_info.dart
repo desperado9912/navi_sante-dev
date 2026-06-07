@@ -26,6 +26,7 @@ class _AccountInfoState extends State<AccountInfo> {
     MemoryLeakTracker.logInit(this);
     MemoryLeakTracker.logInit(_nameController);
     MemoryLeakTracker.logInit(_securityController);
+    
     final initialName = supa
         .Supabase
         .instance
@@ -1440,7 +1441,6 @@ class _AccountInfoState extends State<AccountInfo> {
 
         return Scaffold(
           appBar: const PlatformAdaptiveAppBar(title: 'Account Information'),
-          backgroundColor: const Color(0xFFF8F9F8),
           body: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
             child: Column(

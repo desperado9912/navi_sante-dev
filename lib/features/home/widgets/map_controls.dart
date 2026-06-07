@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:navi_sante/features/home/screens/ai_chat.dart';
 import '../controller/map_cubit.dart';
+import 'map_info_sheet.dart';
 
 /// A sleek, glassmorphic column of map controls (zoom in, zoom out, center/locate).
 class MapControls extends StatelessWidget {
@@ -51,15 +52,13 @@ class MapControls extends StatelessWidget {
             _GlassmorphicButton(
               icon: CupertinoIcons.info_circle,
               tooltip: 'map info',
-              onTap: () {
-                // TODO: ADD INFO BOTTOM SHEET
-              },
+              onTap: () => _showMapInfoSheet(context),
             ),
             const SizedBox(height: 40),
 
             //ai chat button
             _GlassmorphicButton(
-              icon: CupertinoIcons.chat_bubble,
+              icon: CupertinoIcons.chat_bubble_text_fill,
               iconColor: const Color(0xFF2A7D8F),
               tooltip: 'AI Chat',
               onTap: () {
@@ -74,6 +73,21 @@ class MapControls extends StatelessWidget {
     );
   }
 }
+
+void _showMapInfoSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: kCupertinoModalBarrierColor,
+      isScrollControlled: true,
+      enableDrag: true,
+      sheetAnimationStyle: AnimationStyle(
+        duration: const Duration(milliseconds: 250),
+        reverseDuration: const Duration(milliseconds: 200),
+      ),
+      builder: (_) => const MapInfoSheet(),
+    );
+  }
 
 /// A highly polished, custom glassmorphic button with built-in micro-animations on tap.
 class _GlassmorphicButton extends StatefulWidget {

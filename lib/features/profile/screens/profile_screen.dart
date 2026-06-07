@@ -63,9 +63,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final selected = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
+      barrierColor: kCupertinoModalBarrierColor,
       isScrollControlled: true,
+      sheetAnimationStyle: AnimationStyle(
+        duration: const Duration(milliseconds: 250),
+        reverseDuration: const Duration(milliseconds: 200),
+      ),
       builder: (_) => LanguageBottomSheet(currentCode: _langCode),
     );
+    
     if (selected != null && mounted) {
       setState(() => _langCode = selected);
       // TODO: propagate to app-level LanguageCubit when localisation is built
@@ -78,7 +84,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final canOpen = await canLaunchUrl(uri);
     if (!canOpen) {
       if (!mounted) return;
-      AppFeedback.show(context, type: FeedbackType.info, message: 'Could not open the link.');
+      AppFeedback.show(
+        context,
+        type: FeedbackType.info,
+        message: 'Could not open the link.',
+      );
       return;
     }
     await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -121,7 +131,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       AppFeedback.show(
         context,
         type: FeedbackType.info,
-        message: 'No email app found. Please contact contact@navisante.com directly.',
+        message:
+            'No email app found. Please contact contact@navisante.com directly.',
       );
     }
   }
@@ -136,7 +147,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await launchUrl(webUri, mode: LaunchMode.inAppWebView);
     } else {
       if (!context.mounted) return;
-      AppFeedback.show(context, type: FeedbackType.info, message: 'Could not open the link.');
+      AppFeedback.show(
+        context,
+        type: FeedbackType.info,
+        message: 'Could not open the link.',
+      );
     }
   }
 
@@ -227,7 +242,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     }
   }
-
 
   // ────────────────────────────────────────────────────────────────
   // Language tile trailing widget
