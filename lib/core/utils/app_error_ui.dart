@@ -1,16 +1,10 @@
-// Centralized UI feedback utility for consistent error/warning/info/success
-// presentation across the entire app.
-//
-// Usage:
-// ''dart
-// AppFeedback.show(context, type: FeedbackType.error, message: 'Incorrect email or password.');
-// AppFeedback.show(context, type: FeedbackType.warning, message: '...', title: 'Warning');
-// ''
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-// ── Feedback categories ──────────────────────────────────────────────
+// Centralized UI feedback utility for consistent error/warning/info/success
+// presentation across the entire app.
+// Creates a reusable snacbar widget that handles all UI error messages.
+
 enum FeedbackType { error, warning, info, success }
 
 class AppFeedback {
@@ -117,7 +111,6 @@ class AppFeedback {
       );
   }
 
-  // ── Platform-adaptive error dialog ───────────────────────────────
   /// Shows a platform-adaptive dialog for critical errors that need acknowledgment.
   static void showErrorDialog(
     BuildContext context, {
@@ -169,9 +162,7 @@ class AppFeedback {
     }
   }
 
-  // ── Inline error widget for bottom sheets ────────────────────────
   /// Returns a styled inline error container for use inside bottom sheets.
-  /// Returns an empty SizedBox when [error] is null.
   static Widget inlineError(String? error) {
     if (error == null) return const SizedBox.shrink();
 
@@ -180,18 +171,12 @@ class AppFeedback {
       decoration: BoxDecoration(
         color: _errorColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: _errorColor.withValues(alpha: 0.25),
-        ),
+        border: Border.all(color: _errorColor.withValues(alpha: 0.25)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.error_outline_rounded,
-            color: _errorColor,
-            size: 18,
-          ),
+          Icon(Icons.error_outline_rounded, color: _errorColor, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Text(

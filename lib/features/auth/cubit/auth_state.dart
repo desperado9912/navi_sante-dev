@@ -1,3 +1,5 @@
+// BLoc that handles all states from auth flow.
+
 part of 'auth_cubit.dart';
 
 abstract class AuthState {

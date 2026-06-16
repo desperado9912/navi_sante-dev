@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:navi_sante/features/home/screens/home_screen.dart';
-import 'package:navi_sante/features/hospitals/hospitals.dart';
+import 'package:navi_sante/features/hospitals/screens/hospitals.dart';
 import 'package:navi_sante/features/pharmacy/pharmacy.dart';
 import 'package:navi_sante/features/profile/screens/profile_screen.dart';
 import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
 import 'package:navi_sante/core/performance/fade_indexed_stack.dart';
 
+// Apps core naviagtion widget (Navigation menu)
+// Main entry point from auth holds all other main screens, using index stack.
+/// For smooth transitions, replaced by [FadeIndexedStack].
 
 class NavigationMenu extends StatefulWidget {
   const NavigationMenu({super.key});
@@ -35,6 +38,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
     return Obx(
       () => Scaffold(
         extendBody: true,
+
         //all screens bg color
         backgroundColor: const Color(0xFFF8F9F8),
         appBar: controller.selectedIndex.value == 0
@@ -58,6 +62,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
                 ),
               ],
             ),
+
             // Navbar design
             child: ClipRRect(
               borderRadius: BorderRadius.circular(26.0),
@@ -90,6 +95,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
                     );
                   }),
                 ),
+
                 child: NavigationBar(
                   selectedIndex: controller.selectedIndex.value,
                   labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
@@ -122,6 +128,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
             ),
           ),
         ),
+
         // Body elements scroll behind navbar
         body: SafeArea(
           top: controller.selectedIndex.value != 0,
@@ -140,7 +147,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
 class NavigationController extends GetxController {
   final RxInt selectedIndex = 0.obs;
 
-  //Index for screens
+  /// Index for screens
   final List<Widget> screens = [
     const RepaintBoundary(child: ScreenWrapper(child: HomeScreen())),
     const RepaintBoundary(child: ScreenWrapper(child: Hospitals())),
@@ -148,9 +155,13 @@ class NavigationController extends GetxController {
     const RepaintBoundary(child: ScreenWrapper(child: ProfileScreen())),
   ];
 
-  List<String> get titles => ['Discover', 'Find Sanctuary', 'Medications', 'Profile'];
+  List<String> get titles => [
+    'Discover',
+    'Find Sanctuary',
+    'Medications',
+    'Profile',
+  ];
 }
-
 
 // Adding a bottom padding so screen content dont get stuck behind navbar.
 const double navBottomPadding = 150.0;

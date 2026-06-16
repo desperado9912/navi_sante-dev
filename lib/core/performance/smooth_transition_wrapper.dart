@@ -2,12 +2,6 @@ import 'package:flutter/material.dart';
 
 /// A utility widget that delays rendering heavy or complex UI subtrees
 /// until the page transition (e.g. slide/fade) is fully complete.
-///
-/// Under both Apple and Android performance guidelines, rendering a complex widget tree
-/// in the same frame as a screen transition animation causes GPU pipelines to stall,
-/// leading to noticeable jank and frame drops (stutter). By rendering a lightweight
-/// loader or placeholder first, and switching to the complex subtree only after the
-/// transition completes, we guarantee a consistent 60-120 FPS.
 class SmoothTransitionWrapper extends StatefulWidget {
   final Widget child;
   final Widget? placeholder;

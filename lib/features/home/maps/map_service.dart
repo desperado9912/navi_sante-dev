@@ -26,36 +26,12 @@ class MapConfig {
   // Fires new user position only after 10 metres.
   static const int trackingDistanceFilter = 10; //metres
 
-  // Fires new user position only after 10 seconds.
-  static const int trackingTimeFilter = 3; //seconds
+  // Fires new user position only after 1 seconds.
+  static const int trackingTimeFilter = 1; //seconds
 
   // Fallback Coordinates (Yaoundé, Cameroon)
   static final LatLng yaoundeLatLng = LatLng(3.8480, 11.5021);
 }
-
-/// Enum representing the type of medical facility.
-enum FacilityType { hospital, pharmacy, clinic }
-
-// /// Data model representing health facilities.
-// class HealthFacility {
-//   final String id;
-//   final String name;
-//   final String description;
-//   final LatLng coordinate;
-//   final FacilityType type;
-//   final String contactNumber;
-//   final bool is24Hours;
-
-//   const HealthFacility({
-//     required this.id,
-//     required this.name,
-//     required this.description,
-//     required this.coordinate,
-//     required this.type,
-//     this.contactNumber = '',
-//     this.is24Hours = false,
-//   });
-// }
 
 /// Abstract representation of location retrieval results.
 sealed class LocationResult {
@@ -81,7 +57,6 @@ class LocationFailure extends LocationResult {
 /// A service to cleanly handle permissions and GPS coordinates fetching.
 class MapService {
   // Requests permission and fetches the current device position.
-  /// If [requestIfNeeded] is false, it only checks if already granted, and otherwise returns denied.
   Future<LocationResult> getCurrentLocation({
     bool requestIfNeeded = true,
   }) async {
@@ -158,7 +133,7 @@ class MapService {
               accuracy: LocationAccuracy.high,
               distanceFilter: MapConfig.trackingDistanceFilter,
               // Minimum interval between updates — prevents battery drain
-              intervalDuration: const Duration(seconds: 4),
+              intervalDuration: const Duration(seconds: 1),
             )
           : AppleSettings(
               accuracy: LocationAccuracy.bestForNavigation,
@@ -177,25 +152,4 @@ class MapService {
       yield LocationFailure('Location tracking error: ${e.toString()}');
     }
   }
-
-  // /// Triggers Apple Maps or Google Maps external intent frameworks cleanly based on device OS.
-  // Future<void> launchExternalNavigation(LatLng destination, String title) async {
-  //   final String lat = destination.latitude.toString();
-  //   final String lng = destination.longitude.toString();
-
-  //   final Uri appleMapsUri = Uri.parse('maps://?q=${Uri.encodeComponent(title)}&ll=$lat,$lng');
-  //   final Uri googleMapsUri = Uri.parse('https://google.com');
-
-  //   try {
-  //     if (await canLaunchUrl(appleMapsUri)) {
-  //       await launchUrl(appleMapsUri, mode: LaunchMode.externalApplication);
-  //     } else if (await canLaunchUrl(googleMapsUri)) {
-  //       await launchUrl(googleMapsUri, mode: LaunchMode.externalApplication);
-  //     } else {
-  //       debugPrint('No native application maps clients found.');
-  //     }
-  //   } catch (e) {
-  //     debugPrint('Intent navigation execution error: $e');
-  //   }
-  // }
 }

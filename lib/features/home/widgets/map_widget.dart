@@ -201,8 +201,7 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
                       ),
                     )
                   else
-                    // If hive not ready render tiles without caching so
-                    // the map is immediately visible
+                    // If hive not ready render tiles without caching
                     TileLayer(
                       urlTemplate: MapConfig.cartoLightUrl,
                       fallbackUrl:

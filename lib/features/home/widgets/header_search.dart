@@ -4,8 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Home screen Floating search bar.
-class HeaderSearch extends StatelessWidget {
+class HeaderSearch extends StatefulWidget {
   const HeaderSearch({super.key});
+
+  @override
+  State<HeaderSearch> createState() => _HeaderSearchState();
+}
+
+class _HeaderSearchState extends State<HeaderSearch> {
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,9 +52,9 @@ class HeaderSearch extends StatelessWidget {
                       size: 22,
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: TextField(
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           hintText: 'Search hospitals, pharmacies, clinics',
                           hintStyle: TextStyle(
                             color: Color(0xFF5F6368),

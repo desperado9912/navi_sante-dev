@@ -3,11 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import "package:supabase_flutter/supabase_flutter.dart";
 
+// Handles all authentication providers and backend api services for auth.
 class AuthServices {
-  final _supabase = Supabase.instance.client;
-
   // Prevents OAuth services to overwrite User's Display Name
-    // All UI code should call this instead of reading full_name directly.
   String get currentDisplayName {
     final meta = _supabase.auth.currentUser?.userMetadata;
     final custom = meta?['custom_display_name'] as String?;
@@ -15,6 +13,9 @@ class AuthServices {
     final fullName = meta?['full_name'] as String?;
     return fullName ?? '';
   }
+
+  // 1. SUPABASE CLIENT
+  final _supabase = Supabase.instance.client;
 
   //sign in with email & password
   Future<AuthResponse> signInWithEmailPassword(
@@ -36,20 +37,40 @@ class AuthServices {
     return await _supabase.auth.signUp(
       email: email.toLowerCase(),
       password: password,
-      data: {
-        'full_name': fullName,
-        'custom_display_name': fullName,
-      },
+      data: {'full_name': fullName, 'custom_display_name': fullName},
     );
   }
 
+  //sign out with local scope
+  Future<void> signOut() async {
+    await _supabase.auth.signOut(scope: SignOutScope.local);
+  }
+
+  //signout with global scope
+  Future<void> signOutGlobal() async {
+    await _supabase.auth.signOut(scope: SignOutScope.global);
+  }
+
+  // Update display name (in app settings)
+  Future<void> updateDisplayName(String newName) async {
+    await _supabase.auth.updateUser(
+      UserAttributes(data: {'custom_display_name': newName}),
+    );
+  }
+
+  //current session check
+  bool get hasSession => _supabase.auth.currentSession != null;
+
+  // 2. GOOGLE OAUTH CLIENT
   //sign in / continue with Google
   Future<AuthResponse> nativeGoogleSignIn() async {
     final GoogleSignInAccount? googleUser;
     try {
       googleUser = await GoogleSignIn.instance.authenticate();
     } on PlatformException catch (e) {
-      debugPrint('[AuthServices] Google PlatformException: ${e.code} - ${e.message}');
+      debugPrint(
+        '[AuthServices] Google PlatformException: ${e.code} - ${e.message}',
+      );
       if (e.code == 'sign_in_canceled') {
         throw Exception('Sign In process aborted.');
       }
@@ -88,26 +109,6 @@ class AuthServices {
     return response;
   }
 
-  // ── Update display name (for app settings) ──────────────────────
-  Future<void> updateDisplayName(String newName) async {
-    await _supabase.auth.updateUser(
-      UserAttributes(data: {'custom_display_name': newName}),
-    );
-  }
-
-  //sign in / continue with Apple
-
-  //sign out with local scope
-  Future<void> signOut() async {
-    await _supabase.auth.signOut(scope: SignOutScope.local);
-  }
-
-  //signout with global scope
-  Future<void> signOutGlobal() async {
-    await _supabase.auth.signOut(scope: SignOutScope.global);
-  }
-
-  //current session check
-  bool get hasSession => _supabase.auth.currentSession != null;
+  // 3. APPLE CLIENT
+  // TODO: sign in / continue with Apple
 }
-

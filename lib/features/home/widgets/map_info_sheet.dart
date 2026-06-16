@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 /// Bottom sheet that shows map attribution and data source information.
+/// TODO: REUSABLE BOTTOM SHEET WIDGET.
 class MapInfoSheet extends StatelessWidget {
   const MapInfoSheet({super.key});
 
@@ -123,8 +124,6 @@ class MapInfoSheet extends StatelessWidget {
     );
   }
 }
-
-// ── Private helper widgets ───────────────────────────────────────────────────
 
 /// Rounded card container that wraps a column of info rows.
 class _InfoCard extends StatelessWidget {

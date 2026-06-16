@@ -30,10 +30,8 @@ class MapCacheManager {
 
   /// Initialises Hive in the device's OS temporary directory
   Future<HiveCacheStore> initialize() async {
-    // Place cache in the OS temp folder.
     final tempDir = await getTemporaryDirectory();
     _cachePath = '${tempDir.path}/navisante_tile_cache';
-
     _store = HiveCacheStore(_cachePath!, hiveBoxName: _hiveBoxName);
 
     // Clean any stale tiles left from the previous session.
@@ -67,7 +65,6 @@ class MapCacheManager {
   /// Removes only entries whose maxStale duration has been exceeded.
   Future<void> _cleanStaleEntries() async {
     try {
-      // staleOnly: true → only evicts tiles whose 30-day window has passed.
       await _store?.clean(staleOnly: true);
       debugPrint('[MapCache] Stale tile cleanup complete.');
     } catch (e) {

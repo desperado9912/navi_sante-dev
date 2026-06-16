@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import '../maps/map_service.dart';
 
 /// Base state representing the map's current configuration and context.
+/// Handles map functions and states.
 abstract class MapState extends Equatable {
   final LatLng center;
   final double zoom;
@@ -16,9 +17,7 @@ abstract class MapState extends Equatable {
   /// A temporary signal used to trigger a one-off snackbar/error notification.
   final String? errorSignal;
 
-  // New features handles
-  // final List<HealthFacility> facilities;
-  // final HealthFacility? selectedFacility;
+  final MapInteractionState interactionState;
 
   const MapState({
     required this.center,
@@ -26,8 +25,7 @@ abstract class MapState extends Equatable {
     this.userLocation,
     this.animateToState = false,
     this.errorSignal,
-    // this.facilities = const [],
-    // this.selectedFacility,
+    this.interactionState = const MapIdle(),
   });
 
   @override
@@ -37,9 +35,46 @@ abstract class MapState extends Equatable {
     userLocation,
     animateToState,
     errorSignal,
-    // facilities,
-    // selectedFacility,
+    interactionState,
   ];
+
+  MapState copyWith({
+    LatLng? center,
+    double? zoom,
+    LatLng? userLocation,
+    bool? animateToState,
+    String? errorSignal,
+    MapInteractionState? interactionState,
+  }) {
+    if (this is MapLoadingState) {
+      return MapLoadingState(
+        center: center ?? this.center,
+        zoom: zoom ?? this.zoom,
+        userLocation: userLocation ?? this.userLocation,
+      );
+    } else if (this is MapErrorState) {
+      final err = this as MapErrorState;
+      return MapErrorState(
+        center: center ?? this.center,
+        zoom: zoom ?? this.zoom,
+        errorMessage: err.errorMessage,
+        isNetworkError: err.isNetworkError,
+        userLocation: userLocation ?? this.userLocation,
+        animateToState: animateToState ?? this.animateToState,
+        errorSignal: errorSignal ?? this.errorSignal,
+        interactionState: interactionState ?? this.interactionState,
+      );
+    } else {
+      return MapLocatedState(
+        center: center ?? this.center,
+        zoom: zoom ?? this.zoom,
+        userLocation: userLocation ?? this.userLocation,
+        animateToState: animateToState ?? this.animateToState,
+        errorSignal: errorSignal ?? this.errorSignal,
+        interactionState: interactionState ?? this.interactionState,
+      );
+    }
+  }
 }
 
 /// Initial state while checking permissions or fetching first GPS coordinate.
@@ -48,6 +83,7 @@ class MapLoadingState extends MapState {
     required super.center,
     required super.zoom,
     super.userLocation,
+    super.interactionState = const MapIdle(),
   });
 }
 
@@ -59,8 +95,7 @@ class MapLocatedState extends MapState {
     super.userLocation,
     super.animateToState,
     super.errorSignal,
-    // super.facilities,
-    // super.selectedFacility,
+    super.interactionState = const MapIdle(),
   });
 }
 
@@ -77,12 +112,39 @@ class MapErrorState extends MapState {
     super.userLocation,
     super.animateToState,
     super.errorSignal,
-    // super.facilities,
-    // super.selectedFacility,
+    super.interactionState = const MapIdle(),
   });
 
   @override
   List<Object?> get props => [...super.props, errorMessage, isNetworkError];
+}
+
+abstract class MapInteractionState {
+  const MapInteractionState();
+}
+
+// Default: all pins visible, carousel showing 5 closest.
+class MapIdle extends MapInteractionState {
+  const MapIdle();
+}
+
+// User tapped pin: pin is scaled up, mini card shown, carousel hidden.
+class MapPinSelected extends MapInteractionState {
+  final String facilityId; // Which pin is highlighted
+  const MapPinSelected(this.facilityId);
+}
+
+// User is searching: matching pins highlighted, non-matching dimmed.
+// Carousel hidden, single result card shown at bottom.
+class MapSearchActive extends MapInteractionState {
+  final String query;
+  const MapSearchActive(this.query);
+}
+
+// Bottom sheet is expanded (came from pin tap or carousel card tap).
+class MapDetailSheet extends MapInteractionState {
+  final String facilityId;
+  const MapDetailSheet(this.facilityId);
 }
 
 /// Manages the state of the home map, including coordinates, zoom level, and tracking.
@@ -101,7 +163,7 @@ class MapCubit extends Cubit<MapState> {
       );
 
   /// Initializes the map. Attempts to locate the user immediately.
-  /// If it fails or is denied, it falls back to Yaoundé and shows a snackbar.
+  /// Fallback to Yaounde on failure or denied location access.
   Future<void> initMap() async {
     emit(MapLoadingState(center: state.center, zoom: state.zoom));
     await locateUser(requestPermission: true, isInit: true);
@@ -301,5 +363,27 @@ class MapCubit extends Cubit<MapState> {
   Future<void> close() async {
     await _locationStreamSub?.cancel();
     return super.close();
+  }
+
+  // Other Interaction map states
+
+  /// User tapped a map pin. Tell FacilityBloc to load the details in widget.
+  void selectPin(String facilityId) {
+    emit(state.copyWith(interactionState: MapPinSelected(facilityId)));
+  }
+
+  /// User tapped the expand button on the mini card.
+  void expandSheet(String facilityId) {
+    emit(state.copyWith(interactionState: MapDetailSheet(facilityId)));
+  }
+
+  /// User started typing in the map search bar.
+  void activateSearch(String query) {
+    emit(state.copyWith(interactionState: MapSearchActive(query)));
+  }
+
+  /// User tapped the map background, cleared search, or dragged sheet down.
+  void returnToIdle() {
+    emit(state.copyWith(interactionState: MapIdle()));
   }
 }

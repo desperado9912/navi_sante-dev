@@ -2,6 +2,7 @@
 // Logs security events in supabase tables
 // Logs Sign in and Sign up events
 // Logs Sign out & password reset events
+// TODO: PROPAGATE TO APP LEVEL LOGS FOR ALL CORE EVENTS BEFORE PRODUCTION.
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

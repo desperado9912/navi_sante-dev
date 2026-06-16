@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'features/hospitals/data/facility_get_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -10,7 +11,12 @@ import 'app.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  //Hive initialization
   await Hive.initFlutter();
+
+  //Handle Caching for map models
+  await Hive.openBox('mapCache');
+  await FacilityLocal.init();
 
   //orientation lock
   await SystemChrome.setPreferredOrientations([

@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+// TODO: DELETE BEFORE PRODUCTION AND CLEAR ALL TRACKER CODE LINE IN FILES.
+
 /// A simple, lightweight memory leak tracker designed for development mode.
 ///
 /// Logs when controllers, animations, change notifiers, or stream subscriptions

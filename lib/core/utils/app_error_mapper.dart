@@ -1,4 +1,4 @@
-// Centralized error-to-human-message mapper.
+// Centralized exception and errors-to-human-message mapper.
 //
 // Translates raw debug, Supabase, auth, network, and general exceptions
 // into user-friendly messages with appropriate [FeedbackType] categorization.
@@ -16,7 +16,7 @@ class MappedError {
 class AppErrorMapper {
   AppErrorMapper._();
 
-  // ── Auth errors (login / signup / OAuth) ─────────────────────────
+  // Auth errors (login / signup / OAuth)
   static MappedError mapAuthError(String raw) {
     final msg = raw.toLowerCase();
 
@@ -67,7 +67,7 @@ class AppErrorMapper {
     );
   }
 
-  // ── Password change / link errors ────────────────────────────────
+  // Password change and update
   static String mapPasswordError(Object error) {
     final msg = error.toString().toLowerCase();
 
@@ -95,15 +95,14 @@ class AppErrorMapper {
     return 'Failed to update password. Please try again.';
   }
 
-  // ── Account deletion errors ──────────────────────────────────────
+  // Account deletion errors
   static String mapDeleteAccountError(Object error) {
     final msg = error.toString().toLowerCase();
 
     if (msg.contains('account deletion failed')) {
       return 'Unable to delete account. Please try again or contact support.';
     }
-    if (msg.contains('no user session') ||
-        msg.contains('not authenticated')) {
+    if (msg.contains('no user session') || msg.contains('not authenticated')) {
       return 'Your session has expired. Please log in again.';
     }
     if (_isNetworkError(msg)) {
@@ -113,7 +112,7 @@ class AppErrorMapper {
     return 'Unable to delete account. Please try again or contact support.';
   }
 
-  // ── General catch-all mapper ─────────────────────────────────────
+  // General catch-all mapper
   static MappedError mapGeneral(Object error) {
     final msg = error.toString().toLowerCase();
 
@@ -138,7 +137,7 @@ class AppErrorMapper {
     );
   }
 
-  // ── Network error detection ──────────────────────────────────────
+  // Network error detection
   static bool _isNetworkError(String msg) {
     return msg.contains('socketexception') ||
         msg.contains('connection refused') ||

@@ -12,6 +12,7 @@ import 'package:navi_sante/features/profile/screens/saved_facilities.dart';
 import 'package:navi_sante/features/profile/screens/notifications_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../features/auth/cubit/auth_cubit.dart';
+import '../../hospitals/controller/bookmark_cubit.dart';
 import '../controllers/profile_controller.dart';
 import '../widgets/language_sheet.dart';
 import '../widgets/profile_header.dart';
@@ -71,7 +72,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       builder: (_) => LanguageBottomSheet(currentCode: _langCode),
     );
-    
+
     if (selected != null && mounted) {
       setState(() => _langCode = selected);
       // TODO: propagate to app-level LanguageCubit when localisation is built
@@ -201,6 +202,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   //perform logout Function
   Future<void> _performLogout() async {
+    final authCubit = context.read<AuthCubit>();
+    final bookmarkCubit = context.read<BookmarkCubit>();
+    final navigator = Navigator.of(context, rootNavigator: true);
+
     // Show non-dismissible loading overlay to prevent any interaction
     showDialog<void>(
       context: context,
@@ -215,8 +220,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    final navigator = Navigator.of(context, rootNavigator: true);
-
     try {
       // 1. Clear all Hive caches before signout
       for (final name in ['app_cache', 'news_cache']) {
@@ -226,9 +229,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
 
       // 2. Sign out — local scope (clears session on this device only)
-      if (mounted) await context.read<AuthCubit>().logout();
+      await authCubit.logout();
 
-      // AuthGate automatically redirects to /login after state change.
+      // Clears bookmarks/saved facilities
+      bookmarkCubit.clear();
+
       navigator.pop(); // dismiss loader safely
     } catch (e) {
       //dismiss loader on error

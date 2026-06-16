@@ -6,7 +6,7 @@ import 'package:navi_sante/features/home/screens/ai_chat.dart';
 import '../controller/map_cubit.dart';
 import 'map_info_sheet.dart';
 
-/// A sleek, glassmorphic column of map controls (zoom in, zoom out, center/locate).
+/// A sleek, glassmorphic column of map controls (zoom in, zoom out, center/locate, info etc.).
 class MapControls extends StatelessWidget {
   const MapControls({super.key});
 

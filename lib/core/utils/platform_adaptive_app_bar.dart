@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+// Custom app bar used accross all widget screens.
+// Replaces the default [AppBar] with a platform-specific design.
 class PlatformAdaptiveAppBar extends StatelessWidget
     implements PreferredSizeWidget {
   const PlatformAdaptiveAppBar({

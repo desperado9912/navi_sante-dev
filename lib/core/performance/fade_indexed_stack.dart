@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 ///
 /// Keeps all children alive in memory (preserving scroll positions, forms, and controller states)
 /// while utilizing [TickerMode] to freeze tickers (cursors, animation controllers, scroll events)
-/// on non-active pages to minimize CPU cycles and conserve battery life, satisfying
-/// Apple's Energy guidelines and Android App Performance guidelines.
+/// on non-active pages to minimize CPU cycles and conserve battery life.
 class FadeIndexedStack extends StatefulWidget {
   final int index;
   final List<Widget> children;
