@@ -8,10 +8,9 @@ class NotificationsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const PlatformAdaptiveAppBar(title: 'Notifications settings'),
+      backgroundColor: Color(0xFFF8F9F8),
 
-      body: const Center(
-        
-      ),
+      body: const Center(),
     );
   }
 }

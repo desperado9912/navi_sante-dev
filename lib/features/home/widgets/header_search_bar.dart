@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Home screen Floating search bar.
+// Home screen Floating search bar with user profile avatar.
 class HeaderSearch extends StatefulWidget {
   const HeaderSearch({super.key});
 

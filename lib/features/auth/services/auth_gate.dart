@@ -12,9 +12,7 @@ import 'package:get/get.dart';
 import 'package:navi_sante/features/auth/cubit/auth_cubit.dart';
 import 'package:navi_sante/features/auth/screens/login.dart';
 import 'package:navi_sante/core/utils/navigation_menu.dart';
-import 'package:navi_sante/features/hospitals/controller/facility_bloc_cubit.dart';
-import 'package:navi_sante/features/hospitals/controller/recently_viewed_cubit.dart';
-import 'package:navi_sante/features/hospitals/controller/bookmark_cubit.dart';
+import 'package:navi_sante/features/hospitals/controller/facility_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 class AuthGate extends StatefulWidget {
@@ -67,7 +65,7 @@ class _AuthGateState extends State<AuthGate> {
           // Use mounted check to safely access context across the async gap
           if (mounted) {
             context.read<AuthCubit>().reset();
-            context.read<BookmarkCubit>().clear();
+            context.read<FacilityBloc>().add(ClearBookmarks());
           }
 
           // Clean up GetX controller
@@ -109,8 +107,8 @@ class _AuthGateState extends State<AuthGate> {
     }
 
     context.read<FacilityBloc>().add(LoadFacilities());
-    context.read<RecentlyViewedCubit>().load();
-    context.read<BookmarkCubit>().loadBookmarks();
+    context.read<FacilityBloc>().add(LoadRecentlyViewed());
+    context.read<FacilityBloc>().add(LoadBookmarks());
   }
 
   @override

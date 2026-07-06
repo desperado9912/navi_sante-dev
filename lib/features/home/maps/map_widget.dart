@@ -5,16 +5,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_cache/flutter_map_cache.dart';
+import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../../hospitals/controller/facility_bloc.dart';
+import '../../hospitals/controller/facility_model.dart';
 import '../controller/map_cubit.dart';
 import '../controller/map_cache_manager.dart';
-import '../maps/map_service.dart';
-import 'map_controls.dart';
-import 'header_search.dart';
+import 'map_service.dart';
+import '../widgets/map_marker.dart';
+import '../widgets/map_controls.dart';
+import '../widgets/header_search_bar.dart';
+import '../widgets/facility_carousel.dart';
+import '../widgets/facility_bottom_sheet.dart';
 
-/// Map widget that renders OpenStreetMap with the Carto Light tile layer,
-/// displays a pulsing user location dot, and features smooth panning camera transitions.
+/// Map widget that holds together and renders all main map features and widgets
+/// [HomeScreen] builds this widget.
+/// The widget builds the following features:
+/// => OSM Carto map tile initilization, Map Animation,
+/// => Map Error snackbar, Floating Search bar, map controls, facility carousel,
+/// => User location pulsing indicator, marker clustering, facility markers,
+/// => Smooth camera transitions
+/// 
+/// TODO: MOVE PULSING INDICATOR TO ITS OWN WIDGET FILE & CONFIGURATION WITH SMOOTH ANIMATION. THAT BUILDS IN THIS ONE.
+
 class HomeMapWidget extends StatefulWidget {
   const HomeMapWidget({super.key});
 
@@ -127,7 +141,7 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.fromLTRB(24, 0, 24, 128),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        duration: const Duration(seconds: 5), // Autodismisses after 5 seconds
+        duration: const Duration(seconds: 4), // Autodismisses after 4 seconds
         action: SnackBarAction(
           label: 'Settings',
           textColor: const Color(0xFF2A7D8F),
@@ -148,8 +162,14 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
       listenWhen: (previous, current) =>
           current.animateToState != previous.animateToState ||
           current.animateToState ||
-          current.errorSignal != null,
+          current.errorSignal != null ||
+          current.userLocation != previous.userLocation,
       listener: (context, state) {
+        // Dismiss snackbar on new state
+        if (state is MapLocatedState || state.errorSignal == null) {
+          ScaffoldMessenger.of(context).removeCurrentSnackBar();
+        }
+
         // Trigger smooth animated glide if requested
         if (state.animateToState) {
           _animatedMapMove(state.center, state.zoom);
@@ -160,8 +180,23 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
           _showErrorSnackbar(context, state.errorSignal!);
           context.read<MapCubit>().clearErrorSignal();
         }
+
+        // Fetch highlights when user's location is resolved/updated
+        if (state.userLocation != null) {
+          context.read<FacilityBloc>().add(
+            LoadHighlights(
+              userLat: state.userLocation!.latitude,
+              userLng: state.userLocation!.longitude,
+            ),
+          );
+        }
       },
       child: BlocBuilder<MapCubit, MapState>(
+        buildWhen: (prev, current) =>
+            prev.animateToState != current.animateToState ||
+            prev.userLocation != current.userLocation ||
+            prev.interactionState != current.interactionState ||
+            current is MapErrorState,
         builder: (context, state) {
           return Stack(
             children: [
@@ -180,6 +215,10 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
                         camera.zoom,
                       );
                     }
+                  },
+                  onTap: (tapPosition, point) {
+                    context.read<MapCubit>().returnToIdle();
+                    context.read<FacilityBloc>().add(ClearSearch());
                   },
                 ),
 
@@ -224,6 +263,62 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
                         ),
                       ],
                     ),
+
+                  // Facility Map Pins
+                  BlocBuilder<FacilityBloc, FacilityState>(
+                    buildWhen: (prev, curr) =>
+                        prev.facilities != curr.facilities,
+                    builder: (context, facilityState) {
+                      if (facilityState.facilities.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+
+                      final selectedFacilityId =
+                          state.interactionState is MapPinSelected
+                          ? (state.interactionState as MapPinSelected)
+                                .facilityId
+                          : null;
+
+                      final markers = facilityState.facilities.map((facility) {
+                        return Marker(
+                          point: LatLng(
+                            facility.latitude,
+                            facility.longitude,
+                          ),
+                          width: 34,
+                          height: 41,
+                          alignment: Alignment.bottomCenter,
+                          child: GestureDetector(
+                            onTap: () {
+                              context.read<MapCubit>().selectPin(
+                                    facility.facilityId,
+                                  );
+                            },
+                            child: FacilityMapMarker(
+                              type: facility.type,
+                              isSelected:
+                                  facility.facilityId == selectedFacilityId,
+                            ),
+                          ),
+                        );
+                      }).toList();
+
+                      // MarkerClusterLayerWidget groups nearby pins at low zoom.
+                      // At higher zoom they separate back into individual pins.
+                      return MarkerClusterLayerWidget(
+                        options: MarkerClusterLayerOptions(
+                          maxClusterRadius: 45,
+                          size: const Size(40, 40),
+                          alignment: Alignment.center,
+                          markers: markers,
+                          builder: (context, clusterMarkers) =>
+                              FacilityClusterMarker(
+                            count: clusterMarkers.length,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
 
@@ -241,11 +336,89 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
                 top: controlsTopOffset, // Positioned below search bar
                 child: const MapControls(),
               ),
+
+              // Overlays (Carousel card) based on MapInteractionState
+              Positioned(
+                bottom: MediaQuery.of(context).padding.bottom + 12,
+                left: 0,
+                right: 0,
+                child: _buildBottomOverlay(context, state),
+              ),
             ],
           );
         },
       ),
     );
+  }
+
+  Widget _buildBottomOverlay(BuildContext context, MapState state) {
+    final interaction = state.interactionState;
+
+    if (interaction is MapPinSelected) {
+      return BlocBuilder<FacilityBloc, FacilityState>(
+        builder: (context, facilityState) {
+          final facility = facilityState.facilities
+              .cast<FacilityModel?>()
+              .firstWhere(
+                (f) => f?.facilityId == interaction.facilityId,
+                orElse: () => null,
+              );
+
+          if (facility == null) return const SizedBox.shrink();
+
+          return Container(
+            height: 142,
+            alignment: Alignment.center,
+            child: FacilityCardUI(
+              facility: facility,
+              userLat: state.userLocation?.latitude,
+              userLng: state.userLocation?.longitude,
+              onTap: () async {
+                context.read<FacilityBloc>().add(
+                  LoadFacilityDetail(facility.facilityId),
+                );
+                context.read<MapCubit>().expandSheet(facility.facilityId);
+                await FacilityExpandedSheet.show(
+                  context,
+                  facility.facilityId,
+                  userLat: state.userLocation?.latitude,
+                  userLng: state.userLocation?.longitude,
+                );
+                if (context.mounted) {
+                  context.read<MapCubit>().returnToIdle();
+                }
+              },
+            ),
+          );
+        },
+      );
+    }
+
+    if (interaction is MapIdle) {
+      if (state.userLocation != null) {
+        return HighlightsCarousel(
+          userLat: state.userLocation!.latitude,
+          userLng: state.userLocation!.longitude,
+          onCardTap: (facility) async {
+            context.read<FacilityBloc>().add(
+              LoadFacilityDetail(facility.facilityId),
+            );
+            context.read<MapCubit>().expandSheet(facility.facilityId);
+            await FacilityExpandedSheet.show(
+              context,
+              facility.facilityId,
+              userLat: state.userLocation?.latitude,
+              userLng: state.userLocation?.longitude,
+            );
+            if (context.mounted) {
+              context.read<MapCubit>().returnToIdle();
+            }
+          },
+        );
+      }
+    }
+
+    return const SizedBox.shrink();
   }
 }
 

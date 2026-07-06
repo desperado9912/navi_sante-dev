@@ -12,11 +12,13 @@ import 'package:navi_sante/features/profile/screens/saved_facilities.dart';
 import 'package:navi_sante/features/profile/screens/notifications_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../features/auth/cubit/auth_cubit.dart';
-import '../../hospitals/controller/bookmark_cubit.dart';
+import '../../hospitals/controller/facility_bloc.dart';
 import '../controllers/profile_controller.dart';
 import '../widgets/language_sheet.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/settings_tiles.dart';
+import '../widgets/navigation_app_sheet.dart';
+import 'package:navi_sante/core/utils/navigation_settings.dart';
 import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
 import 'package:navi_sante/core/utils/app_error_ui.dart';
 
@@ -34,6 +36,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _langCode = 'en';
   String get _langLabel => _langCode == 'en' ? 'English' : 'Français';
 
+  // preferred navigation app state
+  String _navigationAppCode = 'google';
+  String get _navAppLabel {
+    switch (_navigationAppCode) {
+      case 'google': return 'Google Maps';
+      case 'apple': return 'Apple Maps';
+      case 'waze': return 'Waze';
+      default: return 'Google Maps';
+    }
+  }
+
   // App metadata
   // Will be read from package_info_plus when version management is set up.
   static const _appVersion = 'V1.0.0.';
@@ -45,6 +58,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     MemoryLeakTracker.logInit(this);
     MemoryLeakTracker.logInit(_profileController);
     _profileController.loadHealthScore();
+    _navigationAppCode = NavigationSettings.getPreferredApp();
   }
 
   @override
@@ -78,7 +92,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // TODO: propagate to app-level LanguageCubit when localisation is built
     }
   }
+  
+  //navigation app picker
+  Future<void> _openNavigationAppPicker() async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: kCupertinoModalBarrierColor,
+      isScrollControlled: true,
+      sheetAnimationStyle: AnimationStyle(
+        duration: const Duration(milliseconds: 250),
+        reverseDuration: const Duration(milliseconds: 200),
+      ),
+      builder: (_) => NavigationAppBottomSheet(currentCode: _navigationAppCode),
+    );
 
+    if (selected != null && mounted) {
+      setState(() => _navigationAppCode = selected);
+      await NavigationSettings.setPreferredApp(selected);
+    }
+  }
   //URL launcher
   Future<void> _launchUrl(String url) async {
     final uri = Uri.parse(url);
@@ -203,7 +236,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   //perform logout Function
   Future<void> _performLogout() async {
     final authCubit = context.read<AuthCubit>();
-    final bookmarkCubit = context.read<BookmarkCubit>();
+    final facilityBloc = context.read<FacilityBloc>();
     final navigator = Navigator.of(context, rootNavigator: true);
 
     // Show non-dismissible loading overlay to prevent any interaction
@@ -232,7 +265,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await authCubit.logout();
 
       // Clears bookmarks/saved facilities
-      bookmarkCubit.clear();
+      facilityBloc.add(ClearBookmarks());
 
       navigator.pop(); // dismiss loader safely
     } catch (e) {
@@ -262,6 +295,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         child: Text(
           _langLabel,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF2A7D8F),
+          ),
+        ),
+      ),
+      const SizedBox(width: 6),
+      const Icon(
+        CupertinoIcons.chevron_right,
+        size: 16,
+        color: Color(0xFF888780),
+      ),
+    ],
+  );
+
+  // ────────────────────────────────────────────────────────────────
+  // Preffered Navigation app tile trailing widget
+  // ────────────────────────────────────────────────────────────────
+  Widget get _navAppTrailing => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2A7D8F).withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          _navAppLabel,
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
@@ -377,6 +440,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: 'Language',
                     onTap: _openLanguagePicker,
                     trailing: _langTrailing,
+                  ),
+
+                  SettingsTile(
+                    icon: CupertinoIcons.placemark,
+                    title: 'Navigation App',
+                    onTap: _openNavigationAppPicker,
+                    trailing: _navAppTrailing,
                   ),
                 ],
               ),

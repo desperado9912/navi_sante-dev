@@ -1,8 +1,15 @@
-import 'facility_get_local.dart';
-import 'facility_model.dart';
-import 'facility_get_remote.dart';
+import 'facility_local.dart';
+import '../controller/facility_model.dart';
+import 'facility_remote.dart';
 
-// Single entry point for all facility data consumed by the BLoC layer.
+// The Controller / Business Logic Layer: It receives user actions/events from the UI (like starting a search or loading details), queries the Repository, and updates the reactive FacilityState with the results (loaded facilities, highlights, search results, recents, etc.) to redraw the UI.
+
+// he Orchestrator: It decides whether to fetch data from FacilityLocal (cache) or FacilityRemote (network) for each operation.
+// This is the orchestrator and sole entry point for the rest of the application. It dictates the caching strategies. For instance:
+// getAllFacilities() first yields cached facilities from Hive, then retrieves fresh ones from Supabase, updates Hive, and yields again.
+// getFacilityDetail() checks Hive first (cache-first), fetching from Supabase only if it is not found locally.
+// The BLoC layers only communicate with the Repository, keeping the underlying storage mechanisms decoupled.
+// // Single entry point for all facility data consumed by the BLoC layer.
 ///
 /// BLoC never imports [FacilityLocal] or [FacilityRemote] directly.
 /// This class orchestrates caching strategy per operation:
@@ -14,7 +21,7 @@ import 'facility_get_remote.dart';
 /// | `searchFacilities()`  | Network only (never cached)     |
 /// | `getFacilityDetail()` | Cache-first, network on miss    |
 /// | `getUserBookmarks()`  | Network only                    |
-/// 
+///
 // ============================================================================
 class FacilityRepository {
   final FacilityLocal _local;
@@ -70,14 +77,17 @@ class FacilityRepository {
     }
   }
 
-  /// Searches facilities via the Supabase RPC.
+  /// Searches facilities via the Supabase RPC. Always network.
   Future<List<FacilityModel>> searchFacilities({
     required String query,
     String? typeFilter,
     String? cityFilter,
+    String? serviceFilter,
+    String? priceRangeFilter,
     double minRating = 0.0,
   }) async {
-    final cacheKey = '$query-$typeFilter-$cityFilter-$minRating';
+    final cacheKey =
+        '$query-$typeFilter-$cityFilter-$serviceFilter-$priceRangeFilter-$minRating';
     if (_searchCache.containsKey(cacheKey)) {
       return _searchCache[cacheKey]!;
     }
@@ -86,6 +96,8 @@ class FacilityRepository {
       query: query,
       typeFilter: typeFilter,
       cityFilter: cityFilter,
+      serviceFilter: serviceFilter,
+      priceRangeFilter: priceRangeFilter,
       minRating: minRating,
     );
 
@@ -119,7 +131,8 @@ class FacilityRepository {
   Future<void> clearRecentlyViewed() => _local.clearRecentlyViewed();
 
   /// Fetches the authenticated user's bookmarked facilities.
-  Future<List<FacilityModel>> getUserBookmarks() => _remote.getUserBookmarks();
+  Future<List<FacilityModel>> getUserBookmarks() => 
+    _remote.getUserBookmarks();
 
   /// Adds a bookmark for the authenticated user.
   Future<void> addBookmark(String facilityId) =>
@@ -128,4 +141,15 @@ class FacilityRepository {
   /// Removes a bookmark for the authenticated user.
   Future<void> removeBookmark(String facilityId) =>
       _remote.removeBookmark(facilityId);
+
+  /// Returns distinct service names from cached facilities for filter dropdowns.
+  /// Derived from Hive (no network call) — returns empty list if cache is cold.
+  List<String> getServiceOptions() {
+    final all = _local.getAllFacilities();
+    final services = <String>{};
+    for (final f in all) {
+      services.addAll(f.servicesList);
+    }
+    return services.toList()..sort();
+  }
 }

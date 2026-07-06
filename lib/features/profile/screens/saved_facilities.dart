@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
 import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../hospitals/controller/bookmark_cubit.dart';
+import '../../hospitals/controller/facility_bloc.dart';
 
 class SavedFacilities extends StatefulWidget {
   const SavedFacilities({super.key});
@@ -16,7 +16,7 @@ class _SavedFacilitiesState extends State<SavedFacilities> {
     super.initState();
     MemoryLeakTracker.logInit(this);
     // Trigger load if not loaded yet
-    context.read<BookmarkCubit>().loadBookmarks();
+    context.read<FacilityBloc>().add(LoadBookmarks());
   }
   
   @override
@@ -31,9 +31,9 @@ class _SavedFacilitiesState extends State<SavedFacilities> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9F8),
       appBar: const PlatformAdaptiveAppBar(title: 'Saved Facilities'),
-      body: BlocBuilder<BookmarkCubit, BookmarkState>(
+      body: BlocBuilder<FacilityBloc, FacilityState>(
         builder: (context, state) {
-          if (state.isLoading && state.savedFacilities.isEmpty) {
+          if (state.isBookmarkLoading && state.savedFacilities.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
           if (state.savedFacilities.isEmpty) {

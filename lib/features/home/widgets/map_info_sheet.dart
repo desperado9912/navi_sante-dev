@@ -1,125 +1,68 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:navi_sante/core/utils/app_bottom_sheet.dart';
 
 /// Bottom sheet that shows map attribution and data source information.
-/// TODO: REUSABLE BOTTOM SHEET WIDGET.
 class MapInfoSheet extends StatelessWidget {
   const MapInfoSheet({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // ── Drag handle ────────────────────────────────────────────
-          const SizedBox(height: 12),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE0E0E0),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // ── Header ─────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.only(left: 30, right: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return AppBottomSheet(
+      title: 'Map Information',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Map style card
+            _InfoCard(
               children: [
-                const Text(
-                  'Map Information',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1A1A1A),
-                  ),
+                _InfoRow(
+                  icon: CupertinoIcons.layers_alt,
+                  label: 'Tile Provider',
+                  value: 'Carto CDN',
                 ),
-                GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    width: 35,
-                    height: 35,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF0F0F0),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: const Icon(
-                      CupertinoIcons.xmark,
-                      size: 16,
-                      color: Color(0xFF555552),
-                    ),
+              ],
+            ),
+
+            const SizedBox(height: 15),
+
+            // OSM Attribution card
+            _InfoCard(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        '© OpenStreetMap and other contributors',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                      ),
+                      SizedBox(height: 3),
+                      Text(
+                        'Map data is licensed under the Open Database License (ODbL).',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF5F6368),
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 20),
-
-          // ── Content ────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              children: [
-                // Map style card
-                _InfoCard(
-                  children: [
-                    _InfoRow(
-                      icon: CupertinoIcons.layers_alt,
-                      label: 'Tile Provider',
-                      value: 'Carto CDN',
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 15),
-
-                // OSM Attribution card
-                _InfoCard(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '© OpenStreetMap and other contributors',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF1A1A1A),
-                            ),
-                          ),
-                          SizedBox(height: 3),
-                          Text(
-                            'Map data is licensed under the Open Database License (ODbL).',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF5F6368),
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 35),
-        ],
+            const SizedBox(height: 35),
+          ],
+        ),
       ),
     );
   }

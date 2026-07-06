@@ -1,11 +1,17 @@
 import 'dart:convert';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'facility_model.dart';
+import '../controller/facility_model.dart';
 
-// Handles caching for all facilities data in BLoC model. 
+// Rename to facility_cache_manager.
+
+// The local data manager for facility data.
+/// Owns all Hive read/write operations for facility data.
+/// JSON-encoded strings storage instead of TypeAdapters.
+/// All operations, searches, queries, data, bookmarks etc
+/// that are to be read or written to HIVE only are handled here, NO NETWORK CALLS.
 /// No business logic — just storage mechanics. The repository calls this;
 
-// ── Hive Box Names ───────────────────────────────────────────────────────────
+// Initilizes a hive box for the data.
 const String _facilitiesBox = 'facilities';
 const String _detailsBox = 'facility_details';
 const String _recentlyViewedBox = 'recently_viewed';
@@ -19,13 +25,8 @@ const String _recentlyViewedKey = 'recent';
 /// Maximum number of recently-viewed entries kept in Hive.
 const int _maxRecentlyViewed = 10;
 
-// ── FacilityLocal ────────────────────────────────────────────────────────────
-/// Owns all Hive read/write operations for facility data.
-/// No business logic — just storage mechanics. The repository calls this;
-/// nothing else in the codebase touches Hive directly for facility data.
-/// JSON-encoded strings storage instead of TypeAdapters.
 class FacilityLocal {
-  /// Opens all facility Hive boxes.
+  // Opens all facility Hive boxes.
   static Future<void> init() async {
     await Future.wait([
       Hive.openBox<String>(_facilitiesBox),
@@ -34,15 +35,14 @@ class FacilityLocal {
     ]);
   }
 
-  // ── Facilities List ──────────────────────────────────────────────────────
-  /// Overwrites the cached facility list with [facilities].
+  // Overwrites the cached facility list with [facilities].
   Future<void> saveAllFacilities(List<FacilityModel> facilities) async {
     final box = Hive.box<String>(_facilitiesBox);
     final encoded = jsonEncode(facilities.map((f) => f.toJson()).toList());
     await box.put(_allFacilitiesKey, encoded);
   }
 
-  /// Returns the cached facility list, or an empty list if the cache is cold.
+  // Returns the cached facility list, or an empty list if the cache is cold.
   List<FacilityModel> getAllFacilities() {
     final box = Hive.box<String>(_facilitiesBox);
     final encoded = box.get(_allFacilitiesKey);
@@ -54,12 +54,11 @@ class FacilityLocal {
         .toList();
   }
 
-  /// Whether at least one facility list has been cached.
   bool hasFacilities() {
     return Hive.box<String>(_facilitiesBox).containsKey(_allFacilitiesKey);
   }
 
-  /// Caches a single facility's full detail payload, keyed by its ID.
+  // Caches a single facility's full detail payload, keyed by its ID.
   Future<void> saveFacilityDetail(FacilityDetailModel detail) async {
     final box = Hive.box<String>(_detailsBox);
     await box.put(detail.facilityId, jsonEncode(detail.toJson()));
@@ -76,7 +75,7 @@ class FacilityLocal {
     );
   }
 
-  // ── Recently Viewed ────────────────────────────────────────────────────
+  // Recently Viewed
   /// Records [facilityId] as the most-recently-viewed facility.
   /// Maintains a capped list of [_maxRecentlyViewed] IDs. If the ID already
   /// exists it is moved to the front (most recent). Oldest entries are
@@ -115,9 +114,8 @@ class FacilityLocal {
     await Hive.box<String>(_recentlyViewedBox).delete(_recentlyViewedKey);
   }
 
-  // ── Cache Management ─────────────────────────────────────────────────────
-  /// Wipes all cached facility data. The next `getAllFacilities()` stream
-  /// emission will fetch fresh from Supabase.
+  // Cache Management: wipes all cached facility data for storage.
+  /// The next [getAllFacilities] emission will fetch fresh from database.
   Future<void> clearAll() async {
     await Future.wait([
       Hive.box<String>(_facilitiesBox).clear(),

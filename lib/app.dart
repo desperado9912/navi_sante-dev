@@ -7,11 +7,9 @@ import 'features/auth/cubit/language_cubit.dart';
 import 'features/auth/screens/login.dart';
 import 'features/auth/services/auth_gate.dart';
 import 'features/home/controller/map_cubit.dart';
-import 'features/hospitals/controller/bookmark_cubit.dart';
-import 'features/hospitals/controller/facility_bloc_cubit.dart';
-import 'features/hospitals/controller/recently_viewed_cubit.dart';
-import 'features/hospitals/data/facility_get_local.dart';
-import 'features/hospitals/data/facility_get_remote.dart';
+import 'features/hospitals/controller/facility_bloc.dart';
+import 'features/hospitals/data/facility_local.dart';
+import 'features/hospitals/data/facility_remote.dart';
 import 'features/hospitals/data/facility_repository.dart';
 import 'core/utils/navigation_menu.dart';
 
@@ -32,16 +30,8 @@ class NaviSanteApp extends StatelessWidget {
           BlocProvider(
             create: (context) =>
                 FacilityBloc(repository: context.read<FacilityRepository>())
-                  ..add(LoadFacilities()),
-          ),
-          BlocProvider(
-            create: (context) => RecentlyViewedCubit(
-              repository: context.read<FacilityRepository>(),
-            )..load(),
-          ),
-          BlocProvider(
-            create: (context) =>
-                BookmarkCubit(repository: context.read<FacilityRepository>()),
+                  ..add(LoadFacilities())
+                  ..add(LoadRecentlyViewed()),
           ),
           BlocProvider(create: (_) => MapCubit()),
         ],

@@ -601,9 +601,8 @@ final facilityRepo = FacilityRepository(
 ### 🔜 Sprint 4 — BLoC Layer (UPCOMING)
 
 **Files to create:**
-- `hospitals/bloc/facility_bloc.dart` — events, states, bloc class (one file)
+- `hospitals/bloc/facility_bloc.dart` — events, states, bloc class (one file, recently viewed integrated)
 - `hospitals/bloc/bookmark_cubit.dart` — bookmark toggle, saved list
-- `hospitals/bloc/recently_viewed_cubit.dart` — last 10 viewed (Hive only)
 
 **Events planned:**
 - `LoadFacilities` → triggers `getAllFacilities()` stream
@@ -630,7 +629,7 @@ final facilityRepo = FacilityRepository(
 
 **BookmarkCubit state:** Holds a `Set<String>` of bookmarked `facility_id` values in memory. Loaded from Supabase on auth. Toggled optimistically on UI tap, synced to Supabase.
 
-**RecentlyViewedCubit:** Holds a `List<String>` of up to 10 recently viewed `facility_id` values. Persisted in Hive. Shown as chips on hospitals screen "Recent History" section.
+**Recently Viewed (integrated in FacilityBloc):** Holds a `List<String>` of up to 5 recently viewed `facility_id` values. Persisted in Hive. Shown as chips on hospitals screen "Recent History" section.
 
 ### 🔜 Sprint 5 — Map Integration (UPCOMING)
 

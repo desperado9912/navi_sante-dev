@@ -240,8 +240,14 @@ class MapCubit extends Cubit<MapState> {
 
   /// Live User Location Stream Listener
   void _onLiveLocationUpdate(LocationResult result) {
-    if (isClosed) return;
-    if (result is! LocationSuccess) return; // Silently skip stream errors
+    if (isClosed || result is! LocationSuccess) return; // Skip stream errors
+
+    emit(
+      state.copyWith(
+        userLocation: result.position,
+        animateToState: state is MapLoadingState,
+      ),
+    );
 
     final MapState current = state;
 
@@ -332,30 +338,7 @@ class MapCubit extends Cubit<MapState> {
 
   /// Clears the error signal after it has been consumed by the UI.
   void clearErrorSignal() {
-    final current = state;
-    if (current is MapErrorState) {
-      emit(
-        MapErrorState(
-          center: current.center,
-          zoom: current.zoom,
-          errorMessage: current.errorMessage,
-          isNetworkError: current.isNetworkError,
-          userLocation: current.userLocation,
-          animateToState: false,
-          errorSignal: null,
-        ),
-      );
-    } else if (current is MapLocatedState) {
-      emit(
-        MapLocatedState(
-          center: current.center,
-          zoom: current.zoom,
-          userLocation: current.userLocation,
-          animateToState: false,
-          errorSignal: null,
-        ),
-      );
-    }
+    emit(state.copyWith(errorSignal: null));
   }
 
   /// Cleanup

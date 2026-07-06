@@ -26,6 +26,7 @@ class _FavouriteProductsState extends State<FavouriteProducts> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const PlatformAdaptiveAppBar(title: 'Favourite Products'),
+      backgroundColor: Color(0xFFF8F9F8),
 
       body: const Center(),
     );

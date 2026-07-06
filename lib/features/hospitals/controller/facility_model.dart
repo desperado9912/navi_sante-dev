@@ -1,17 +1,18 @@
 import 'dart:math';
 import 'package:equatable/equatable.dart';
 
-// All data models for the facilities live in this file.
+// Holds the actual facilities data NaviSante delivers to UI to render on
+// maps, carousels, lists, details sheet and details screens in an organized data model.
+
+/// All data models for the facilities live in this file.
 // Three classes:
 //   FacilityModel       → lightweight, used for map pins, cards, carousel
 //   FacilityImage       → nested inside FacilityDetailModel
 //   FacilityDetailModel → full data, used only on detail screen / expanded sheet
 
+/// Serializes data for hive storage in json anotations.
 
-// ── Facility Type ────────────────────────────────────────────────────────────
-
-/// Typed enum for the three facility categories stored in the DB.
-/// Unknown values gracefully fall back to [hospital] instead of crashing.
+// Facility type enum Unknown values gracefully fall back to [hospital] instead of crashing.
 enum FacilityType {
   hospital,
   clinic,
@@ -25,11 +26,8 @@ enum FacilityType {
   }
 }
 
-// ── Facility Model ───────────────────────────────────────────────────────────
 
-/// Contains only the fields needed for map pins, grid cards, and the
-/// highlights carousel. Tags and description are intentionally absent —
-/// they live in [FacilityDetailModel] and are fetched on demand.
+/// Contains only the fields needed for map pins, grid cards, and the highlights carousel
 class FacilityModel extends Equatable {
   final String facilityId;
   final String name;
@@ -59,8 +57,7 @@ class FacilityModel extends Equatable {
     required this.servicesList,
   });
 
-  /// Parses the raw Map returned by the Supabase RPC.
-  /// Column names match the `RETURNS TABLE` definition in `03_functions.sql`.
+  /// Parses the raw Map returned by the Supabase RPC
   factory FacilityModel.fromJson(Map<String, dynamic> json) {
     return FacilityModel(
       facilityId: json['facility_id'] as String,
@@ -80,7 +77,7 @@ class FacilityModel extends Equatable {
     );
   }
 
-  /// Serialises to JSON for Hive storage. Must round-trip with [fromJson].
+  /// Serialises to JSON for Hive storage
   Map<String, dynamic> toJson() => {
         'facility_id': facilityId,
         'name': name,
@@ -129,9 +126,8 @@ class FacilityModel extends Equatable {
   }
 
 
-  // ── Distance Utilities ───────────────────────────────────────────────────
-
-  /// Haversine distance in metres from this facility to the user's position.
+  // Distance Utilities
+  /// Haversine distance in metres from facility to the user's position.
   /// Used by [FacilityRepository.getHighlights] for client-side proximity sort.
 
   double _toRadians(double degrees) => degrees * pi / 180;
@@ -147,7 +143,7 @@ class FacilityModel extends Equatable {
     return earthRadius * 2 * atan2(sqrt(a), sqrt(1 - a));
   }
 
-  /// Human-readable distance string: `"350m"` below 1 km, `"2.4km"` above.
+  /// Human-readable distance string: e.g "350m" "1 km", "2.4km".
   String formatDistance(double userLat, double userLng) {
     final metres = distanceTo(userLat, userLng);
     if (metres < 1000) return '${metres.toStringAsFixed(0)}m';
@@ -171,7 +167,7 @@ class FacilityModel extends Equatable {
       ];
 }
 
-// ── Facility Image ───────────────────────────────────────────────────────────
+// Facility Image
 
 /// A single image belonging to a facility.
 /// Used inside [FacilityDetailModel] for the detail-screen image carousel.
@@ -209,13 +205,9 @@ class FacilityImage extends Equatable {
 }
 
 
-// ── Facility Detail Model ────────────────────────────────────────────────────
-
-/// Full model returned by `get_facility_detail()` RPC.
-///
-/// Includes description, tags, and all images — fields that the lightweight
-/// [FacilityModel] intentionally omits. Fetched on demand when the user taps
-/// a facility, then cached in Hive by `facility_id`.
+// Facility Detail Model
+/// Includes description, tags, and all images
+/// Fetched on demand when the user taps a facility, then cached in Hive by `facility_id`.
 class FacilityDetailModel extends Equatable {
   final String facilityId;
   final String name;
@@ -252,8 +244,7 @@ class FacilityDetailModel extends Equatable {
   });
 
   /// Parses the JSON object returned by `get_facility_detail()` RPC.
-  /// Images are sorted by [displayOrder] after parsing to guarantee
-  /// correct carousel sequence regardless of DB insertion order.
+  /// Images are sorted by [displayOrder].
   factory FacilityDetailModel.fromJson(Map<String, dynamic> json) {
     final rawImages = (json['images'] as List<dynamic>? ?? [])
         .map((e) => FacilityImage.fromJson(e as Map<String, dynamic>))
