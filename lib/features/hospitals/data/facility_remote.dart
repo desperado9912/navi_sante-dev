@@ -37,7 +37,7 @@ class FacilityRemote {
         'query_text': query,
         'type_filter': typeFilter,
         'city_filter': cityFilter,
-        'service_filter':     serviceFilter,
+        'service_filter': serviceFilter,
         'price_range_filter': priceRangeFilter,
         'min_rating': minRating,
       },
@@ -78,9 +78,12 @@ class FacilityRemote {
 
   /// User Adds a bookmark. RLS enforces `user_id = auth.uid()`.
   Future<void> addBookmark(String facilityId) async {
-    await _supabase
-        .from('facility_bookmarks')
-        .insert({'facility_id': facilityId});
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) throw Exception('User not authenticated');
+    await _supabase.from('facility_bookmarks').insert({
+      'user_id': userId,
+      'facility_id': facilityId,
+    });
   }
 
   /// Removes a bookmark. RLS enforces ownership.

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../hospitals/controller/facility_bloc.dart';
 import '../../hospitals/controller/facility_model.dart';
+import '../../hospitals/widgets/facility_details_screen.dart';
 import '../maps/map_launcher.dart';
 
 // FACILITY EXPANDED BOTTOM SHEET
@@ -329,12 +330,14 @@ class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
                             width: double.infinity,
                             child: OutlinedButton(
                               onPressed: () {
-                                Navigator.pop(context); // close sheet first
-                                // Navigate to full detail screen (Sprint 7).
-                                Navigator.pushNamed(
-                                  context,
-                                  '/facility-detail',
-                                  arguments: widget.facilityId,
+                                final navigator = Navigator.of(context);
+                                navigator.pop(); // close sheet first
+                                navigator.push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => FacilityDetailScreen(
+                                      facilityId: widget.facilityId,
+                                    ),
+                                  ),
                                 );
                               },
                               style: OutlinedButton.styleFrom(

@@ -179,7 +179,7 @@ class FacilityState {
   bool get hasFacilities => facilities.isNotEmpty;
   bool get hasHighlights => highlights.isNotEmpty;
   bool get hasResults => searchResults.isNotEmpty;
-  bool get isSearchActive => activeQuery != null && activeQuery!.isNotEmpty;
+  bool get isSearchActive => searchStatus != FacilityStatus.initial;
 
   bool get isFacilitiesLoading => facilitiesStatus == FacilityStatus.loading;
   bool get isSearchLoading => searchStatus == FacilityStatus.loading;

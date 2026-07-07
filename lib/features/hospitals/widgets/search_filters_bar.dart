@@ -47,8 +47,7 @@ class _FacilityFilterBarState extends State<FacilityFilterBar> {
   // changes, not worth a database round trip or a dedicated lookup table.
   static const List<String> _cities = [
     'Yaoundé', 'Douala', 'Bafoussam', 'Bamenda',
-    'Garoua', 'Maroua', 'Ngaoundéré', 'Bertoua', 'Ebolowa', 'Buea', 'Kribi', 
-    'Mbalmayo', 'Kumba', ''
+    'Garoua', 'Maroua', 'Buea', 'Kribi', ''
   ];
 
   // Maps the user-facing label to the database value stored in price_range.
@@ -57,7 +56,6 @@ class _FacilityFilterBarState extends State<FacilityFilterBar> {
     'Low':        'low',  
     'Affordable': 'affordable',
     'High':       'high',
-    'Premium':    'premium',
   };
 
   String? _selectedService;

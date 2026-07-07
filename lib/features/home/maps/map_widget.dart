@@ -26,7 +26,7 @@ import '../widgets/facility_bottom_sheet.dart';
 /// => Map Error snackbar, Floating Search bar, map controls, facility carousel,
 /// => User location pulsing indicator, marker clustering, facility markers,
 /// => Smooth camera transitions
-/// 
+///
 /// TODO: MOVE PULSING INDICATOR TO ITS OWN WIDGET FILE & CONFIGURATION WITH SMOOTH ANIMATION. THAT BUILDS IN THIS ONE.
 
 class HomeMapWidget extends StatefulWidget {
@@ -121,21 +121,28 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.info_outline, color: Colors.white, size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+        padding: EdgeInsets.zero,
+        content: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12)
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.info_outline, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         backgroundColor: const Color(0xFF1E293B),
         behavior: SnackBarBehavior.floating,
@@ -165,8 +172,8 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
           current.errorSignal != null ||
           current.userLocation != previous.userLocation,
       listener: (context, state) {
-        // Dismiss snackbar on new state
-        if (state is MapLocatedState || state.errorSignal == null) {
+        // Dismiss snackbar when location is successfully found
+        if (state is MapLocatedState && state.userLocation != null) {
           ScaffoldMessenger.of(context).removeCurrentSnackBar();
         }
 
@@ -281,18 +288,15 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
 
                       final markers = facilityState.facilities.map((facility) {
                         return Marker(
-                          point: LatLng(
-                            facility.latitude,
-                            facility.longitude,
-                          ),
+                          point: LatLng(facility.latitude, facility.longitude),
                           width: 34,
                           height: 41,
                           alignment: Alignment.bottomCenter,
                           child: GestureDetector(
                             onTap: () {
                               context.read<MapCubit>().selectPin(
-                                    facility.facilityId,
-                                  );
+                                facility.facilityId,
+                              );
                             },
                             child: FacilityMapMarker(
                               type: facility.type,
@@ -313,8 +317,8 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
                           markers: markers,
                           builder: (context, clusterMarkers) =>
                               FacilityClusterMarker(
-                            count: clusterMarkers.length,
-                          ),
+                                count: clusterMarkers.length,
+                              ),
                         ),
                       );
                     },

@@ -24,33 +24,32 @@ import '../../home/maps/map_launcher.dart';
 //   │ [Details →] [↗]      │  ← text button + directions icon button
 //   └─────────────────────┘
 //
-// Tapping anywhere on the card (except the bookmark icon and directions
-// icon) navigates to the full detail screen.
+// Only the "Details →" button navigates to the full detail screen.
+// Bookmark and directions are independent tap targets on the card.
 // =============================================================================
 
 class FacilityGridCard extends StatelessWidget {
   final FacilityModel facility;
-  final VoidCallback onTap;
+  final VoidCallback onDetailsTap;
 
   const FacilityGridCard({
     super.key,
     required this.facility,
-    required this.onTap,
+    required this.onDetailsTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
+    return Container(
         decoration: BoxDecoration(
           color:        Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color:      Colors.black.withValues(alpha: 0.06),
-              blurRadius: 8,
-              offset:     const Offset(0, 2),
+              color:      Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              spreadRadius: 1,
+              offset:     const Offset(0, 4),
             ),
           ],
         ),
@@ -58,65 +57,70 @@ class FacilityGridCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _CardImage(facility: facility),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ── Name ─────────────────────────────────────────────────
-                  Text(
-                    facility.name,
-                    style: const TextStyle(
-                      fontSize:   13,
-                      fontWeight: FontWeight.w700,
-                      height:     1.2,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ── Name ─────────────────────────────────────────────────
+                        Text(
+                          facility.name,
+                          style: const TextStyle(
+                            fontSize:   13,
+                            fontWeight: FontWeight.w700,
+                            height:     1.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+
+                        // ── Service chips ────────────────────────────────────────
+                        _ServiceChipsRow(services: facility.servicesList),
+                        const SizedBox(height: 6),
+                      ],
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
 
-                  // ── Service chips ────────────────────────────────────────
-                  _ServiceChipsRow(services: facility.servicesList),
-                  const SizedBox(height: 8),
-
-                  // ── Actions row ──────────────────────────────────────────
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: onTap,
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF00897B),
-                            side: const BorderSide(color: Color(0xFF00897B)),
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            minimumSize: Size.zero,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                    // ── Actions row ──────────────────────────────────────────
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: onDetailsTap,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF00897B),
+                              side: const BorderSide(color: Color(0xFF00897B)),
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              minimumSize: Size.zero,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text(
+                              'Details →',
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
                             ),
                           ),
-                          child: const Text(
-                            'Details →',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                          ),
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      // Directions icon button — independent tap target,
-                      // does not trigger the card's onTap navigation.
-                      _DirectionsIconButton(facility: facility),
-                    ],
-                  ),
-                ],
+                        const SizedBox(width: 6),
+                        // Directions icon button — opens maps via MapLauncher.
+                        _DirectionsIconButton(facility: facility),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
-      ),
     );
   }
 }
-
 
 // =============================================================================
 // CARD IMAGE — with rating badge and bookmark icon overlaid
@@ -235,23 +239,25 @@ class _DirectionsIconButton extends StatelessWidget {
 
   const _DirectionsIconButton({required this.facility});
 
+  Future<void> _openDirections(BuildContext context) async {
+    try {
+      await MapLauncher.openDirections(
+        latitude: facility.latitude,
+        longitude: facility.longitude,
+        facilityName: facility.name,
+      );
+    } on MapLaunchException catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () async {
-        try {
-          await MapLauncher.openDirections(
-            latitude:     facility.latitude,
-            longitude:    facility.longitude,
-            facilityName: facility.name,
-          );
-        } on MapLaunchException catch (e) {
-          if (!context.mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.message)),
-          );
-        }
-      },
+      onTap: () => _openDirections(context),
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -297,38 +303,93 @@ class _ServiceChipsRow extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxWidth = constraints.maxWidth;
-        // Pre-measure the widest possible overflow chip (e.g. "+99").
-        final overflowWidth = _measureChipWidth('+${services.length}');
 
-        double usedWidth = 0;
-        int visibleCount = 0;
+        // We will compute which chips go to Row 1 and Row 2.
+        List<String> row1 = [];
+        List<String> row2 = [];
+        int index = 0;
 
-        for (int i = 0; i < services.length; i++) {
-          final chipWidth = _measureChipWidth(services[i]);
-          final gap = visibleCount > 0 ? _chipSpacing : 0;
-          final remaining = services.length - visibleCount - 1;
-          // If more chips follow, reserve space for the "+N" indicator.
-          final needed = usedWidth + gap + chipWidth +
-              (remaining > 0 ? _chipSpacing + overflowWidth : 0);
-
-          if (needed > maxWidth && visibleCount > 0) break;
-
-          usedWidth += gap + chipWidth;
-          visibleCount++;
+        // Let's fit Row 1
+        double row1Width = 0;
+        while (index < services.length) {
+          final chipWidth = _measureChipWidth(services[index]);
+          final gap = row1.isNotEmpty ? _chipSpacing : 0;
+          if (row1Width + gap + chipWidth <= maxWidth) {
+            row1Width += gap + chipWidth;
+            row1.add(services[index]);
+            index++;
+          } else {
+            break;
+          }
         }
 
-        // Always show at least 1 chip.
-        if (visibleCount == 0) visibleCount = 1;
+        // If there are more chips, they go to Row 2 or overflow
+        List<String> visibleChips = List.from(row1);
+        int overflowCount = 0;
 
-        final visible  = services.take(visibleCount).toList();
-        final overflow = services.length - visibleCount;
+        if (index < services.length) {
+          // We have remaining chips. We need to fit them in Row 2,
+          // keeping in mind we might need a "+N" overflow chip.
+          final remaining = services.sublist(index);
+          double row2Width = 0;
+          int row2Count = 0;
+
+          for (int i = 0; i < remaining.length; i++) {
+            final chipWidth = _measureChipWidth(remaining[i]);
+            final gap = row2.isNotEmpty ? _chipSpacing : 0;
+            final isLast = (i == remaining.length - 1);
+
+            if (isLast) {
+              // If it's the last one, we don't need an overflow indicator if it fits.
+              if (row2Width + gap + chipWidth <= maxWidth) {
+                row2.add(remaining[i]);
+                row2Width += gap + chipWidth;
+                row2Count++;
+              } else {
+                overflowCount = remaining.length - row2Count;
+                while (row2.isNotEmpty && row2Width + (row2.length > 1 ? _chipSpacing : 0) + _measureChipWidth('+$overflowCount') > maxWidth) {
+                  final removed = row2.removeLast();
+                  row2Width -= _measureChipWidth(removed) + (row2.isNotEmpty ? _chipSpacing : 0);
+                  overflowCount++;
+                }
+              }
+            } else {
+              // Not the last one, so we definitely have remaining/overflow.
+              final nextOverflowCount = remaining.length - row2Count - 1;
+              final currentOverflowWidth = _measureChipWidth('+$nextOverflowCount');
+              if (row2Width + gap + chipWidth + _chipSpacing + currentOverflowWidth <= maxWidth) {
+                row2.add(remaining[i]);
+                row2Width += gap + chipWidth;
+                row2Count++;
+              } else {
+                overflowCount = remaining.length - row2Count;
+                while (row2.isNotEmpty && row2Width + (row2.length > 1 ? _chipSpacing : 0) + _measureChipWidth('+$overflowCount') > maxWidth) {
+                  final removed = row2.removeLast();
+                  row2Width -= _measureChipWidth(removed) + (row2.isNotEmpty ? _chipSpacing : 0);
+                  overflowCount++;
+                }
+                break;
+              }
+            }
+          }
+
+          visibleChips.addAll(row2);
+        }
+
+        // If visible list is empty (should not happen unless screen is extremely narrow), show at least 1
+        if (visibleChips.isEmpty && services.isNotEmpty) {
+          visibleChips.add(services[0]);
+          if (services.length > 1) {
+            overflowCount = services.length - 1;
+          }
+        }
 
         return Wrap(
           spacing:    _chipSpacing,
           runSpacing: _chipSpacing,
           children: [
-            for (final name in visible) _Chip(label: name),
-            if (overflow > 0) _Chip(label: '+$overflow', isOverflow: true),
+            for (final name in visibleChips) _Chip(label: name),
+            if (overflowCount > 0) _Chip(label: '+$overflowCount', isOverflow: true),
           ],
         );
       },

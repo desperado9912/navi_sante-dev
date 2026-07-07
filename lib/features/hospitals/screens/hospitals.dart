@@ -4,8 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../controller/facility_bloc.dart';
 import '../controller/facility_model.dart';
 import '../data/facility_repository.dart';
+import '../widgets/facility_details_screen.dart';
 import '../widgets/facility_grid_cards.dart';
 import '../widgets/search_filters_bar.dart';
+import 'package:navi_sante/core/utils/navigation_menu.dart'
+    show navBottomPadding;
 
 // =============================================================================
 // hospitals.dart
@@ -50,11 +53,6 @@ class _ScreenHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Find Sanctuary',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
-          ),
-          SizedBox(height: 2),
-          Text(
             'Find health facilities around you',
             style: TextStyle(fontSize: 13, color: Colors.grey),
           ),
@@ -80,9 +78,9 @@ class _SearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
-      onChanged:  onChanged,
+      onChanged: onChanged,
       decoration: InputDecoration(
-        hintText:   'Search hospitals, clinics or pharma...',
+        hintText: 'Search hospitals, clinics or pharma...',
         prefixIcon: const Icon(Icons.search_rounded),
         // Clear (X) button only shows once there's text to clear.
         suffixIcon: ValueListenableBuilder<TextEditingValue>(
@@ -90,17 +88,17 @@ class _SearchField extends StatelessWidget {
           builder: (context, value, _) {
             if (value.text.isEmpty) return const SizedBox.shrink();
             return IconButton(
-              icon:      const Icon(Icons.close_rounded, size: 18),
+              icon: const Icon(Icons.close_rounded, size: 18),
               onPressed: onClear,
             );
           },
         ),
-        filled:     true,
-        fillColor:  Colors.white,
+        filled: true,
+        fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(vertical: 12),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:   BorderSide.none,
+          borderSide: BorderSide.none,
         ),
       ),
     );
@@ -127,9 +125,7 @@ class _RecentHistorySection extends StatelessWidget {
         final entries = state.recentlyViewedIds
             .map((id) {
               try {
-                return state.facilities.firstWhere(
-                  (f) => f.facilityId == id,
-                );
+                return state.facilities.firstWhere((f) => f.facilityId == id);
               } catch (_) {
                 return null;
               }
@@ -152,14 +148,13 @@ class _RecentHistorySection extends StatelessWidget {
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                   ),
                   GestureDetector(
-                    onTap: () => context
-                        .read<FacilityBloc>()
-                        .add(ClearRecentlyViewed()),
+                    onTap: () =>
+                        context.read<FacilityBloc>().add(ClearRecentlyViewed()),
                     child: const Text(
                       'Clear all',
                       style: TextStyle(
-                        fontSize:   12,
-                        color:      Color(0xFF00897B),
+                        fontSize: 12,
+                        color: Color(0xFF00897B),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -170,14 +165,14 @@ class _RecentHistorySection extends StatelessWidget {
               SizedBox(
                 height: 32,
                 child: ListView.separated(
-                  scrollDirection:  Axis.horizontal,
-                  itemCount:        entries.length,
+                  scrollDirection: Axis.horizontal,
+                  itemCount: entries.length,
                   separatorBuilder: (_, _) => const SizedBox(width: 8),
                   itemBuilder: (context, index) {
                     final facility = entries[index];
                     return Chip(
                       avatar: const Icon(Icons.history_rounded, size: 14),
-                      label:  Text(
+                      label: Text(
                         facility.name,
                         style: const TextStyle(fontSize: 11),
                       ),
@@ -278,9 +273,10 @@ class _HospitalsState extends State<Hospitals> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
-      body: SafeArea(
+    return ColoredBox(
+      color: const Color(0xFFF7F8FA),
+      child: SafeArea(
+        bottom: false,
         // BlocListener refreshes service options when facilities finish loading.
         // Covers the cold-start case where Hive is empty during initState.
         child: BlocListener<FacilityBloc, FacilityState>(
@@ -299,8 +295,8 @@ class _HospitalsState extends State<Hospitals> {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: _SearchField(
                     controller: _searchController,
-                    onChanged:  _onSearchChanged,
-                    onClear:    _onClearSearch,
+                    onChanged: _onSearchChanged,
+                    onClear: _onClearSearch,
                   ),
                 ),
               ),
@@ -314,7 +310,7 @@ class _HospitalsState extends State<Hospitals> {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: FacilityFilterBar(
                     serviceOptions: _serviceOptions,
-                    onApply:        _onFilterApply,
+                    onApply: _onFilterApply,
                   ),
                 ),
               ),
@@ -322,7 +318,9 @@ class _HospitalsState extends State<Hospitals> {
               // ── Section header + grid ───────────────────────────────────
               const SliverToBoxAdapter(child: SizedBox(height: 16)),
               const _ResultsGrid(),
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: navBottomPadding),
+              ),
             ],
           ),
         ),
@@ -367,23 +365,24 @@ class _ResultsGrid extends StatelessWidget {
             .where((f) => f.type != FacilityType.pharmacy)
             .toList();
 
-        // Browse mode: sort by rating so "Top Rated Nearby" is meaningful.
-        // Search mode: keep the server's relevance-based order as-is.
-        if (!isSearching) {
-          filtered.sort((a, b) => b.rating.compareTo(a.rating));
-        }
+        // Browse mode: sort by rating so "Top Rated Nearby" is meaningful,
+        // capped at 10 cards. Search mode: keep server order as-is.
+        final displayList = isSearching
+            ? filtered
+            : (List<FacilityModel>.from(filtered)
+                ..sort((a, b) => b.rating.compareTo(a.rating)))
+                .take(10)
+                .toList();
 
         // ── Empty state ─────────────────────────────────────────────────────
-        if (filtered.isEmpty) {
+        if (displayList.isEmpty) {
           return SliverFillRemaining(
             hasScrollBody: false,
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.only(top: 40),
                 child: Text(
-                  isSearching
-                      ? 'No results found'
-                      : 'No facilities available',
+                  isSearching ? 'No results found' : 'No facilities available',
                   style: const TextStyle(color: Colors.grey),
                 ),
               ),
@@ -401,7 +400,7 @@ class _ResultsGrid extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Text(
                     isSearching
-                        ? 'Search Results (${filtered.length})'
+                        ? 'Search Results (${displayList.length})'
                         : 'Top Rated Nearby',
                     style: const TextStyle(
                       fontSize: 14,
@@ -411,34 +410,31 @@ class _ResultsGrid extends StatelessWidget {
                 ),
               ),
               SliverGrid(
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount:  2,
-                  mainAxisSpacing:  12,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  childAspectRatio: 0.72,
+                  childAspectRatio: 0.63,
                 ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final facility = filtered[index];
-                    return FacilityGridCard(
-                      facility: facility,
-                      onTap: () {
-                        context.read<FacilityBloc>()
-                            .add(LoadFacilityDetail(facility.facilityId));
-                        context.read<FacilityBloc>()
-                            .add(AddRecentlyViewed(facility.facilityId));
-                        // TODO: Navigate to detail screen once implemented.
-                        // Navigator.pushNamed(
-                        //   context,
-                        //   '/facility-detail',
-                        //   arguments: facility.facilityId,
-                        // );
-                      },
-                    );
-                  },
-                  childCount: filtered.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final facility = displayList[index];
+                  return FacilityGridCard(
+                    facility: facility,
+                    onDetailsTap: () {
+                      context.read<FacilityBloc>().add(
+                        LoadFacilityDetail(facility.facilityId),
+                      );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => FacilityDetailScreen(
+                            facilityId: facility.facilityId,
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                }, childCount: displayList.length),
               ),
             ],
           ),

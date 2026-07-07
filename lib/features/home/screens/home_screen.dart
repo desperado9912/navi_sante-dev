@@ -6,9 +6,11 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: HomeMapWidget(),
+    return const ScaffoldMessenger(
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        body: HomeMapWidget(),
+      ),
     );
   }
 }
