@@ -15,6 +15,8 @@ import '../controller/facility_model.dart';
 const String _facilitiesBox = 'facilities';
 const String _detailsBox = 'facility_details';
 const String _recentlyViewedBox = 'recently_viewed';
+const String _bookmarkedFacilitiesBox = 'bookmarks';
+// const String _bookmarksBox = 'bookmarks';
 
 /// Key for the single entry that holds the full facility list.
 const String _allFacilitiesKey = 'all';
@@ -22,19 +24,25 @@ const String _allFacilitiesKey = 'all';
 /// Key for the recently-viewed facility ID list.
 const String _recentlyViewedKey = 'recent';
 
+/// Key for the bookmarked facility IDs list.
+const String _bookmarkIdsKey = 'bookmark_ids';
+
 /// Maximum number of recently-viewed entries kept in Hive.
 const int _maxRecentlyViewed = 10;
 
+
 class FacilityLocal {
-  // Opens all facility Hive boxes.
+  // Opens all facility related Hive boxes.
   static Future<void> init() async {
     await Future.wait([
       Hive.openBox<String>(_facilitiesBox),
       Hive.openBox<String>(_detailsBox),
       Hive.openBox<String>(_recentlyViewedBox),
+      Hive.openBox<String>(_bookmarkedFacilitiesBox),
     ]);
   }
 
+  // FACILITIES HIVE BOX
   // Overwrites the cached facility list with [facilities].
   Future<void> saveAllFacilities(List<FacilityModel> facilities) async {
     final box = Hive.box<String>(_facilitiesBox);
@@ -75,7 +83,7 @@ class FacilityLocal {
     );
   }
 
-  // Recently Viewed
+  // RECENTLY VIEWED FACILITIES HIVE BOX
   /// Records [facilityId] as the most-recently-viewed facility.
   /// Maintains a capped list of [_maxRecentlyViewed] IDs. If the ID already
   /// exists it is moved to the front (most recent). Oldest entries are
@@ -114,6 +122,31 @@ class FacilityLocal {
     await Hive.box<String>(_recentlyViewedBox).delete(_recentlyViewedKey);
   }
 
+  // BOOKMARKED FACILITIES HIVE
+  /// Persists the full set of bookmarked facility IDs.
+  /// Overwrites any previous cache — call after every successful sync
+  /// with the server (login fetch, or after a confirmed add/remove).
+  Future<void> saveBookmarkIds(Set<String> ids) async {
+    final box = Hive.box<String>(_bookmarkedFacilitiesBox);
+    await box.put(_bookmarkIdsKey, jsonEncode(ids.toList()));
+  }
+
+  // Returns the cached set of bookmark IDs or empty set.
+  // Used as offline fallback when network fetch fails.
+  Set<String> getBookmarkIds() {
+    final box = Hive.box<String>(_bookmarkedFacilitiesBox);
+    final encoded = box.get(_bookmarkIdsKey);
+    if (encoded == null) return {};
+    return (jsonDecode(encoded) as List<dynamic>).cast<String>().toSet();
+  }
+  
+  // Clears the cached bookmarks list. 
+  // Called on sign out so the next user never sees a stale bookmark list.
+  Future<void> clearBookmarkIds() async {
+    await Hive.box<String>(_bookmarkedFacilitiesBox).delete(_bookmarkIdsKey);
+  }
+
+
   // Cache Management: wipes all cached facility data for storage.
   /// The next [getAllFacilities] emission will fetch fresh from database.
   Future<void> clearAll() async {
@@ -121,6 +154,7 @@ class FacilityLocal {
       Hive.box<String>(_facilitiesBox).clear(),
       Hive.box<String>(_detailsBox).clear(),
       Hive.box<String>(_recentlyViewedBox).clear(),
+      Hive.box<String>(_bookmarkedFacilitiesBox).clear(),
     ]);
   }
 }

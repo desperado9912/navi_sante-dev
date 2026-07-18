@@ -69,28 +69,35 @@ class FacilityRemote {
 
   // BOOKMARKS
   /// Fetches all bookmarked facilities for the authenticated user.
-  Future<List<FacilityModel>> getUserBookmarks() async {
-    final response = await _supabase.rpc('get_user_bookmarks');
+  Future<Set<String>> getUserBookmarks() async {
+    final response = await _supabase
+        .from('facility_bookmarks')
+        .select('facility_id');
     return (response as List<dynamic>)
-        .map((row) => FacilityModel.fromJson(row as Map<String, dynamic>))
-        .toList();
+        .map((row) => row['facility_id'] as String)
+        .toSet();
   }
 
-  /// User Adds a bookmark. RLS enforces `user_id = auth.uid()`.
+  /// User Adds a bookmark. RLS enforces ownership.
+  /// Optimistic flow and safe revert on network failure
   Future<void> addBookmark(String facilityId) async {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) throw Exception('User not authenticated');
-    await _supabase.from('facility_bookmarks').insert({
-      'user_id': userId,
-      'facility_id': facilityId,
-    });
+    await _supabase.from('facility_bookmarks').upsert(
+      {'user_id': userId, 'facility_id': facilityId},
+      onConflict: 'user_id,facility_id',
+      ignoreDuplicates: true,
+      );
   }
 
   /// Removes a bookmark. RLS enforces ownership.
   Future<void> removeBookmark(String facilityId) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) throw Exception('User not authenticated');
     await _supabase
         .from('facility_bookmarks')
         .delete()
-        .eq('facility_id', facilityId);
+        .eq('facility_id', facilityId)
+        .eq('user_id', userId);
   }
 }

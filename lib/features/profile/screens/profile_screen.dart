@@ -17,7 +17,7 @@ import '../controllers/profile_controller.dart';
 import '../widgets/language_sheet.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/settings_tiles.dart';
-import '../widgets/navigation_app_sheet.dart';
+import '../widgets/preffered_navigation_app_sheet.dart';
 import 'package:navi_sante/core/utils/navigation_settings.dart';
 import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
 import 'package:navi_sante/core/utils/app_error_ui.dart';
@@ -154,7 +154,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final Uri emailUri = Uri(
       scheme: 'mailto',
       path: 'contact@navisante.com', //TODO: Add real contact email.
-      queryParameters: {'subject': 'NaviSanté%20Contact'},
+      queryParameters: {'subject': 'NaviSanté Contact'},
     );
 
     if (await canLaunchUrl(emailUri)) {

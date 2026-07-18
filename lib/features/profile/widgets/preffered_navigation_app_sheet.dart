@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:navi_sante/core/utils/app_bottom_sheet.dart';
 
+// Bottom sheet in settings tiles for users to select preffered navigation app
 class NavigationAppBottomSheet extends StatelessWidget {
   final String currentCode;
 

@@ -26,7 +26,6 @@ enum FacilityType {
   }
 }
 
-
 /// Contains only the fields needed for map pins, grid cards, and the highlights carousel
 class FacilityModel extends Equatable {
   final String facilityId;
@@ -40,6 +39,7 @@ class FacilityModel extends Equatable {
   final double latitude;
   final double longitude;
   final String? primaryImage;
+  final int servicesCount;
   final List<String> servicesList;
 
   const FacilityModel({
@@ -55,6 +55,7 @@ class FacilityModel extends Equatable {
     required this.longitude,
     this.primaryImage,
     required this.servicesList,
+    required this.servicesCount,
   });
 
   /// Parses the raw Map returned by the Supabase RPC
@@ -66,6 +67,7 @@ class FacilityModel extends Equatable {
       address: json['address'] as String?,
       phone: json['phone'] as String?,
       workHours: json['work_hours'] as String?,
+      
       rating: (json['rating'] as num).toDouble(),
       priceRange: json['price_range'] as String?,
       latitude: (json['latitude'] as num).toDouble(),
@@ -74,24 +76,27 @@ class FacilityModel extends Equatable {
       servicesList: (json['services_list'] as List<dynamic>? ?? [])
           .map((e) => e as String)
           .toList(),
+      servicesCount: (json['services_count'] as num?)?.toInt()
+      ?? (json['services_list'] as List<dynamic>? ?? []).length,
     );
   }
 
   /// Serialises to JSON for Hive storage
   Map<String, dynamic> toJson() => {
-        'facility_id': facilityId,
-        'name': name,
-        'type': type.name,
-        'address': address,
-        'phone': phone,
-        'work_hours': workHours,
-        'rating': rating,
-        'price_range': priceRange,
-        'latitude': latitude,
-        'longitude': longitude,
-        'primary_image': primaryImage,
-        'services_list': servicesList,
-      };
+    'facility_id': facilityId,
+    'name': name,
+    'type': type.name,
+    'address': address,
+    'phone': phone,
+    'work_hours': workHours,
+    'rating': rating,
+    'price_range': priceRange,
+    'latitude': latitude,
+    'longitude': longitude,
+    'primary_image': primaryImage,
+    'services_list': servicesList,
+    'services_count': servicesCount,
+  };
 
   /// Creates a copy with selected fields replaced.
   /// Used by BLoC layer for filter mutations and bookmark toggling.
@@ -107,6 +112,7 @@ class FacilityModel extends Equatable {
     double? latitude,
     double? longitude,
     String? primaryImage,
+    int? servicesCount,
     List<String>? servicesList,
   }) {
     return FacilityModel(
@@ -122,9 +128,9 @@ class FacilityModel extends Equatable {
       longitude: longitude ?? this.longitude,
       primaryImage: primaryImage ?? this.primaryImage,
       servicesList: servicesList ?? this.servicesList,
+      servicesCount: servicesCount ?? this.servicesCount,
     );
   }
-
 
   // Distance Utilities
   /// Haversine distance in metres from facility to the user's position.
@@ -135,7 +141,8 @@ class FacilityModel extends Equatable {
     const earthRadius = 6371000.0; // metres
     final dLat = _toRadians(userLat - latitude);
     final dLng = _toRadians(userLng - longitude);
-    final a = sin(dLat / 2) * sin(dLat / 2) +
+    final a =
+        sin(dLat / 2) * sin(dLat / 2) +
         cos(_toRadians(latitude)) *
             cos(_toRadians(userLat)) *
             sin(dLng / 2) *
@@ -152,19 +159,19 @@ class FacilityModel extends Equatable {
 
   @override
   List<Object?> get props => [
-        facilityId,
-        name,
-        type,
-        address,
-        phone,
-        workHours,
-        rating,
-        priceRange,
-        latitude,
-        longitude,
-        primaryImage,
-        servicesList,
-      ];
+    facilityId,
+    name,
+    type,
+    address,
+    phone,
+    workHours,
+    rating,
+    priceRange,
+    latitude,
+    longitude,
+    primaryImage,
+    servicesList,
+  ];
 }
 
 // Facility Image
@@ -194,16 +201,15 @@ class FacilityImage extends Equatable {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'url': url,
-        'is_primary': isPrimary,
-        'display_order': displayOrder,
-      };
+    'id': id,
+    'url': url,
+    'is_primary': isPrimary,
+    'display_order': displayOrder,
+  };
 
   @override
   List<Object?> get props => [id, url, isPrimary, displayOrder];
 }
-
 
 // Facility Detail Model
 /// Includes description, tags, and all images
@@ -246,10 +252,11 @@ class FacilityDetailModel extends Equatable {
   /// Parses the JSON object returned by `get_facility_detail()` RPC.
   /// Images are sorted by [displayOrder].
   factory FacilityDetailModel.fromJson(Map<String, dynamic> json) {
-    final rawImages = (json['images'] as List<dynamic>? ?? [])
-        .map((e) => FacilityImage.fromJson(e as Map<String, dynamic>))
-        .toList()
-      ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+    final rawImages =
+        (json['images'] as List<dynamic>? ?? [])
+            .map((e) => FacilityImage.fromJson(e as Map<String, dynamic>))
+            .toList()
+          ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
 
     return FacilityDetailModel(
       facilityId: json['facility_id'] as String,
@@ -275,22 +282,22 @@ class FacilityDetailModel extends Equatable {
   }
 
   Map<String, dynamic> toJson() => {
-        'facility_id': facilityId,
-        'name': name,
-        'type': type.name,
-        'description': description,
-        'city': city,
-        'address': address,
-        'phone': phone,
-        'work_hours': workHours,
-        'rating': rating,
-        'price_range': priceRange,
-        'latitude': latitude,
-        'longitude': longitude,
-        'images': images.map((e) => e.toJson()).toList(),
-        'services': services,
-        'tags': tags,
-      };
+    'facility_id': facilityId,
+    'name': name,
+    'type': type.name,
+    'description': description,
+    'city': city,
+    'address': address,
+    'phone': phone,
+    'work_hours': workHours,
+    'rating': rating,
+    'price_range': priceRange,
+    'latitude': latitude,
+    'longitude': longitude,
+    'images': images.map((e) => e.toJson()).toList(),
+    'services': services,
+    'tags': tags,
+  };
 
   /// Returns the primary image URL, falling back to the first image, or null.
   String? get primaryImageUrl {
@@ -303,20 +310,20 @@ class FacilityDetailModel extends Equatable {
 
   @override
   List<Object?> get props => [
-        facilityId,
-        name,
-        type,
-        description,
-        city,
-        address,
-        phone,
-        workHours,
-        rating,
-        priceRange,
-        latitude,
-        longitude,
-        images,
-        services,
-        tags,
-      ];
+    facilityId,
+    name,
+    type,
+    description,
+    city,
+    address,
+    phone,
+    workHours,
+    rating,
+    priceRange,
+    latitude,
+    longitude,
+    images,
+    services,
+    tags,
+  ];
 }

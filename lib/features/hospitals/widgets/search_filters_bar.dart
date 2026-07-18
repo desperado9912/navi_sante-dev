@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 // =============================================================================
 // facility_filter_bar.dart
@@ -47,7 +48,7 @@ class _FacilityFilterBarState extends State<FacilityFilterBar> {
   // changes, not worth a database round trip or a dedicated lookup table.
   static const List<String> _cities = [
     'Yaoundé', 'Douala', 'Bafoussam', 'Bamenda',
-    'Garoua', 'Maroua', 'Buea', 'Kribi', ''
+    'Garoua', 'Maroua', 'Buea', 'Kribi',
   ];
 
   // Maps the user-facing label to the database value stored in price_range.
@@ -76,7 +77,7 @@ class _FacilityFilterBarState extends State<FacilityFilterBar> {
           Row(
             children: [
               Expanded(
-                child: _Dropdown(
+                child: _PlatformAdaptiveDropdown(
                   hint:    'Health Condition',
                   value:   _selectedService,
                   items:   widget.serviceOptions,
@@ -85,7 +86,7 @@ class _FacilityFilterBarState extends State<FacilityFilterBar> {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _Dropdown(
+                child: _PlatformAdaptiveDropdown(
                   hint:    'Select City',
                   value:   _selectedCity,
                   items:   _cities,
@@ -100,7 +101,7 @@ class _FacilityFilterBarState extends State<FacilityFilterBar> {
           Row(
             children: [
               Expanded(
-                child: _Dropdown(
+                child: _PlatformAdaptiveDropdown(
                   hint:    'Price Rating',
                   value:   _selectedPriceLabel,
                   items:   _priceRangeOptions.keys.toList(),
@@ -144,25 +145,109 @@ class _FacilityFilterBarState extends State<FacilityFilterBar> {
 
 
 // =============================================================================
-// DROPDOWN — shared styling for all three filter dropdowns
+// PLATFORM-ADAPTIVE DROPDOWN
+// iOS/macOS → CupertinoActionSheet bottom picker on tap.
+// Android/others → Material DropdownButton (unchanged).
 // =============================================================================
-// TODO: USE A MORE MODERN OR CUPERTINO IOS STYLE DROPDOWN
 
-class _Dropdown extends StatelessWidget {
+class _PlatformAdaptiveDropdown extends StatelessWidget {
   final String hint;
   final String? value;
   final List<String> items;
   final ValueChanged<String?> onChanged;
 
-  const _Dropdown({
+  const _PlatformAdaptiveDropdown({
     required this.hint,
     required this.value,
     required this.items,
     required this.onChanged,
   });
 
+  bool _isCupertino(BuildContext context) {
+    final platform = Theme.of(context).platform;
+    return platform == TargetPlatform.iOS || platform == TargetPlatform.macOS;
+  }
+
   @override
   Widget build(BuildContext context) {
+    return _isCupertino(context)
+        ? _buildCupertinoDropdown(context)
+        : _buildMaterialDropdown(context);
+  }
+
+  // ── Cupertino: tappable container → CupertinoActionSheet ──────────────────
+  Widget _buildCupertinoDropdown(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _showCupertinoSheet(context),
+      child: Container(
+        height: 44,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color:        Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border:       Border.all(color: Colors.grey[300]!),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                value ?? hint,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: value != null ? Colors.black87 : Colors.grey[600],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Icon(
+              CupertinoIcons.chevron_down,
+              size: 14,
+              color: Colors.grey[600],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCupertinoSheet(BuildContext context) {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (ctx) => CupertinoActionSheet(
+        title: Text(hint),
+        actions: [
+          // "All" option clears the selection.
+          CupertinoActionSheetAction(
+            isDefaultAction: value == null,
+            onPressed: () {
+              onChanged(null);
+              Navigator.pop(ctx);
+            },
+            child: const Text('All'),
+          ),
+          ...items.map(
+            (item) => CupertinoActionSheetAction(
+              isDefaultAction: item == value,
+              onPressed: () {
+                onChanged(item);
+                Navigator.pop(ctx);
+              },
+              child: Text(item),
+            ),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          isDestructiveAction: true,
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Cancel'),
+        ),
+      ),
+    );
+  }
+
+  // ── Material: standard DropdownButton (existing behaviour) ────────────────
+  Widget _buildMaterialDropdown(BuildContext context) {
     return Container(
       height: 44,
       padding: const EdgeInsets.symmetric(horizontal: 10),

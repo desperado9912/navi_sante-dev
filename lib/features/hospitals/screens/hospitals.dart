@@ -414,7 +414,7 @@ class _ResultsGrid extends StatelessWidget {
                   crossAxisCount: 2,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  childAspectRatio: 0.63,
+                  childAspectRatio: 0.62,
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final facility = displayList[index];

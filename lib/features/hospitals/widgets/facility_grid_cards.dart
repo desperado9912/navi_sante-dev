@@ -41,83 +41,98 @@ class FacilityGridCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-        decoration: BoxDecoration(
-          color:        Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color:      Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              spreadRadius: 1,
-              offset:     const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _CardImage(facility: facility),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // ── Name ─────────────────────────────────────────────────
-                        Text(
-                          facility.name,
-                          style: const TextStyle(
-                            fontSize:   13,
-                            fontWeight: FontWeight.w700,
-                            height:     1.2,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 6),
-
-                        // ── Service chips ────────────────────────────────────────
-                        _ServiceChipsRow(services: facility.servicesList),
-                        const SizedBox(height: 6),
-                      ],
-                    ),
-
-                    // ── Actions row ──────────────────────────────────────────
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: onDetailsTap,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF00897B),
-                              side: const BorderSide(color: Color(0xFF00897B)),
-                              padding: const EdgeInsets.symmetric(vertical: 6),
-                              minimumSize: Size.zero,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            spreadRadius: 1,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.max,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _CardImage(facility: facility),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // ── Top content group (name + chips) ─────────────────
+                  // Flexible + ClipRect: defensive net — content shrinks
+                  // gracefully on very small screens, never overflows.
+                  Flexible(
+                    child: ClipRect(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // ── Name (max 2 lines overflow ellipsis) ──────
+                          Text(
+                            facility.name,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              height: 1.2,
                             ),
-                            child: const Text(
-                              'Details →',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+
+                          // ── Service chips ─────────────────────────────
+                          _ServiceChipsRow(
+                            services: facility.servicesList,
+                            totalCount: facility.servicesCount,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+
+                  // ── Actions row ────────────────
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: onDetailsTap,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF00897B),
+                            side: const BorderSide(color: Color(0xFF00897B)),
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            minimumSize: Size.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            'Details →',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        // Directions icon button — opens maps via MapLauncher.
-                        _DirectionsIconButton(facility: facility),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                      const SizedBox(width: 6),
+                      // Directions icon button — opens maps via [MapLauncher].
+                      _DirectionsIconButton(facility: facility),
+                    ],
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -143,8 +158,8 @@ class _CardImage extends StatelessWidget {
             // ── Image or placeholder ────────────────────────────────────────
             facility.primaryImage != null
                 ? CachedNetworkImage(
-                    imageUrl:    facility.primaryImage!,
-                    fit:         BoxFit.cover,
+                    imageUrl: facility.primaryImage!,
+                    fit: BoxFit.cover,
                     placeholder: (_, _) => _Placeholder(type: facility.type),
                     errorWidget: (_, _, _) => _Placeholder(type: facility.type),
                   )
@@ -157,17 +172,24 @@ class _CardImage extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
-                  color:        Colors.white.withValues(alpha: 0.92),
+                  color: Colors.white.withValues(alpha: 0.92),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.star_rounded, color: Color(0xFFFFB300), size: 12),
+                    const Icon(
+                      Icons.star_rounded,
+                      color: Color(0xFFFFB300),
+                      size: 12,
+                    ),
                     const SizedBox(width: 2),
                     Text(
                       facility.rating.toStringAsFixed(1),
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ],
                 ),
@@ -186,7 +208,6 @@ class _CardImage extends StatelessWidget {
     );
   }
 }
-
 
 // =============================================================================
 // BOOKMARK BUTTON
@@ -208,7 +229,8 @@ class _BookmarkButton extends StatelessWidget {
       builder: (context, isBookmarked) {
         return GestureDetector(
           // Stop the tap from bubbling up to the card's onTap (no navigation).
-          onTap: () => context.read<FacilityBloc>().add(ToggleBookmark(facilityId)),
+          onTap: () =>
+              context.read<FacilityBloc>().add(ToggleBookmark(facilityId)),
           child: Container(
             padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
@@ -216,8 +238,10 @@ class _BookmarkButton extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-              size:  16,
+              isBookmarked
+                  ? Icons.bookmark_rounded
+                  : Icons.bookmark_border_rounded,
+              size: 16,
               color: isBookmarked ? const Color(0xFF00897B) : Colors.grey[700],
             ),
           ),
@@ -226,7 +250,6 @@ class _BookmarkButton extends StatelessWidget {
     );
   }
 }
-
 
 // =============================================================================
 // DIRECTIONS ICON BUTTON
@@ -248,9 +271,9 @@ class _DirectionsIconButton extends StatelessWidget {
       );
     } on MapLaunchException catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -261,30 +284,47 @@ class _DirectionsIconButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color:        const Color(0xFF00897B),
+          color: const Color(0xFF00897B),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Icon(Icons.directions_rounded, size: 15, color: Colors.white),
+        child: const Icon(
+          Icons.directions_rounded,
+          size: 15,
+          color: Colors.white,
+        ),
       ),
     );
   }
 }
 
-
 // =============================================================================
 // SERVICE CHIPS ROW
 // Dynamically measures how many service chips fit within the available card
 // width using TextPainter, then shows a "+N" overflow indicator for the rest.
+//   1. Greedily pack chip labels into lines, mimicking Wrap's own
+//      line-breaking, stopping once 2 lines are full.
+//   2. If items remain after 2 lines, or the DB reports more services than
+//      we even received (services_count > services.length), we need an
+//      overflow chip. Pop chips off the END of the last line — recomputing
+//      the overflow count using the REAL total each time — until the "+N"
+//      chip physically fits alongside what's left.
+//   3. Wrapped in a fixed-height, hard-clipped SizedBox: a defensive net
+//      that guarantees the card can never grow taller than 2 chip lines,
+//      even in a font-metrics edge case this algorithm didn't anticipate.
 // =============================================================================
 
 class _ServiceChipsRow extends StatelessWidget {
   final List<String> services;
+  final int totalCount;
 
-  const _ServiceChipsRow({required this.services});
+  const _ServiceChipsRow({required this.services, required this.totalCount});
 
   static const _chipStyle = TextStyle(fontSize: 9, fontWeight: FontWeight.w600);
   static const double _chipHPadding = 12.0; // 6px each side
-  static const double _chipSpacing  = 4.0;
+  static const double _chipSpacing = 4.0;
+  static const double _chipHeight =
+      17.0; // measured: 9px text + 2*2px vertical padding + line height slack
+  static const double _lineGap = 4.0; // gap between lines 1 and 2
 
   /// Measures the rendered pixel width of a single chip.
   double _measureChipWidth(String label) {
@@ -298,102 +338,90 @@ class _ServiceChipsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (services.isEmpty) return const SizedBox(height: 18);
+    if (services.isEmpty) return const SizedBox(height: _chipHeight);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth;
+    return SizedBox(
+      // Cap service chips to exactly 2 lines no matter what the packing algorithm decides.
+      height: (_chipHeight * 2) + _lineGap,
+      child: ClipRect(
+        clipBehavior: Clip.hardEdge,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final maxWidth = constraints.maxWidth;
+            final chips = _pack(maxWidth);
 
-        // We will compute which chips go to Row 1 and Row 2.
-        List<String> row1 = [];
-        List<String> row2 = [];
-        int index = 0;
-
-        // Let's fit Row 1
-        double row1Width = 0;
-        while (index < services.length) {
-          final chipWidth = _measureChipWidth(services[index]);
-          final gap = row1.isNotEmpty ? _chipSpacing : 0;
-          if (row1Width + gap + chipWidth <= maxWidth) {
-            row1Width += gap + chipWidth;
-            row1.add(services[index]);
-            index++;
-          } else {
-            break;
-          }
-        }
-
-        // If there are more chips, they go to Row 2 or overflow
-        List<String> visibleChips = List.from(row1);
-        int overflowCount = 0;
-
-        if (index < services.length) {
-          // We have remaining chips. We need to fit them in Row 2,
-          // keeping in mind we might need a "+N" overflow chip.
-          final remaining = services.sublist(index);
-          double row2Width = 0;
-          int row2Count = 0;
-
-          for (int i = 0; i < remaining.length; i++) {
-            final chipWidth = _measureChipWidth(remaining[i]);
-            final gap = row2.isNotEmpty ? _chipSpacing : 0;
-            final isLast = (i == remaining.length - 1);
-
-            if (isLast) {
-              // If it's the last one, we don't need an overflow indicator if it fits.
-              if (row2Width + gap + chipWidth <= maxWidth) {
-                row2.add(remaining[i]);
-                row2Width += gap + chipWidth;
-                row2Count++;
-              } else {
-                overflowCount = remaining.length - row2Count;
-                while (row2.isNotEmpty && row2Width + (row2.length > 1 ? _chipSpacing : 0) + _measureChipWidth('+$overflowCount') > maxWidth) {
-                  final removed = row2.removeLast();
-                  row2Width -= _measureChipWidth(removed) + (row2.isNotEmpty ? _chipSpacing : 0);
-                  overflowCount++;
-                }
-              }
-            } else {
-              // Not the last one, so we definitely have remaining/overflow.
-              final nextOverflowCount = remaining.length - row2Count - 1;
-              final currentOverflowWidth = _measureChipWidth('+$nextOverflowCount');
-              if (row2Width + gap + chipWidth + _chipSpacing + currentOverflowWidth <= maxWidth) {
-                row2.add(remaining[i]);
-                row2Width += gap + chipWidth;
-                row2Count++;
-              } else {
-                overflowCount = remaining.length - row2Count;
-                while (row2.isNotEmpty && row2Width + (row2.length > 1 ? _chipSpacing : 0) + _measureChipWidth('+$overflowCount') > maxWidth) {
-                  final removed = row2.removeLast();
-                  row2Width -= _measureChipWidth(removed) + (row2.isNotEmpty ? _chipSpacing : 0);
-                  overflowCount++;
-                }
-                break;
-              }
-            }
-          }
-
-          visibleChips.addAll(row2);
-        }
-
-        // If visible list is empty (should not happen unless screen is extremely narrow), show at least 1
-        if (visibleChips.isEmpty && services.isNotEmpty) {
-          visibleChips.add(services[0]);
-          if (services.length > 1) {
-            overflowCount = services.length - 1;
-          }
-        }
-
-        return Wrap(
-          spacing:    _chipSpacing,
-          runSpacing: _chipSpacing,
-          children: [
-            for (final name in visibleChips) _Chip(label: name),
-            if (overflowCount > 0) _Chip(label: '+$overflowCount', isOverflow: true),
-          ],
-        );
-      },
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Wrap(
+                spacing: _chipSpacing,
+                runSpacing: _lineGap,
+                children: chips,
+              ),
+            );
+          },
+        ),
+      ),
     );
+  }
+
+  // Packs Service chips as fit into 2 lines, appending an accurate
+  /// "+N" chip if any services remain (using [totalCount]).
+  List<Widget> _pack(double maxWidth) {
+    final lines = <List<String>>[[]];
+    double lineWidth = 0;
+
+    for (final label in services) {
+      final chipWidth = _measureChipWidth(label);
+      final gap = lines.last.isEmpty ? 0 : _chipSpacing;
+
+      if (lineWidth + gap + chipWidth <= maxWidth) {
+        lines.last.add(label);
+        lineWidth += gap + chipWidth;
+        continue;
+      }
+
+      if (lines.length < 2) {
+        lines.add([label]);
+        lineWidth = chipWidth;
+      } else {
+        break;
+      }
+    }
+
+    final shown = lines.expand((l) => l).toList();
+    var overflow = totalCount - shown.length;
+
+    if (overflow <= 0) {
+      return [for (final s in shown) _Chip(label: s)];
+    }
+
+    // Reserves last line space for the +N chips indicator
+    // Evitcs non fitting trailing chips (except if they fit)
+    final lastLine = lines.last;
+    double lastLineWidth = 0;
+    for (var i = 0; i < lastLine.length; i++) {
+      lastLineWidth +=
+          _measureChipWidth(lastLine[i]) + (i == 0 ? 0 : _chipSpacing);
+    }
+
+    while (lastLine.isNotEmpty &&
+        lastLineWidth + _chipSpacing + _measureChipWidth('+$overflow') >
+            maxWidth) {
+      final removed = lastLine.removeLast();
+      lastLineWidth -=
+          _measureChipWidth(removed) + (lastLine.isEmpty ? 0 : _chipSpacing);
+      overflow++;
+    }
+
+    final finalChips = [
+      for (final l in lines.sublist(0, lines.length - 1)) ...l,
+      ...lastLine,
+    ];
+
+    return [
+      for (final s in finalChips) _Chip(label: s),
+      _Chip(label: '+$overflow', isOverflow: true),
+    ];
   }
 }
 
@@ -408,21 +436,20 @@ class _Chip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color:        isOverflow ? Colors.grey[200] : const Color(0xFFE0F2F1),
+        color: isOverflow ? Colors.grey[200] : const Color(0xFFE0F2F1),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         label,
         style: TextStyle(
-          fontSize:   9,
+          fontSize: 9,
           fontWeight: FontWeight.w600,
-          color:      isOverflow ? Colors.grey[600] : const Color(0xFF00897B),
+          color: isOverflow ? Colors.grey[600] : const Color(0xFF00897B),
         ),
       ),
     );
   }
 }
-
 
 // =============================================================================
 // PLACEHOLDER — shown when no image or while loading
@@ -435,7 +462,7 @@ class _Placeholder extends StatelessWidget {
 
   IconData get _icon => switch (type) {
     FacilityType.hospital => Icons.local_hospital_rounded,
-    FacilityType.clinic   => Icons.medical_services_rounded,
+    FacilityType.clinic => Icons.medical_services_rounded,
     FacilityType.pharmacy => CupertinoIcons.capsule_fill,
   };
 
@@ -445,12 +472,16 @@ class _Placeholder extends StatelessWidget {
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF26A69A), Color(0xFF4DB6AC)],
-          begin:  Alignment.topLeft,
-          end:    Alignment.bottomRight,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
       child: Center(
-        child: Icon(_icon, color: Colors.white.withValues(alpha: 0.8), size: 30),
+        child: Icon(
+          _icon,
+          color: Colors.white.withValues(alpha: 0.8),
+          size: 30,
+        ),
       ),
     );
   }

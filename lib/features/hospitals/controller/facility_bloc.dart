@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'facility_model.dart';
 import '../data/facility_repository.dart';
 
@@ -66,7 +67,6 @@ class AddRecentlyViewed extends FacilityEvent {
 
 class ClearRecentlyViewed extends FacilityEvent {}
 
-// Bookmarks
 /// Load the user's saved bookmarks.
 class LoadBookmarks extends FacilityEvent {}
 
@@ -106,7 +106,6 @@ class FacilityState {
 
   // Bookmark state — IDs in a Set for O(1) look-ups; full models for the list screen.
   final Set<String> bookmarkedIds;
-  final List<FacilityModel> savedFacilities;
 
   // Independent status trackers for each concern.
   final FacilityStatus facilitiesStatus;
@@ -127,7 +126,6 @@ class FacilityState {
     this.currentDetail,
     this.recentlyViewedIds = const [],
     this.bookmarkedIds = const {},
-    this.savedFacilities = const [],
     this.facilitiesStatus = FacilityStatus.initial,
     this.searchStatus = FacilityStatus.initial,
     this.detailStatus = FacilityStatus.initial,
@@ -146,7 +144,6 @@ class FacilityState {
     Object? currentDetail = _sentinel,
     List<String>? recentlyViewedIds,
     Set<String>? bookmarkedIds,
-    List<FacilityModel>? savedFacilities,
     FacilityStatus? facilitiesStatus,
     FacilityStatus? searchStatus,
     FacilityStatus? detailStatus,
@@ -163,7 +160,6 @@ class FacilityState {
           : currentDetail as FacilityDetailModel?,
       recentlyViewedIds: recentlyViewedIds ?? this.recentlyViewedIds,
       bookmarkedIds: bookmarkedIds ?? this.bookmarkedIds,
-      savedFacilities: savedFacilities ?? this.savedFacilities,
       facilitiesStatus: facilitiesStatus ?? this.facilitiesStatus,
       searchStatus: searchStatus ?? this.searchStatus,
       detailStatus: detailStatus ?? this.detailStatus,
@@ -187,6 +183,10 @@ class FacilityState {
   bool get isBookmarkLoading => bookmarkStatus == FacilityStatus.loading;
 
   bool isBookmarked(String facilityId) => bookmarkedIds.contains(facilityId);
+
+  // get saved facilities
+  List<FacilityModel> get savedFacilities =>
+      facilities.where((f) => bookmarkedIds.contains(f.facilityId)).toList();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -213,8 +213,8 @@ class FacilityBloc extends Bloc<FacilityEvent, FacilityState> {
     on<ClearRecentlyViewed>(_onClearRecentlyViewed);
     // Bookmarks
     on<LoadBookmarks>(_onLoadBookmarks);
-    on<RefreshBookmarks>(_onRefreshBookmarks);
-    on<ToggleBookmark>(_onToggleBookmark);
+    on<RefreshBookmarks>(_onRefreshBookmarks, transformer: droppable());
+    on<ToggleBookmark>(_onToggleBookmark, transformer: sequential());
     on<ClearBookmarks>(_onClearBookmarks);
   }
 
@@ -261,11 +261,12 @@ class FacilityBloc extends Bloc<FacilityEvent, FacilityState> {
     Emitter<FacilityState> emit,
   ) async {
     final query = event.query.trim();
-    final hasActiveFilters = event.typeFilter != null ||
-                             event.cityFilter != null ||
-                             event.serviceFilter != null ||
-                             event.priceRangeFilter != null ||
-                             event.minRating > 0;
+    final hasActiveFilters =
+        event.typeFilter != null ||
+        event.cityFilter != null ||
+        event.serviceFilter != null ||
+        event.priceRangeFilter != null ||
+        event.minRating > 0;
 
     if (query.isEmpty && !hasActiveFilters) {
       emit(
@@ -401,97 +402,60 @@ class FacilityBloc extends Bloc<FacilityEvent, FacilityState> {
   }
 
   // BOOKMARKS
-  /// Loads bookmarks on auth (Hndles in auth gate).
+  /// Loads bookmarks on auth (Handles in auth gate).
   Future<void> _onLoadBookmarks(
     LoadBookmarks event,
     Emitter<FacilityState> emit,
   ) async {
-    // Prevent redundant network calls if already loaded.
-    if (state.bookmarkedIds.isNotEmpty || state.savedFacilities.isNotEmpty) {
-      return;
-    }
-
-    emit(state.copyWith(bookmarkStatus: FacilityStatus.loading));
-
-    // Exponential backoff retry (up to 3 attempts)
-    int retries = 0;
-    while (retries < 3) {
-      try {
-        final bookmarks = await _repository.getUserBookmarks();
-        final ids = bookmarks.map((b) => b.facilityId).toSet();
-        emit(
-          state.copyWith(
-            bookmarkedIds: ids,
-            savedFacilities: bookmarks,
-            bookmarkStatus: FacilityStatus.loaded,
-          ),
-        );
-        return;
-      } catch (_) {
-        retries++;
-        await Future.delayed(Duration(seconds: retries * 3));
-      }
-    }
-
-    // All retries exhausted — fail silently, restore previous state.
-    emit(state.copyWith(bookmarkStatus: FacilityStatus.error));
+    if (state.bookmarkStatus == FacilityStatus.loaded) return;
+    await _fetchAndEmitBookmarks(emit);
   }
 
-  /// Force-refresh bookmarks (e.g. from pull-to-refresh).
+  // Manual force pull to refresh on Saved facilities screen.
   Future<void> _onRefreshBookmarks(
     RefreshBookmarks event,
     Emitter<FacilityState> emit,
   ) async {
-    emit(state.copyWith(bookmarkStatus: FacilityStatus.loading));
+    await _fetchAndEmitBookmarks(emit);
+  }
 
+  // Internal helper: fetch once, apply retry logic, update state.
+  // Shared helper for both LoadBookmarks and RefreshBookmarks.
+  Future<void> _fetchAndEmitBookmarks(Emitter<FacilityState> emit) async {
+    emit(state.copyWith(bookmarkStatus: FacilityStatus.loading));
     try {
-      final bookmarks = await _repository.getUserBookmarks();
-      final ids = bookmarks.map((b) => b.facilityId).toSet();
+      final ids = await _repository.getBookmarkedIds();
       emit(
         state.copyWith(
           bookmarkedIds: ids,
-          savedFacilities: bookmarks,
           bookmarkStatus: FacilityStatus.loaded,
         ),
       );
     } catch (_) {
-      // Restore previous bookmark data; just stop loading.
       emit(state.copyWith(bookmarkStatus: FacilityStatus.error));
     }
   }
 
-  /// Bookmark toggle: update the UI immediately, before sync to Supabase.
-  /// If the network call fails, the state is automatically reverted.
+  // Bookmark toggle(Getter from [bookmarIds])
+  // Update the UI immediately, before sync to database.
+  // Reverts automatically on sync or network failure.
   Future<void> _onToggleBookmark(
     ToggleBookmark event,
     Emitter<FacilityState> emit,
   ) async {
     final facilityId = event.facilityId;
     final wasBookmarked = state.bookmarkedIds.contains(facilityId);
-
-    // Optimistic update
     final optimisticIds = Set<String>.from(state.bookmarkedIds);
-    final optimisticFacilities = List<FacilityModel>.from(
-      state.savedFacilities,
-    );
 
     if (wasBookmarked) {
       optimisticIds.remove(facilityId);
-      optimisticFacilities.removeWhere((f) => f.facilityId == facilityId);
     } else {
       optimisticIds.add(facilityId);
-      final model = _repository.getFacilitySync(facilityId);
-      if (model != null) optimisticFacilities.insert(0, model);
     }
 
-    emit(
-      state.copyWith(
-        bookmarkedIds: optimisticIds,
-        savedFacilities: optimisticFacilities,
-      ),
-    );
+    // Optimistic update
+    emit(state.copyWith(bookmarkedIds: optimisticIds));
 
-    // Network sync
     try {
       if (wasBookmarked) {
         await _repository.removeBookmark(facilityId);
@@ -499,39 +463,28 @@ class FacilityBloc extends Bloc<FacilityEvent, FacilityState> {
         await _repository.addBookmark(facilityId);
       }
     } catch (_) {
-      // auto-revert on failure
+      // Revert on failure.
+      // Correctly undoes only this specific toggle even if other bookmark
+      // changes happened concurrently in between.
       final revertedIds = Set<String>.from(state.bookmarkedIds);
-      final revertedFacilities = List<FacilityModel>.from(
-        state.savedFacilities,
-      );
-
       if (wasBookmarked) {
         revertedIds.add(facilityId);
-        final model = _repository.getFacilitySync(facilityId);
-        if (model != null) revertedFacilities.insert(0, model);
       } else {
         revertedIds.remove(facilityId);
-        revertedFacilities.removeWhere((f) => f.facilityId == facilityId);
       }
-
-      emit(
-        state.copyWith(
-          bookmarkedIds: revertedIds,
-          savedFacilities: revertedFacilities,
-        ),
-      );
+      emit(state.copyWith(bookmarkedIds: revertedIds));
     }
   }
 
-  /// Wipes all bookmark state — called on sign-out.
+  // Clears all bookmark state — called on sign-out.
   Future<void> _onClearBookmarks(
     ClearBookmarks event,
     Emitter<FacilityState> emit,
   ) async {
+    await _repository.clearBookmarkIds();
     emit(
       state.copyWith(
         bookmarkedIds: const {},
-        savedFacilities: const [],
         bookmarkStatus: FacilityStatus.initial,
       ),
     );

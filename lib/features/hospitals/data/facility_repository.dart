@@ -16,11 +16,11 @@ import 'facility_remote.dart';
 ///
 /// | Method                | Source                          |
 /// |-----------------------|---------------------------------|
-/// | `getAllFacilities()`  | Cache → Network (Stream×2)     |
+/// | `getAllFacilities()`  | Cache → Network (Stream×2)      |
 /// | `getHighlights()`     | Cache only (sync, zero network) |
 /// | `searchFacilities()`  | Network only (never cached)     |
 /// | `getFacilityDetail()` | Cache-first, network on miss    |
-/// | `getUserBookmarks()`  | Network only                    |
+/// | `getUserBookmarks()`  | Network first, Cache fallback   |
 ///
 // ============================================================================
 class FacilityRepository {
@@ -130,17 +130,35 @@ class FacilityRepository {
   /// Clears the locally persisted recently-viewed list.
   Future<void> clearRecentlyViewed() => _local.clearRecentlyViewed();
 
-  /// Fetches the authenticated user's bookmarked facilities.
-  Future<List<FacilityModel>> getUserBookmarks() => 
-    _remote.getUserBookmarks();
+  /// Fetches the authenticated user's bookmarked facilitY Ids.
+  /// Network first (typically under 200ms), Cache fallback on network failure so the UI is never stale.
+  Future<Set<String>> getBookmarkedIds() async {
+    try {
+      final ids = await _remote.getUserBookmarks();
+      await _local.saveBookmarkIds(ids);
+      return ids;
+    } catch (_) {
+      return _local.getBookmarkIds();
+    }
+  }
 
-  /// Adds a bookmark for the authenticated user.
-  Future<void> addBookmark(String facilityId) =>
-      _remote.addBookmark(facilityId);
+  /// Adds a bookmark for the authenticated user then syncs to cache.
+  Future<void> addBookmark(String facilityId) async {
+    await _remote.addBookmark(facilityId);
+    final ids = _local.getBookmarkIds()..add(facilityId);
+    await _local.saveBookmarkIds(ids);
+  }
 
-  /// Removes a bookmark for the authenticated user.
-  Future<void> removeBookmark(String facilityId) =>
-      _remote.removeBookmark(facilityId);
+  /// Removes a bookmark for the authenticated user then syncs to cache.
+  Future<void> removeBookmark(String facilityId) async{
+    await _remote.removeBookmark(facilityId);
+    final ids = _local.getBookmarkIds()..remove(facilityId);
+    await _local.saveBookmarkIds(ids);
+  }
+
+  /// Clears cached bookmars Id set. 
+  // Called on Signout so next user never gets stale bookmark list.
+  Future<void> clearBookmarkIds() => _local.clearBookmarkIds();
 
   /// Returns distinct service names from cached facilities for filter dropdowns.
   /// Derived from Hive (no network call) — returns empty list if cache is cold.
