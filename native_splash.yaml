@@ -3,9 +3,22 @@ flutter_native_splash:
   ios: true
   web: false
 
-  background_image: "assets/splashscreeniPhone_bg.png"
-  image: "assets/logoiphone.png"
+  # Light mode Splash Setup
+  background_image: "assets/splash/splashLight_bg.png"
+  image: "assets/splash/splashLight_logo.png"
+  branding: "assets/splash/splashLight_branding.png"
 
+  #Dark mode Splash Setup
+  background_image_dark: "assets/splash/splashDark_bg.png"
+  image_dark: "assets/splash/splashDark_logo.png"
+  branding_dark: "assets/splash/splashDark_branding.png"
+
+  #Android 12+ Splash Setup (Light & dark)
   android_12:
     color: "#F8F9F8"
-    image: "assets/logoandroid.png"
+    image: "assets/splash/splashLightAndroid_logo.png"
+    branding: "assets/splash/splashDarkAndroid_branding.png"
+
+    color_dark: "#121817"
+    image_dark: "assets/splash/splashDarkAndroid_logo.png"
+    branding_dark: "assets/splash/splashDarkAndroid_branding.png"

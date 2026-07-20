@@ -127,18 +127,16 @@ class _SignupScreenState extends State<SignupScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'NaviSanté',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2A7D8F),
-                          ),
+                        // Logo
+                        Image.asset(
+                          'assets/navisanteLogoSmall.png',
+                          height: 20,
+                          fit: BoxFit.contain,
                         ),
                         const LanguagePicker(),
                       ],
                     ),
-                    const SizedBox(height: 25),
+                    const SizedBox(height: 20),
 
                     // ── Heading ───────────────────────────────────
                     BlocBuilder<LanguageCubit, LanguageState>(
@@ -316,7 +314,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           text: TextSpan(
                             style: const TextStyle(
                               fontSize: 12,
-                              color: Color(0xFF888780),
+                              color: Color(0xFF5F6368),
                             ),
                             children: [
                               TextSpan(
@@ -473,14 +471,14 @@ class _Rule extends StatelessWidget {
           Icon(
             met ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
             size: 14,
-            color: met ? const Color(0xFF2A7D8F) : const Color(0xFFAAAAAA),
+            color: met ? const Color(0xFF2A7D8F) : const Color(0xFF5F6368),
           ),
           const SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
               fontSize: 12,
-              color: met ? const Color(0xFF2A7D8F) : const Color(0xFF888780),
+              color: met ? const Color(0xFF2A7D8F) : const Color(0xFF5F6368),
               fontWeight: met ? FontWeight.w500 : FontWeight.w400,
             ),
           ),

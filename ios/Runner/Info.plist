@@ -41,26 +41,22 @@
 			<string>UIInterfaceOrientationLandscapeLeft</string>
 			<string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
-
 		<key>LSApplicationQueriesSchemes</key>
 		<array>
 			<string>mailto</string>
 			<string>https</string>
 		</array>
-
 		<key>CADisableMinimumFrameDurationOnPhone</key>
 		<true/>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
-
 		<!-- Google Sign-In (must match GOOGLE_IOS_CLIENT_ID / GOOGLE_WEB_CLIENT_ID in .env) -->
 		<key>GIDClientID</key>
 		<string>692742796179-le2hgmlo6nrctn46ruhur4mbgrjt16fr.apps.googleusercontent.com</string>
 		<key>GIDServerClientID</key>
 		<string>692742796179-t1jpnngktg3klip41u6q8i8sl6p8ajon.apps.googleusercontent.com</string>
-
 		<key>CFBundleURLTypes</key>
 		<array>
 			<dict>
@@ -85,12 +81,10 @@
 				</array>
 			</dict>
 		</array>
-		
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>NaviSanté requires your location to display map services and nearby medical facilities.</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 		<string>NaviSanté requires your location to display map services and nearby medical facilities.</string>
-
 		<!-- Required for url_launcher to open map apps on iOS 10+ -->
 		<key>LSApplicationQueriesSchemes</key>
 		<array>

@@ -13,6 +13,7 @@ import 'package:navi_sante/features/auth/cubit/auth_cubit.dart';
 import 'package:navi_sante/features/auth/screens/login.dart';
 import 'package:navi_sante/core/utils/navigation_menu.dart';
 import 'package:navi_sante/features/hospitals/controller/facility_bloc.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 class AuthGate extends StatefulWidget {
@@ -27,11 +28,21 @@ class _AuthGateState extends State<AuthGate> {
   supa.Session? _currentSession =
       supa.Supabase.instance.client.auth.currentSession;
   bool _isLoading = true;
+  bool _splashRemoved = false;
 
   @override
   void initState() {
     super.initState();
     _listenToAuth();
+  }
+
+  // Listen to state changes for init and then dismiss splash after first fram paint
+  void _removeSplash() {
+    if (_splashRemoved) return;
+    _splashRemoved = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FlutterNativeSplash.remove();
+    });
   }
 
   void _listenToAuth() {
@@ -40,6 +51,7 @@ class _AuthGateState extends State<AuthGate> {
       _handleSignInLogic(isInitialCheck: true);
     } else {
       _isLoading = false;
+      _removeSplash();
     }
 
     // 2. The Manager: Listen to the auth stream once.
@@ -92,6 +104,7 @@ class _AuthGateState extends State<AuthGate> {
           _currentSession = session;
           _isLoading = false;
         });
+        _removeSplash();
       }
     });
   }
@@ -109,6 +122,8 @@ class _AuthGateState extends State<AuthGate> {
     context.read<FacilityBloc>().add(LoadFacilities());
     context.read<FacilityBloc>().add(LoadRecentlyViewed());
     context.read<FacilityBloc>().add(LoadBookmarks());
+
+    if (isInitialCheck) _removeSplash();
   }
 
   @override

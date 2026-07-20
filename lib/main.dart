@@ -1,24 +1,30 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'features/hospitals/data/facility_local.dart';
 import 'core/utils/navigation_settings.dart';
+import 'features/home/controller/map_cache_manager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'app.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+
+  // Preserve the splash screen while Loading/Initializing apis
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   //Hive initialization
   await Hive.initFlutter();
-
-  //Handle Caching for map models
   await Hive.openBox('mapCache');
   await FacilityLocal.init();
   await NavigationSettings.init();
+
+  //Init map cache manager
+  await MapCacheManager.instance.initialize();
 
   //orientation lock
   await SystemChrome.setPreferredOrientations([
@@ -40,6 +46,8 @@ void main() async {
   //google OAuth initilization
   final webClientId = dotenv.env['GOOGLE_WEB_CLIENT_ID']?.trim();
   final iosClientId = dotenv.env['GOOGLE_IOS_CLIENT_ID']?.trim();
+
+  // TODO: Delete debug print note.
   debugPrint('[main] GOOGLE_WEB_CLIENT_ID: "$webClientId"');
   debugPrint('[main] GOOGLE_IOS_CLIENT_ID: "$iosClientId"');
 

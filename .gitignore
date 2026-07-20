@@ -45,6 +45,7 @@ node_modules
 .dart_tool/
 .packages
 .flutter-plugins-dependencies
+.metadata/
 .pub-cache/
 .pub/
 /build/

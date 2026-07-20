@@ -42,7 +42,6 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
   late final Dio _tilesDio;
 
   // Map tile request instance. Map caching is handled by cache manager with Hive storage.
-  final MapCacheManager _cacheManager = MapCacheManager();
   CacheStore? _hiveCacheStore;
 
   @override
@@ -60,9 +59,8 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
     );
 
     // Initialize Hive cache store
-    _cacheManager.initialize().then((store) {
-      if (mounted) setState(() => _hiveCacheStore = store);
-    });
+    _hiveCacheStore = MapCacheManager.instance.store;
+
 
     // Trigger map initialization
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -74,7 +72,6 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
   void dispose() {
     _mapController.dispose();
     _tilesDio.close(force: false);
-    _cacheManager.dispose();
     super.dispose();
   }
 

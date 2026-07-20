@@ -121,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     // ── Top bar: logo + language picker ───────────
                     RepaintBoundary(child: _TopBar()),
-                    const SizedBox(height: 25),
+                    const SizedBox(height: 20),
 
                     // ── Welcome heading ───────────────────────────
                     RepaintBoundary(
@@ -448,7 +448,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: const Text(
                 'OK',
                 style: TextStyle(
-                  color: Color(0xFF2A7D8F),
+                  color: Color(0xFF1A1A1A),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -467,15 +467,12 @@ class _TopBar extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Logo || Logo text
-        const Text(
-          'NaviSanté',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF2A7D8F),
+        // Top Logo
+        Image.asset(
+          'assets/navisanteLogoSmall.png',
+          height: 20,
+          fit: BoxFit.contain,
           ),
-        ),
         LanguagePicker(),
       ],
     );
@@ -585,7 +582,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                   const Text(
                     'Enter your email address and we will send '
                     'you a reset link.',
-                    style: TextStyle(fontSize: 14, color: Color(0xFF666660)),
+                    style: TextStyle(fontSize: 14, color: Color(0xFF5F6368)),
                   ),
                   const SizedBox(height: 16),
                   TextField(
@@ -616,7 +613,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
             },
             child: Text(
               _sent ? 'Done' : 'Cancel',
-              style: const TextStyle(color: Color(0xFF666660)),
+              style: const TextStyle(color: Color(0xFF5F6368)),
             ),
           ),
           if (!_sent)

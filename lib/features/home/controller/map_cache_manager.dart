@@ -14,6 +14,9 @@ import 'package:path_provider/path_provider.dart';
 ///   - Removes tiles older than 30 days on startup and every 24 hours.
 
 class MapCacheManager {
+  MapCacheManager._internal();
+  static final MapCacheManager instance = MapCacheManager._internal();
+
   // Cache folder disk size, duration, hive box name constants.
   static const int maxCacheSizeBytes = 524 * 1024 * 1024;
   static const Duration cacheTtl = Duration(days: 30);
