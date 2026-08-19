@@ -1,6 +1,6 @@
 // EDGE FUNCTION 1
 import { createServiceClient } from "../_shared/supabase.ts";
-import { sha256Hex, generateRawToken } from "../_shared/crypto.ts";
+import { sha256Hex, generateRawToken, createHmacSha256 } from "../_shared/crypto.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 import { isRateLimited } from "../_shared/rateLimit.ts";
 
@@ -18,15 +18,20 @@ function jsonResponse(
 // EF1 is only ever called from the Flutter app.
 const corsHeaders = buildCorsHeaders("*");
 
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const VERCEL_RESET_URL = Deno.env.get("VERCEL_RESET_URL")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
+const LINK_SIGNING_SECRET =
+  Deno.env.get("LINK_SIGNING_SECRET") ?? "fallback-secret-change-in-prod";
+
 // Swap this once you've verified your own domain in Resend — until
 // then, onboarding@resend.dev works with zero setup.
 const RESET_EMAIL_FROM =
   Deno.env.get("RESET_EMAIL_FROM") ?? "NaviSanté <onboarding@resend.dev>";
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-const TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes DB expiry
+const EMAIL_LINK_HARD_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours link hard-stop
 
 function buildResetEmailHtml(resetLink: string): string {
   // Plain, self-contained HTML — no external stylesheet.
@@ -159,8 +164,14 @@ Deno.serve(async (req: Request) => {
     // that call embeds a live Supabase session into the redirect URL,
     // which would let the frontend bypass this entire token system.
     // This sends a plain email we fully control instead.
-    const resetLink = `${VERCEL_RESET_URL}?token=${rawToken}`;
+    const linkExp = Date.now() + EMAIL_LINK_HARD_EXPIRY_MS;
+    const sig = await createHmacSha256(
+      LINK_SIGNING_SECRET,
+      `${rawToken}:${linkExp}`
+    );
+    const resetLink = `${SUPABASE_URL}/functions/v1/reset-link-gate?token=${rawToken}&exp=${linkExp}&sig=${sig}`;
     const emailSent = await sendResetEmail(email, resetLink);
+
 
     if (!emailSent) {
       // No point leaving a token nobody can ever use.

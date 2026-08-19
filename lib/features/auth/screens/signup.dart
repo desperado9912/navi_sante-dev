@@ -124,7 +124,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   children: [
                     const SizedBox(height: 16),
 
-                    // ── Top bar ───────────────────────────────────
+                    // Top bar
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -139,7 +139,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // ── Heading ───────────────────────────────────
+                    // Heading
                     BlocBuilder<LanguageCubit, LanguageState>(
                       builder: (context, lang) => Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,7 +167,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // ── Full name ─────────────────────────────────
+                    // Full name
                     BlocBuilder<LanguageCubit, LanguageState>(
                       builder: (context, lang) => AuthTextField(
                         controller: _nameCtrl,
@@ -182,7 +182,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // ── Email ─────────────────────────────────────
+                    // Email
                     BlocBuilder<LanguageCubit, LanguageState>(
                       builder: (context, lang) => AuthTextField(
                         controller: _emailCtrl,
@@ -198,7 +198,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // ── Password ──────────────────────────────────
+                    // Password
                     BlocBuilder<LanguageCubit, LanguageState>(
                       builder: (context, lang) => AuthTextField(
                         controller: _passwordCtrl,
@@ -219,7 +219,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    // ── Password rules ────────────────────────────
+                    // Password rules
                     _PasswordRules(
                       hasMinLength: _hasMinLength,
                       hasUppercase: _hasUppercase,
@@ -227,7 +227,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 22),
 
-                    // ── Sign up button ────────────────────────────
+                    // Sign up button
                     BlocBuilder<AuthCubit, AuthState>(
                       builder: (context, state) {
                         final isLoading = state is AuthLoading;
@@ -272,7 +272,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // ── Login redirect ────────────────────────────
+                    // Login redirect
                     BlocBuilder<LanguageCubit, LanguageState>(
                       builder: (context, lang) => Center(
                         child: RichText(
@@ -307,7 +307,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // ── Terms & privacy ───────────────────────────
+                    // Terms & privacy
                     BlocBuilder<LanguageCubit, LanguageState>(
                       builder: (context, lang) => Center(
                         child: RichText(
@@ -419,7 +419,7 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 }
 
-// ── Password rules widget ──────────────────────────────────────────────────────
+// ── Password rules widget ────────────────────────────────────────────────────
 class _PasswordRules extends StatelessWidget {
   final bool hasMinLength;
   final bool hasUppercase;

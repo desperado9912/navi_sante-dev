@@ -22,3 +22,27 @@ export function generateRawToken(): string {
 // Token REGEX
 // Shared so EF2 and EF3 can't drift on what counts as a valid shape.
 export const TOKEN_FORMAT = /^[0-9a-f]{64}$/;
+
+// HMAC SHA-256 signature generator for tamper-proof URL expiration timestamps
+export async function createHmacSha256(
+  keySecret: string,
+  message: string
+): Promise<string> {
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(keySecret);
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    keyData,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signatureBuffer = await crypto.subtle.sign(
+    "HMAC",
+    cryptoKey,
+    encoder.encode(message)
+  );
+  return Array.from(new Uint8Array(signatureBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}

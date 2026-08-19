@@ -111,5 +111,5 @@ class AuthServices {
   }
 
   // 3. APPLE CLIENT
-  // TODO: sign in / continue with Apple
+  // TODO: sign in with Apple
 }

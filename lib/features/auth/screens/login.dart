@@ -125,11 +125,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     const SizedBox(height: 16),
 
-                    // ── Top bar: logo + language picker ───────────
+                    // Top bar: logo + language picker
                     RepaintBoundary(child: _TopBar()),
                     const SizedBox(height: 20),
 
-                    // ── Welcome heading ───────────────────────────
+                    // Welcome heading
                     RepaintBoundary(
                       child: BlocBuilder<LanguageCubit, LanguageState>(
                         builder: (context, lang) => Column(
@@ -159,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // ── Email field ───────────────────────────────
+                    // Email field
                     BlocBuilder<LanguageCubit, LanguageState>(
                       builder: (context, lang) => AuthTextField(
                         controller: _emailCtrl,
@@ -175,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // ── Password field ────────────────────────────
+                    // Password field
                     BlocBuilder<LanguageCubit, LanguageState>(
                       builder: (context, lang) => AuthTextField(
                         controller: _passwordCtrl,
@@ -196,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 10),
 
-                    // ── Forgot password ───────────────────────────
+                    // Forgot password
                     Align(
                       alignment: Alignment.centerRight,
                       child: BlocBuilder<LanguageCubit, LanguageState>(
@@ -218,7 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 28),
 
-                    // ── Login button ──────────────────────────────
+                    // Login button
                     BlocBuilder<AuthCubit, AuthState>(
                       builder: (context, state) {
                         final isLoading = state is AuthLoading;
@@ -265,7 +265,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // ── Sign up redirect ──────────────────────────
+                    // Sign up redirect
                     BlocBuilder<LanguageCubit, LanguageState>(
                       builder: (context, lang) => Center(
                         child: RichText(
@@ -310,7 +310,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 30),
 
-                    // ── Divider & Social buttons ──────────────────
+                    // Divider & Social buttons
                     RepaintBoundary(
                       child: Column(
                         children: [
@@ -342,7 +342,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 20),
 
-                          // ── Social buttons ───────────────────
+                          // Social buttons
                           BlocBuilder<AuthCubit, AuthState>(
                             builder: (context, state) {
                               final isLoading = state is AuthLoading;
