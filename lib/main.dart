@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
@@ -23,8 +24,10 @@ void main() async {
   await FacilityLocal.init();
   await NavigationSettings.init();
 
-  //Init map cache manager
-  await MapCacheManager.instance.initialize();
+  //Init map cache manager (not supported on web — no temp directory)
+  if (!kIsWeb) {
+    await MapCacheManager.instance.initialize();
+  }
 
   //orientation lock
   await SystemChrome.setPreferredOrientations([
@@ -52,8 +55,10 @@ void main() async {
   debugPrint('[main] GOOGLE_IOS_CLIENT_ID: "$iosClientId"');
 
   await GoogleSignIn.instance.initialize(
-    clientId: Platform.isIOS ? iosClientId : null,
-    serverClientId: webClientId,
+    clientId: kIsWeb
+        ? webClientId                          // Web plugin requires clientId
+        : (Platform.isIOS ? iosClientId : null), // iOS uses iosClientId
+    serverClientId: kIsWeb ? null : webClientId, // Not supported on web
   );
 
   runApp(const NaviSanteApp());

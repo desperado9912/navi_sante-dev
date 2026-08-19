@@ -89,6 +89,7 @@ dependencies:
   shimmer: ^3.0.0
 
   bloc_concurrency: ^0.3.0
+  google_fonts: ^8.2.1
 
 
 

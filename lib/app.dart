@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'features/auth/cubit/auth_cubit.dart';
@@ -42,6 +43,7 @@ class NaviSanteApp extends StatelessWidget {
             colorSchemeSeed: const Color(0xFF2A7D8F),
             useMaterial3: true,
             scaffoldBackgroundColor: const Color(0xFFF5F5F5),
+            textTheme: GoogleFonts.plusJakartaSansTextTheme(),
           ),
           routes: {
             '/login': (_) => const LoginScreen(),

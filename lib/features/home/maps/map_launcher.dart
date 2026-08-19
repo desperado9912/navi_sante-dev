@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/utils/navigation_settings.dart';
 
@@ -59,7 +60,7 @@ class MapLauncher {
         return Uri.parse('waze://?ll=$latitude,$longitude&navigate=yes');
 
       case 'google':
-        if (Platform.isIOS) {
+        if (!kIsWeb && Platform.isIOS) {
           return Uri.parse(
             'comgooglemaps://?daddr=$latitude,$longitude&directionsmode=driving',
           );
@@ -80,7 +81,7 @@ class MapLauncher {
 
       default:
         // Should not happen, but default to platform-appropriate URI
-        if (Platform.isIOS) {
+        if (!kIsWeb && Platform.isIOS) {
           return Uri(
             scheme: 'maps',
             queryParameters: {
@@ -125,6 +126,21 @@ class MapLauncher {
           '&destination=$latitude,$longitude',
         );
     }
+  }
+
+  /// Generates a sharing URL using the user's preferred navigation app web link.
+  static String generateShareUrl({
+    required double latitude,
+    required double longitude,
+    required String facilityName,
+  }) {
+    final String preferredApp = NavigationSettings.getPreferredApp();
+    return _buildWebFallbackUri(
+      latitude: latitude,
+      longitude: longitude,
+      facilityName: facilityName,
+      app: preferredApp,
+    ).toString();
   }
 }
 

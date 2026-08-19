@@ -9,7 +9,6 @@ import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../hospitals/controller/facility_bloc.dart';
-import '../../hospitals/controller/facility_model.dart';
 import '../controller/map_cubit.dart';
 import '../controller/map_cache_manager.dart';
 import 'map_service.dart';
@@ -58,9 +57,12 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
       ),
     );
 
-    // Initialize Hive cache store
-    _hiveCacheStore = MapCacheManager.instance.store;
-
+    // Initialize Hive cache store (skipped on web — no temp directory support)
+    try {
+      _hiveCacheStore = MapCacheManager.instance.store;
+    } catch (_) {
+      _hiveCacheStore = null;
+    }
 
     // Trigger map initialization
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -121,9 +123,7 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
         padding: EdgeInsets.zero,
         content: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12)
-          ),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
           child: Row(
             children: [
               const Icon(Icons.info_outline, color: Colors.white, size: 18),
@@ -279,9 +279,10 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
 
                       final selectedFacilityId =
                           state.interactionState is MapPinSelected
-                          ? (state.interactionState as MapPinSelected)
-                                .facilityId
-                          : null;
+                          ? (state.interactionState as MapPinSelected).facilityId
+                          : state.interactionState is MapDetailSheet
+                              ? (state.interactionState as MapDetailSheet).facilityId
+                              : null;
 
                       final markers = facilityState.facilities.map((facility) {
                         return Marker(
@@ -290,10 +291,20 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
                           height: 41,
                           alignment: Alignment.bottomCenter,
                           child: GestureDetector(
-                            onTap: () {
-                              context.read<MapCubit>().selectPin(
-                                facility.facilityId,
+                            onTap: () async {
+                              context.read<FacilityBloc>().add(
+                                LoadFacilityDetail(facility.facilityId),
                               );
+                              context.read<MapCubit>().expandSheet(facility.facilityId);
+                              await FacilityExpandedSheet.show(
+                                context,
+                                facility.facilityId,
+                                userLat: state.userLocation?.latitude,
+                                userLng: state.userLocation?.longitude,
+                              );
+                              if (context.mounted) {
+                                context.read<MapCubit>().returnToIdle();
+                              }
                             },
                             child: FacilityMapMarker(
                               type: facility.type,
@@ -354,46 +365,6 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
 
   Widget _buildBottomOverlay(BuildContext context, MapState state) {
     final interaction = state.interactionState;
-
-    if (interaction is MapPinSelected) {
-      return BlocBuilder<FacilityBloc, FacilityState>(
-        builder: (context, facilityState) {
-          final facility = facilityState.facilities
-              .cast<FacilityModel?>()
-              .firstWhere(
-                (f) => f?.facilityId == interaction.facilityId,
-                orElse: () => null,
-              );
-
-          if (facility == null) return const SizedBox.shrink();
-
-          return Container(
-            height: 142,
-            alignment: Alignment.center,
-            child: FacilityCardUI(
-              facility: facility,
-              userLat: state.userLocation?.latitude,
-              userLng: state.userLocation?.longitude,
-              onTap: () async {
-                context.read<FacilityBloc>().add(
-                  LoadFacilityDetail(facility.facilityId),
-                );
-                context.read<MapCubit>().expandSheet(facility.facilityId);
-                await FacilityExpandedSheet.show(
-                  context,
-                  facility.facilityId,
-                  userLat: state.userLocation?.latitude,
-                  userLng: state.userLocation?.longitude,
-                );
-                if (context.mounted) {
-                  context.read<MapCubit>().returnToIdle();
-                }
-              },
-            ),
-          );
-        },
-      );
-    }
 
     if (interaction is MapIdle) {
       if (state.userLocation != null) {

@@ -95,8 +95,7 @@ class AuthCubit extends Cubit<AuthState> {
       // signUp returns a 200 if the email exists.
       final identities = user.identities;
       if (identities != null && identities.isEmpty) {
-        emit(const AuthError('An account with this email may already exist.'),
-        );
+        emit(const AuthError('An account with this email may already exist.'));
         return;
       }
 
@@ -109,9 +108,7 @@ class AuthCubit extends Cubit<AuthState> {
       if (errorMsg.toLowerCase().contains('user already registered') ||
           errorMsg.toLowerCase().contains('already exists') ||
           errorMsg.toLowerCase().contains('duplicate')) {
-        emit(
-          const AuthError('An account with this email may already exist.'),
-        );
+        emit(const AuthError('An account with this email may already exist.'));
       } else {
         final mapped = AppErrorMapper.mapAuthError(errorMsg);
         emit(AuthError(mapped.message));
@@ -135,21 +132,30 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> sendPasswordReset({required String email}) async {
     emit(const AuthLoading());
     final normalizedEmail = email.trim().toLowerCase();
+
     try {
-      await Supabase.instance.client.functions.invoke(
-        'request-password-reset',
-        body: {'email': normalizedEmail},
-      );
+      final response = await Supabase.instance.client.functions
+          .invoke('password-reset-request', body: {'email': normalizedEmail})
+          .timeout(const Duration(seconds: 10));
+
+      if (response.status != 200) {
+        throw Exception(
+          'Edge Function status code error: ${response.status}. Response: ${response.data}',
+        );
+      }
 
       await SecurityLogger.log(
         eventType: SecurityLogger.passwordResetRequest,
         email: normalizedEmail,
       );
-
-      emit(const AuthPasswordResetSent());
-    } catch (_) {
-      emit(const AuthPasswordResetSent());
+    } catch (e) {
+      await SecurityLogger.log(
+        eventType: SecurityLogger.passwordResetRequestFailed,
+        email: normalizedEmail,
+        metadata: {'error': e.toString()},
+      );
     }
+    emit(const AuthPasswordResetSent());
   }
 
   // ── Google Sign In ─────────────────────────────────────────────
@@ -166,7 +172,6 @@ class AuthCubit extends Cubit<AuthState> {
       await SecurityLogger.log(eventType: SecurityLogger.loginSuccess);
 
       emit(const AuthSuccess());
-
     } on AuthException catch (e) {
       final mapped = AppErrorMapper.mapAuthError(e.message);
       emit(AuthError(mapped.message));

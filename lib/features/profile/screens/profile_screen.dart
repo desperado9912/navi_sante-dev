@@ -40,10 +40,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _navigationAppCode = 'google';
   String get _navAppLabel {
     switch (_navigationAppCode) {
-      case 'google': return 'Google Maps';
-      case 'apple': return 'Apple Maps';
-      case 'waze': return 'Waze';
-      default: return 'Google Maps';
+      case 'google':
+        return 'Google Maps';
+      case 'apple':
+        return 'Apple Maps';
+      case 'waze':
+        return 'Waze';
+      default:
+        return 'Google Maps';
     }
   }
 
@@ -92,7 +96,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // TODO: propagate to app-level LanguageCubit when localisation is built
     }
   }
-  
+
   //navigation app picker
   Future<void> _openNavigationAppPicker() async {
     final selected = await showModalBottomSheet<String>(
@@ -112,6 +116,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await NavigationSettings.setPreferredApp(selected);
     }
   }
+
   //URL launcher
   Future<void> _launchUrl(String url) async {
     final uri = Uri.parse(url);

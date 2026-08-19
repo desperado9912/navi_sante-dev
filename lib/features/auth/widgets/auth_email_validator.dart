@@ -12,6 +12,7 @@
 
 import 'dart:io';
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:navi_sante/core/performance/isolate_runner.dart';
 
 // Layer 1: RFC-compliant regex format check.
@@ -55,10 +56,12 @@ class AppEmailValidator {
       return 'Disposable email addresses are not allowed.';
     }
 
-    // Layer 3 check
-    final domainReachable = await IsolateRunner.run(_isDomainReachable, domain);
-    if (!domainReachable) {
-      return 'This email domain does not appear to be valid.';
+    // Layer 3 check (DNS reachability — not available on web)
+    if (!kIsWeb) {
+      final domainReachable = await IsolateRunner.run(_isDomainReachable, domain);
+      if (!domainReachable) {
+        return 'This email domain does not appear to be valid.';
+      }
     }
     return null;
   }

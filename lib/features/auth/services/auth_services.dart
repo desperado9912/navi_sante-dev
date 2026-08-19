@@ -37,6 +37,7 @@ class AuthServices {
     return await _supabase.auth.signUp(
       email: email.toLowerCase(),
       password: password,
+      emailRedirectTo: 'io.supabase.navisante://login-callback',
       data: {'full_name': fullName, 'custom_display_name': fullName},
     );
   }

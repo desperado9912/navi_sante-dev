@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -128,20 +129,34 @@ class MapService {
         return;
       }
 
-      final LocationSettings settings = Platform.isAndroid
-          ? AndroidSettings(
+      final LocationSettings settings;
+
+      // Web
+      if (kIsWeb) {
+        settings = const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: MapConfig.trackingDistanceFilter,
+        );
+
+        // Android
+      } else if (Platform.isAndroid) {
+        settings = AndroidSettings(
               accuracy: LocationAccuracy.high,
               distanceFilter: MapConfig.trackingDistanceFilter,
               // Minimum interval between updates — prevents battery drain
               intervalDuration: const Duration(seconds: 1),
-            )
-          : AppleSettings(
+            );
+
+        // iOS
+      } else {
+        settings = AppleSettings(
               accuracy: LocationAccuracy.bestForNavigation,
               distanceFilter: MapConfig.trackingDistanceFilter,
               activityType: ActivityType.fitness,
               // Don't let iOS auto-pause tracking when the user is still
               pauseLocationUpdatesAutomatically: false,
             );
+      }
 
       await for (final Position position in Geolocator.getPositionStream(
         locationSettings: settings,

@@ -17,6 +17,7 @@ class SecurityLogger {
   static const signupSuccess = 'signup_success';
   static const signupFailure = 'signup_failure';
   static const passwordResetRequest = 'password_reset_requested';
+  static const passwordResetRequestFailed = 'password_reset_request_failed';
   static const emailNotVerified = 'login_email_not_verified';
   static const disposableEmail = 'signup_disposable_email_blocked';
   static const tokenRefreshed = 'token_refreshed';

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../hospitals/controller/facility_bloc.dart';
 import '../../hospitals/controller/facility_model.dart';
 import '../../hospitals/widgets/facility_details_screen.dart';
+import 'package:share_plus/share_plus.dart';
 import '../maps/map_launcher.dart';
 
 // FACILITY EXPANDED BOTTOM SHEET
@@ -54,8 +55,8 @@ class FacilityExpandedSheet extends StatefulWidget {
 class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
   // Snap positions — must mirror the DraggableScrollableSheet config.
   static const double _minSize = 0.00;
-  static const double _initialSize = 0.40;
-  static const double _maxSize = 0.68;
+  static const double _initialSize = 0.55;
+  static const double _maxSize = 0.70;
   static const List<double> _snapSizes = [_initialSize, _maxSize];
 
   final DraggableScrollableController _sheetController =
@@ -100,9 +101,6 @@ class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
     );
   }
 
-  // TODO: IN FUTURE SPRINT ADD A SHARE BUTTON TO LEFT + CLOSE CARD (X) ON RIGHT
-  // TO HEADER OF BUTTOM SHEET ALLONGSIDE DRAG HANDLE IN MIDLLE LIKE APPLE MAPS.
-
   // Sheet UI Build Method
   @override
   Widget build(BuildContext context) {
@@ -123,23 +121,59 @@ class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Drag handle
+              // Drag handle and Header Buttons
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onVerticalDragUpdate: _onHandleDragUpdate,
                 onVerticalDragEnd: _onHandleDragEnd,
                 child: SizedBox(
                   width: double.infinity,
-                  height: 28, // generous hit-target height
-                  child: Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE0E0E0),
-                        borderRadius: BorderRadius.circular(2),
+                  height: 40, // generous hit-target height for buttons
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Drag handle in the center
+                      Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE0E0E0),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
-                    ),
+                      // Share button on the left
+                      Positioned(
+                        left: 12,
+                        child: BlocBuilder<FacilityBloc, FacilityState>(
+                          builder: (context, state) {
+                            final detail = state.currentDetail;
+                            if (detail == null) return const SizedBox.shrink();
+
+                            return IconButton(
+                              icon: const Icon(Icons.ios_share_rounded, size: 32, color: Color(0xFF888780)),
+                              onPressed: () {
+                                final url = MapLauncher.generateShareUrl(
+                                  latitude: detail.latitude,
+                                  longitude: detail.longitude,
+                                  facilityName: detail.name,
+                                );
+                                SharePlus.instance.share(
+                                  ShareParams(text: '${detail.name}\n$url'),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                      // Close button on the right
+                      Positioned(
+                        right: 12,
+                        child: IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 32, color: Color(0xFF888780)),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

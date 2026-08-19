@@ -25,7 +25,8 @@ GoogleService-Info.plist
 migrate_working_dir/
 
 #folders
-supabase/
+supabase/.temp
+supabase/functions/.env
 node_modules
 
 # IntelliJ related

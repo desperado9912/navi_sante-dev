@@ -1,11 +1,12 @@
 import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:hive_flutter/hive_flutter.dart';
 
 class NavigationSettings {
   static const String _boxName = 'app_settings';
   static const String _navAppKey = 'preferred_navigation_app';
 
-  /// Initializes the settings box. Should be called during app startup if needed, 
+  /// Initializes the settings box. Should be called during app startup if needed,
   /// but Hive.openBox can also be awaited on first access.
   static Future<void> init() async {
     if (!Hive.isBoxOpen(_boxName)) {
@@ -13,9 +14,9 @@ class NavigationSettings {
     }
   }
 
-  /// Platform-aware default: Apple Maps on iOS, Google Maps on Android.
+  /// Platform-aware default: Apple Maps on iOS, Google Maps on Android/Web.
   static String get _platformDefault =>
-      Platform.isIOS ? 'apple' : 'google';
+      (!kIsWeb && Platform.isIOS) ? 'apple' : 'google';
 
   /// Returns the stored navigation app code.
   /// Falls back to the platform default (apple on iOS, google on Android).

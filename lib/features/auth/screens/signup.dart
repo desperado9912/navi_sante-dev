@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:navi_sante/features/auth/screens/login.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/language_cubit.dart';
 import '../widgets/auth_text_field.dart';
@@ -401,8 +402,11 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
             onPressed: () {
               context.read<AuthCubit>().reset();
-              Navigator.of(context).pop(); // close dialog
-              Navigator.of(context).pop(); // redirect to login page
+              final navigator = Navigator.of(context, rootNavigator: true);
+              navigator.pop(); // close dialog
+              navigator.pushReplacement(
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+              );
             },
             child: const Text(
               'Go to Login',

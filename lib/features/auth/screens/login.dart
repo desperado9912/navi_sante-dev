@@ -93,7 +93,13 @@ class _LoginScreenState extends State<LoginScreen> {
       listener: (context, state) {
         // AuthGate handles routing based on current session state.
         if (state is AuthEmailNotVerified) {
-          _showEmailVerificationDialog(context);
+          AppFeedback.show(
+            context,
+            type: FeedbackType.error,
+            message:
+                'Please verify your email before logging in. '
+                'Check your inbox for the verification link.',
+          );
           context.read<AuthCubit>().reset();
         }
         if (state is AuthError) {
@@ -315,7 +321,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: Divider(color: Color(0xFFCCCCCC)),
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
                                   child: Text(
                                     lang.isEnglish
                                         ? 'Or Continue With'
@@ -386,78 +394,6 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
-  // ── Email verification dialog ──────────────────────────────────
-  void _showEmailVerificationDialog(BuildContext context) {
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-
-    if (isIOS) {
-      showCupertinoDialog(
-        context: context,
-        builder: (ctx) => CupertinoAlertDialog(
-          title: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.mark_email_unread_outlined,
-                  color: Color(0xFFE67E22), size: 22),
-              SizedBox(width: 8),
-              Expanded(child: Text('Verify Email')),
-            ],
-          ),
-          content: const Text(
-            'Please verify your email before attempting login. '
-            'Check your inbox for the verification link.',
-          ),
-          actions: [
-            CupertinoDialogAction(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.pop(ctx);
-                context.read<AuthCubit>().reset();
-              },
-            ),
-          ],
-        ),
-      );
-    } else {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: const Row(
-            children: [
-              Icon(Icons.mark_email_unread_outlined,
-                  color: Color(0xFFE67E22), size: 24),
-              SizedBox(width: 10),
-              Text('Verify Email'),
-            ],
-          ),
-          content: const Text(
-            'Please verify your email before attempting login. '
-            'Check your inbox for the verification link.',
-            style: TextStyle(fontSize: 14, color: Color(0xFF5F6368)),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                context.read<AuthCubit>().reset();
-              },
-              child: const Text(
-                'OK',
-                style: TextStyle(
-                  color: Color(0xFF1A1A1A),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-  }
 }
 
 // ── Internal sub-widgets ───────────────────────────────────────────────────────
@@ -472,7 +408,7 @@ class _TopBar extends StatelessWidget {
           'assets/navisanteLogoSmall.png',
           height: 20,
           fit: BoxFit.contain,
-          ),
+        ),
         LanguagePicker(),
       ],
     );
