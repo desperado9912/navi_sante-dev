@@ -206,8 +206,11 @@ class _HospitalsState extends State<Hospitals> {
   @override
   void initState() {
     super.initState();
-    context.read<FacilityBloc>().add(LoadFacilities());
-    context.read<FacilityBloc>().add(LoadRecentlyViewed());
+    final bloc = context.read<FacilityBloc>();
+    if (!bloc.state.hasFacilities) {
+      bloc.add(LoadFacilities());
+    }
+    bloc.add(LoadRecentlyViewed());
     // Derive service options from cached facilities after the first frame
     // so the Bloc has time to emit cached data on cold start.
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadServices());
@@ -230,18 +233,27 @@ class _HospitalsState extends State<Hospitals> {
     } catch (_) {}
   }
 
-  // Debounced search — fires 500ms after the user stops typing.
+  // Debounced search — fires after the user stops typing.
   void _onSearchChanged(String query) {
     _debounceSearchTimer?.cancel();
-    _debounceSearchTimer = Timer(const Duration(milliseconds: 500), () {
+    _debounceSearchTimer = Timer(const Duration(milliseconds: 400), () {
       _dispatchSearch(query);
     });
   }
 
   void _dispatchSearch(String query) {
+    final trimmed = query.trim();
+    final hasFilters =
+        _serviceFilter != null ||
+        _cityFilter != null ||
+        _priceRangeFilter != null;
+    if (trimmed.isEmpty && !hasFilters) {
+      context.read<FacilityBloc>().add(ClearSearch());
+      return;
+    }
     context.read<FacilityBloc>().add(
       SearchFacilities(
-        query: query,
+        query: trimmed,
         serviceFilter: _serviceFilter,
         cityFilter: _cityFilter,
         priceRangeFilter: _priceRangeFilter,
@@ -340,6 +352,11 @@ class _ResultsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<FacilityBloc, FacilityState>(
+      buildWhen: (prev, curr) =>
+          prev.searchStatus != curr.searchStatus ||
+          prev.searchResults != curr.searchResults ||
+          prev.facilities != curr.facilities ||
+          prev.facilitiesStatus != curr.facilitiesStatus,
       builder: (context, state) {
         final isSearching = state.isSearchActive;
 

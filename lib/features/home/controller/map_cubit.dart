@@ -175,6 +175,8 @@ class MapCubit extends Cubit<MapState> {
   /// Uses last-known position for instant first render, then refines
   /// with a fresh GPS fix. Fallback to Yaounde on failure or denied access.
   Future<void> initMap() async {
+    if (_locationStreamSub != null) return;
+
     emit(
       MapLoadingState(
         center: state.center,

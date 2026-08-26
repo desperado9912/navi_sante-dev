@@ -219,6 +219,8 @@ class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
                                 height: 170,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
+                                memCacheWidth: 800,
+                                maxWidthDiskCache: 1200,
                                 placeholder: (context, url) => _Placeholder(
                                   type: detail.type,
                                   height: 170,

@@ -49,6 +49,8 @@ class _DetailImageCarouselState extends State<DetailImageCarousel> {
               imageUrl: widget.images[index].url,
               fit: BoxFit.cover,
               width: double.infinity,
+              memCacheWidth: 800,
+              maxWidthDiskCache: 1200,
               placeholder: (_, _) => _ImagePlaceholder(type: widget.fallbackType),
               errorWidget: (_, _, _) => _ImagePlaceholder(type: widget.fallbackType),
             );

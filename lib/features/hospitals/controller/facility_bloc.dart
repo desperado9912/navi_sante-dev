@@ -544,7 +544,7 @@ class FacilityBloc extends Bloc<FacilityEvent, FacilityState> {
       timer?.cancel();
     }
     _bookmarkTimers.clear();
-
+    _repository.cancelPendingSearch();
     await _repository.clearBookmarkIds();
     emit(
       state.copyWith(
@@ -561,6 +561,7 @@ class FacilityBloc extends Bloc<FacilityEvent, FacilityState> {
       timer?.cancel();
     }
     _bookmarkTimers.clear();
+    _repository.cancelPendingSearch();
     return super.close();
   }
 }

@@ -51,6 +51,7 @@ class HeaderSearchState extends State<HeaderSearch> {
   @override
   void dispose() {
     _debounce?.cancel();
+    _remoteSearchSeq++;
     _focusNode.removeListener(_onFocusChanged);
     _controller.dispose();
     _focusNode.dispose();
@@ -66,6 +67,7 @@ class HeaderSearchState extends State<HeaderSearch> {
     final String query = raw.trim();
 
     if (query.length < _minQueryLength) {
+      _invalidateRemoteSearch();
       setState(() => _suggestions = const []);
       return;
     }
@@ -85,15 +87,25 @@ class HeaderSearchState extends State<HeaderSearch> {
       _suggestions = localMatches;
     });
 
-    // 2. Database direct query fallback / guard
+    // 2. Remote fallback only for queries long enough to justify the RPC.
+    if (query.length < _minRemoteQueryLength) {
+      _invalidateRemoteSearch();
+      return;
+    }
+
     _debounce = Timer(_debounceDelay, () async {
       if (!mounted) return;
+      final int seq = ++_remoteSearchSeq;
 
       try {
         final repo = context.read<FacilityRepository>();
         final remoteResults = await repo.searchFacilities(query: query);
 
-        if (!mounted || _controller.text.trim() != query) return;
+        if (!mounted ||
+            seq != _remoteSearchSeq ||
+            _controller.text.trim() != query) {
+          return;
+        }
 
         // Merge remote results with local suggestions (deduplicate by facilityId)
         final Map<String, FacilityModel> mergedMap = {};
@@ -111,13 +123,21 @@ class HeaderSearchState extends State<HeaderSearch> {
           _suggestions = mergedMap.values.take(_maxSuggestions).toList();
         });
       } catch (_) {
-        // Fallback gracefully to existing local matches
+        // Fallback gracefully to existing local matches. No automatic retry.
       }
     });
   }
 
+  void _invalidateRemoteSearch() {
+    _remoteSearchSeq++;
+    try {
+      context.read<FacilityRepository>().cancelPendingSearch();
+    } catch (_) {}
+  }
+
   void clearSearch({bool notify = true}) {
     _debounce?.cancel();
+    _invalidateRemoteSearch();
     _controller.clear();
     _focusNode.unfocus();
     setState(() => _suggestions = const []);
@@ -128,6 +148,7 @@ class HeaderSearchState extends State<HeaderSearch> {
 
   void _handleSuggestionTap(FacilityModel facility) {
     _debounce?.cancel();
+    _remoteSearchSeq++;
     _focusNode.unfocus();
     _controller.text = facility.name;
     setState(() => _suggestions = const []);

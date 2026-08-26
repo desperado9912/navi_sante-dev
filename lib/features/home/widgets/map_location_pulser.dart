@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import '../controller/map_cubit.dart';
 
 /// Linearly interpolates between two [LatLng] points. Good enough for the
 /// short distances covered between consecutive GPS fixes (metres, not
@@ -22,28 +24,30 @@ class LatLngTween extends Tween<LatLng> {
 }
 
 /// Renders the user's live location as a pulsing marker on the map.
+/// Listens to [MapCubit] itself so GPS updates do not rebuild the map screen.
 class SmoothUserLocationLayer extends StatelessWidget {
-  final LatLng? location;
-
-  const SmoothUserLocationLayer({
-    super.key,
-    required this.location,
-  });
+  const SmoothUserLocationLayer({super.key});
 
   @override
   Widget build(BuildContext context) {
-    if (location == null) return const SizedBox.shrink();
+    return BlocBuilder<MapCubit, MapState>(
+      buildWhen: (prev, curr) => prev.userLocation != curr.userLocation,
+      builder: (context, state) {
+        final LatLng? location = state.userLocation;
+        if (location == null) return const SizedBox.shrink();
 
-    return MarkerLayer(
-      markers: [
-        Marker(
-          point: location!,
-          width: 60,
-          height: 60,
-          alignment: Alignment.center,
-          child: const RepaintBoundary(child: _PulsingUserLocationMarker()),
-        ),
-      ],
+        return MarkerLayer(
+          markers: [
+            Marker(
+              point: location,
+              width: 60,
+              height: 60,
+              alignment: Alignment.center,
+              child: const RepaintBoundary(child: _PulsingUserLocationMarker()),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -20,9 +20,11 @@ class _SavedFacilitiesState extends State<SavedFacilities> {
     super.initState();
     MemoryLeakTracker.logInit(this);
 
-    // Trigger load if not loaded yet
-    context.read<FacilityBloc>().add(LoadFacilities());
-    context.read<FacilityBloc>().add(LoadBookmarks());
+    final bloc = context.read<FacilityBloc>();
+    if (!bloc.state.hasFacilities) {
+      bloc.add(LoadFacilities());
+    }
+    bloc.add(LoadBookmarks());
   }
 
   @override

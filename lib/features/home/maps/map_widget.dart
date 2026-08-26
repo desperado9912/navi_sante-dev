@@ -342,65 +342,52 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
           );
         }
       },
-      child: BlocBuilder<MapCubit, MapState>(
-        buildWhen: (prev, current) =>
-            prev.zoom != current.zoom ||
-            prev.center != current.center ||
-            prev.userLocation != current.userLocation ||
-            prev.interactionState != current.interactionState ||
-            prev.animateToState != current.animateToState ||
-            current is MapErrorState,
-        builder: (context, state) {
-          return Stack(
+      child: Stack(
+        children: [
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: MapConfig.yaoundeLatLng,
+              initialZoom: MapConfig.initialZoom,
+              minZoom: MapConfig.minZoom,
+              maxZoom: MapConfig.maxZoom,
+              keepAlive: true,
+              backgroundColor: const Color(0xFFF4F2ED),
+              onPositionChanged: (camera, hasGesture) {
+                if (hasGesture) {
+                  context.read<MapCubit>().updateViewport(
+                    camera.center,
+                    camera.zoom,
+                  );
+                }
+              },
+              onMapEvent: (event) {
+                if (event is MapEventMoveEnd ||
+                    event is MapEventFlingAnimationEnd) {
+                  _preFetchService?.schedule(
+                    zoom: event.camera.zoom,
+                    visibleBounds: event.camera.visibleBounds,
+                    useRetina: MediaQuery.devicePixelRatioOf(context) > 1.5,
+                  );
+                }
+              },
+              onTap: (tapPosition, point) {
+                setState(() {
+                  _selectedFacility = null;
+                });
+                _headerSearchKey.currentState?.clearSearch(notify: false);
+                context.read<MapCubit>().returnToIdle();
+                context.read<FacilityBloc>().add(ClearSearch());
+              },
+            ),
             children: [
-              // Main Map Layer
-              FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: state.center,
-                  initialZoom: state.zoom,
-                  minZoom: MapConfig.minZoom,
-                  maxZoom: MapConfig.maxZoom,
-                  keepAlive: true,
-                  //Matched the carto tone rather than the white flash (see to delete if not needed)
-                  backgroundColor: const Color(0xFFF4F2ED),
-                  onPositionChanged: (camera, hasGesture) {
-                    if (hasGesture) {
-                      context.read<MapCubit>().updateViewport(
-                        camera.center,
-                        camera.zoom,
-                      );
-                    }
-                  },
-                  onMapEvent: (event) {
-                    if (event is MapEventMoveEnd ||
-                        event is MapEventFlingAnimationEnd) {
-                      _preFetchService?.schedule(
-                        zoom: event.camera.zoom,
-                        visibleBounds: event.camera.visibleBounds,
-                        useRetina: MediaQuery.devicePixelRatioOf(context) > 1.5,
-                      );
-                    }
-                  },
-                  onTap: (tapPosition, point) {
-                    setState(() {
-                      _selectedFacility = null;
-                    });
-                    _headerSearchKey.currentState?.clearSearch(notify: false);
-                    context.read<MapCubit>().returnToIdle();
-                    context.read<FacilityBloc>().add(ClearSearch());
-                  },
-                ),
-
-                // Tile Layer: Carto Light styling with caching
-                children: [
-                  ..._buildTileLayers(context),
-
-                  //Smoothly-animate user position live marker
-                  SmoothUserLocationLayer(location: state.userLocation),
-
-                  // Facility Map Pins
-                  BlocBuilder<FacilityBloc, FacilityState>(
+              ..._buildTileLayers(context),
+              const SmoothUserLocationLayer(),
+              BlocBuilder<MapCubit, MapState>(
+                buildWhen: (prev, curr) =>
+                    prev.interactionState != curr.interactionState,
+                builder: (context, mapState) {
+                  return BlocBuilder<FacilityBloc, FacilityState>(
                     buildWhen: (prev, curr) =>
                         prev.facilities != curr.facilities,
                     builder: (context, facilityState) {
@@ -418,11 +405,11 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
                       }
 
                       final selectedFacilityId =
-                          state.interactionState is MapPinSelected
-                          ? (state.interactionState as MapPinSelected)
+                          mapState.interactionState is MapPinSelected
+                          ? (mapState.interactionState as MapPinSelected)
                                 .facilityId
-                          : state.interactionState is MapDetailSheet
-                          ? (state.interactionState as MapDetailSheet)
+                          : mapState.interactionState is MapDetailSheet
+                          ? (mapState.interactionState as MapDetailSheet)
                                 .facilityId
                           : null;
 
@@ -454,8 +441,6 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
                         );
                       }).toList();
 
-                      // MarkerClusterLayerWidget groups nearby pins at low zoom.
-                      // At higher zoom they separate back into individual pins.
                       return MarkerClusterLayerWidget(
                         options: MarkerClusterLayerOptions(
                           maxClusterRadius: 45,
@@ -482,54 +467,56 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
                         ),
                       );
                     },
-                  ),
-                ],
-              ),
-
-              // Floating Search Bar
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: HeaderSearch(
-                  key: _headerSearchKey,
-                  onFacilitySelected: (facility) {
-                    setState(() {
-                      _selectedFacility = facility;
-                    });
-                    _animatedMapMove(
-                      LatLng(facility.latitude, facility.longitude),
-                      15.5,
-                    );
-                    context.read<MapCubit>().selectPin(facility.facilityId);
-                  },
-                  onClear: () {
-                    setState(() {
-                      _selectedFacility = null;
-                    });
-                    context.read<MapCubit>().returnToIdle();
-                    context.read<FacilityBloc>().add(ClearSearch());
-                  },
-                ),
-              ),
-
-              // Map Control Panel Overlay
-              Positioned(
-                right: 20,
-                top: controlsTopOffset, // Positioned below search bar
-                child: const MapControls(),
-              ),
-
-              // Overlays (Carousel card) based on MapInteractionState
-              Positioned(
-                bottom: MediaQuery.of(context).padding.bottom + 12,
-                left: 0,
-                right: 0,
-                child: _buildBottomOverlay(context, state),
+                  );
+                },
               ),
             ],
-          );
-        },
+          ),
+          // Floating Search Bar
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: HeaderSearch(
+              key: _headerSearchKey,
+              onFacilitySelected: (facility) {
+                setState(() {
+                  _selectedFacility = facility;
+                });
+                _animatedMapMove(
+                  LatLng(facility.latitude, facility.longitude),
+                  15.5,
+                );
+                context.read<MapCubit>().selectPin(facility.facilityId);
+              },
+              onClear: () {
+                setState(() {
+                  _selectedFacility = null;
+                });
+                context.read<MapCubit>().returnToIdle();
+                context.read<FacilityBloc>().add(ClearSearch());
+              },
+            ),
+          ),
+          // Map Controls Panel
+          Positioned(
+            right: 20,
+            top: controlsTopOffset,
+            child: const MapControls(),
+          ),
+          // Overlays (Carousel card)
+          Positioned(
+            bottom: MediaQuery.of(context).padding.bottom + 12,
+            left: 0,
+            right: 0,
+            child: BlocBuilder<MapCubit, MapState>(
+              buildWhen: (prev, curr) =>
+                  prev.interactionState != curr.interactionState ||
+                  (prev.userLocation == null) != (curr.userLocation == null),
+              builder: (context, state) => _buildBottomOverlay(context, state),
+            ),
+          ),
+        ],
       ),
     );
   }

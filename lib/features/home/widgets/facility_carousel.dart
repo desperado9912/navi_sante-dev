@@ -144,8 +144,8 @@ class FacilityCardUI extends StatelessWidget {
                     ? CachedNetworkImage(
                         imageUrl: facility.primaryImage!,
                         fit: BoxFit.cover,
-
-                        // Shimmer-like placeholder while image loads.
+                        memCacheWidth: 360,
+                        maxWidthDiskCache: 540,
                         placeholder: (_, _) =>
                             _FacilityPlaceholder(type: facility.type),
                         errorWidget: (_, _, _) =>

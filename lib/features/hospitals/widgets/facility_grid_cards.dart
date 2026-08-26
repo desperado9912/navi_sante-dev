@@ -160,6 +160,8 @@ class _CardImage extends StatelessWidget {
                 ? CachedNetworkImage(
                     imageUrl: facility.primaryImage!,
                     fit: BoxFit.cover,
+                    memCacheWidth: 480,
+                    maxWidthDiskCache: 720,
                     placeholder: (_, _) => _Placeholder(type: facility.type),
                     errorWidget: (_, _, _) => _Placeholder(type: facility.type),
                   )

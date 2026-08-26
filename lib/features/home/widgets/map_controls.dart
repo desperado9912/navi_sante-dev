@@ -14,6 +14,8 @@ class MapControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<MapCubit, MapState>(
+      buildWhen: (prev, curr) =>
+          (prev is MapLoadingState) != (curr is MapLoadingState),
       builder: (context, state) {
         final mapCubit = context.read<MapCubit>();
         final bool isLoading = state is MapLoadingState;
