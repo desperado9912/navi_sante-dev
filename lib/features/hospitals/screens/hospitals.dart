@@ -48,13 +48,13 @@ class _ScreenHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Padding(
-      padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: EdgeInsets.fromLTRB(22, 8, 22, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Find health facilities around you',
-            style: TextStyle(fontSize: 13, color: Colors.grey),
+            style: TextStyle(fontSize: 13, color: Color(0xFF5F6368)),
           ),
         ],
       ),
@@ -80,7 +80,7 @@ class _SearchField extends StatelessWidget {
       controller: controller,
       onChanged: onChanged,
       decoration: InputDecoration(
-        hintText: 'Search hospitals, clinics or pharma...',
+        hintText: 'hospitals, clinics or pharmacies',
         prefixIcon: const Icon(Icons.search_rounded),
         // Clear (X) button only shows once there's text to clear.
         suffixIcon: ValueListenableBuilder<TextEditingValue>(
@@ -136,7 +136,7 @@ class _RecentHistorySection extends StatelessWidget {
         if (entries.isEmpty) return const SizedBox.shrink();
 
         return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          padding: const EdgeInsets.fromLTRB(22, 16, 22, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -154,7 +154,7 @@ class _RecentHistorySection extends StatelessWidget {
                       'Clear all',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF00897B),
+                        color: Color(0xFF2A7D8F),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -292,7 +292,7 @@ class _HospitalsState extends State<Hospitals> {
               // ── Search bar ──────────────────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(22, 12, 22, 0),
                   child: _SearchField(
                     controller: _searchController,
                     onChanged: _onSearchChanged,
@@ -307,7 +307,7 @@ class _HospitalsState extends State<Hospitals> {
               // ── Filter bar ──────────────────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(22, 12, 22, 0),
                   child: FacilityFilterBar(
                     serviceOptions: _serviceOptions,
                     onApply: _onFilterApply,
@@ -353,7 +353,7 @@ class _ResultsGrid extends StatelessWidget {
             child: Center(
               child: Padding(
                 padding: EdgeInsets.only(top: 40),
-                child: CircularProgressIndicator(color: Color(0xFF00897B)),
+                child: CircularProgressIndicator(color: Color(0xFF2A7D8F)),
               ),
             ),
           );
@@ -392,12 +392,12 @@ class _ResultsGrid extends StatelessWidget {
 
         // ── Section title + grid ────────────────────────────────────────────
         return SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 22),
           sliver: SliverMainAxisGroup(
             slivers: [
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.only(bottom: 12),
                   child: Text(
                     isSearching
                         ? 'Search Results (${displayList.length})'
@@ -412,7 +412,7 @@ class _ResultsGrid extends StatelessWidget {
               SliverGrid(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  mainAxisSpacing: 12,
+                  mainAxisSpacing: 16,
                   crossAxisSpacing: 12,
                   childAspectRatio: 0.62,
                 ),

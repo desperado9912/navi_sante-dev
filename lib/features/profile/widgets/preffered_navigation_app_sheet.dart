@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:navi_sante/core/utils/app_bottom_sheet.dart';
 
 // Bottom sheet in settings tiles for users to select preffered navigation app
@@ -36,7 +37,7 @@ class NavigationAppBottomSheet extends StatelessWidget {
             _NavAppOption(
               label: 'Google Maps',
               code: 'google',
-              assetPath: 'assets/google_maps_logo.png',
+              assetPath: 'assets/google_maps_logo.svg',
               isSelected: currentCode == 'google',
               onTap: () => Navigator.pop(context, 'google'),
             ),
@@ -56,7 +57,7 @@ class NavigationAppBottomSheet extends StatelessWidget {
             _NavAppOption(
               label: 'Waze',
               code: 'waze',
-              assetPath: 'assets/waze_logo.png',
+              assetPath: 'assets/waze_logo.svg',
               isSelected: currentCode == 'waze',
               onTap: () => Navigator.pop(context, 'waze'),
             ),
@@ -103,24 +104,40 @@ class _NavAppOption extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Platform logo from PNG asset
+            // Platform logo from SVG or PNG asset
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
-              child: Image.asset(
-                assetPath,
-                width: 24,
-                height: 24,
-                fit: BoxFit.contain,
+              child: assetPath.endsWith('.svg')
+              // Support svg
+                  ? SvgPicture.asset(
+                      assetPath,
+                      width: 24,
+                      height: 24,
+                      fit: BoxFit.contain,
+                      placeholderBuilder: (context) => Icon(
+                        Icons.map_rounded,
+                        size: 24,
+                        color: isSelected 
+                            ? const Color(0xFF2A7D8F) 
+                            : const Color(0xFF1A1A1A),
+                      ),
+                    )
+                    // Support PNG
+                  : Image.asset(
+                      assetPath,
+                      width: 24,
+                      height: 24,
+                      fit: BoxFit.contain,
 
-                // fallback icon if logo is not found or displayed
-                errorBuilder: (context, error, stackTrace) => Icon(
-                  Icons.map_rounded,
-                  size: 24,
-                  color: isSelected 
-                      ? const Color(0xFF2A7D8F) 
-                      : const Color(0xFF1A1A1A),
-                ),
-              ),
+                      // fallback icon if logo is not found or displayed
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.map_rounded,
+                        size: 24,
+                        color: isSelected 
+                            ? const Color(0xFF2A7D8F) 
+                            : const Color(0xFF1A1A1A),
+                      ),
+                    ),
             ),
             const SizedBox(width: 12),
             Expanded(

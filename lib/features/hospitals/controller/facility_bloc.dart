@@ -82,6 +82,15 @@ class ToggleBookmark extends FacilityEvent {
 /// Clear all bookmark state (called on sign-out).
 class ClearBookmarks extends FacilityEvent {}
 
+/// Internal event — dispatched by a debounce timer after [ToggleBookmark].
+/// Performs the actual Supabase write and silently reverts on failure.
+/// Not intended for external use.
+class _CommitBookmark extends FacilityEvent {
+  final String facilityId;
+  final bool shouldBeBookmarked;
+  _CommitBookmark(this.facilityId, {required this.shouldBeBookmarked});
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────────────────────────────────────────
@@ -196,17 +205,22 @@ class FacilityState {
 class FacilityBloc extends Bloc<FacilityEvent, FacilityState> {
   final FacilityRepository _repository;
 
+  /// Per-facility debounce timers for bookmark writes.
+  /// Rapid taps cancel/restart the timer so only the final desired state
+  /// is committed to Supabase.
+  final Map<String, Timer?> _bookmarkTimers = {};
+
   FacilityBloc({required FacilityRepository repository})
     : _repository = repository,
       super(const FacilityState()) {
     // Facility List
-    on<LoadFacilities>(_onLoadFacilities);
+    on<LoadFacilities>(_onLoadFacilities, transformer: droppable());
     on<LoadHighlights>(_onLoadHighlights);
-    // Search
-    on<SearchFacilities>(_onSearchFacilities);
+    // Search — restartable so a newer query never lets a stale emit win.
+    on<SearchFacilities>(_onSearchFacilities, transformer: restartable());
     on<ClearSearch>(_onClearSearch);
-    // Detail
-    on<LoadFacilityDetail>(_onLoadFacilityDetail);
+    // Detail — latest selected facility wins; skip no-op in the handler.
+    on<LoadFacilityDetail>(_onLoadFacilityDetail, transformer: restartable());
     // Recently Viewed
     on<LoadRecentlyViewed>(_onLoadRecentlyViewed);
     on<AddRecentlyViewed>(_onAddRecentlyViewed);
@@ -214,7 +228,8 @@ class FacilityBloc extends Bloc<FacilityEvent, FacilityState> {
     // Bookmarks
     on<LoadBookmarks>(_onLoadBookmarks);
     on<RefreshBookmarks>(_onRefreshBookmarks, transformer: droppable());
-    on<ToggleBookmark>(_onToggleBookmark, transformer: sequential());
+    on<ToggleBookmark>(_onToggleBookmark);
+    on<_CommitBookmark>(_onCommitBookmark, transformer: sequential());
     on<ClearBookmarks>(_onClearBookmarks);
   }
 
@@ -269,6 +284,7 @@ class FacilityBloc extends Bloc<FacilityEvent, FacilityState> {
         event.minRating > 0;
 
     if (query.isEmpty && !hasActiveFilters) {
+      _repository.cancelPendingSearch();
       emit(
         state.copyWith(
           searchResults: [],
@@ -315,6 +331,7 @@ class FacilityBloc extends Bloc<FacilityEvent, FacilityState> {
     ClearSearch event,
     Emitter<FacilityState> emit,
   ) async {
+    _repository.cancelPendingSearch();
     emit(
       state.copyWith(
         searchResults: [],
@@ -330,6 +347,12 @@ class FacilityBloc extends Bloc<FacilityEvent, FacilityState> {
     LoadFacilityDetail event,
     Emitter<FacilityState> emit,
   ) async {
+    if (state.currentDetail?.facilityId == event.facilityId &&
+        state.detailStatus == FacilityStatus.loaded) {
+      await _repository.saveRecentlyViewed(event.facilityId);
+      return;
+    }
+
     emit(
       state.copyWith(detailStatus: FacilityStatus.loading, currentDetail: null),
     );
@@ -436,41 +459,76 @@ class FacilityBloc extends Bloc<FacilityEvent, FacilityState> {
     }
   }
 
-  // Bookmark toggle(Getter from [bookmarIds])
-  // Update the UI immediately, before sync to database.
-  // Reverts automatically on sync or network failure.
+  // ── Bookmark toggle — optimistic emit + debounced commit ──────────────
+  // Instant icon update on tap. The actual Supabase write is deferred by
+  // 300ms via a per-facility timer. Rapid taps cancel/restart the timer so
+  // only the *final* desired state gets committed — no flip-flop flicker.
   Future<void> _onToggleBookmark(
     ToggleBookmark event,
     Emitter<FacilityState> emit,
   ) async {
     final facilityId = event.facilityId;
     final wasBookmarked = state.bookmarkedIds.contains(facilityId);
+    final shouldBeBookmarked = !wasBookmarked;
+
+    // 1. Optimistic update — icon flips instantly.
     final optimisticIds = Set<String>.from(state.bookmarkedIds);
-
-    if (wasBookmarked) {
-      optimisticIds.remove(facilityId);
-    } else {
+    if (shouldBeBookmarked) {
       optimisticIds.add(facilityId);
+    } else {
+      optimisticIds.remove(facilityId);
     }
-
-    // Optimistic update
     emit(state.copyWith(bookmarkedIds: optimisticIds));
 
+    // 2. Cancel any pending commit for this facility (debounce).
+    _bookmarkTimers[facilityId]?.cancel();
+
+    // 3. Schedule the actual Supabase write after a 300ms quiet window.
+    //    If the user taps again within 300ms, this timer is replaced.
+    _bookmarkTimers[facilityId] = Timer(
+      const Duration(milliseconds: 300),
+      () => add(_CommitBookmark(
+        facilityId,
+        shouldBeBookmarked: shouldBeBookmarked,
+      )),
+    );
+  }
+
+  // ── Commit bookmark — actual network write with silent revert ─────────
+  // Dispatched by the debounce timer. Writes the desired state to Supabase.
+  // If the current local state has already diverged (user toggled again
+  // after this commit was scheduled), the write is skipped — the newer
+  // commit will handle it. On network failure, silently reverts the icon.
+  Future<void> _onCommitBookmark(
+    _CommitBookmark event,
+    Emitter<FacilityState> emit,
+  ) async {
+    final facilityId = event.facilityId;
+    final shouldBeBookmarked = event.shouldBeBookmarked;
+
+    // Clean up the timer reference.
+    _bookmarkTimers.remove(facilityId);
+
+    // Guard: if the user toggled again since this commit was scheduled,
+    // the current state won't match the intended write — skip it.
+    final currentlyBookmarked = state.bookmarkedIds.contains(facilityId);
+    if (currentlyBookmarked != shouldBeBookmarked) return;
+
     try {
-      if (wasBookmarked) {
-        await _repository.removeBookmark(facilityId);
-      } else {
+      if (shouldBeBookmarked) {
         await _repository.addBookmark(facilityId);
+      } else {
+        await _repository.removeBookmark(facilityId);
       }
     } catch (_) {
-      // Revert on failure.
-      // Correctly undoes only this specific toggle even if other bookmark
-      // changes happened concurrently in between.
+      // Silent revert — no snackbar, no error message.
+      // Only reverts this specific facility; other concurrent bookmarks
+      // are unaffected.
       final revertedIds = Set<String>.from(state.bookmarkedIds);
-      if (wasBookmarked) {
-        revertedIds.add(facilityId);
-      } else {
+      if (shouldBeBookmarked) {
         revertedIds.remove(facilityId);
+      } else {
+        revertedIds.add(facilityId);
       }
       emit(state.copyWith(bookmarkedIds: revertedIds));
     }
@@ -481,6 +539,12 @@ class FacilityBloc extends Bloc<FacilityEvent, FacilityState> {
     ClearBookmarks event,
     Emitter<FacilityState> emit,
   ) async {
+    // Cancel all pending bookmark commits before clearing.
+    for (final timer in _bookmarkTimers.values) {
+      timer?.cancel();
+    }
+    _bookmarkTimers.clear();
+
     await _repository.clearBookmarkIds();
     emit(
       state.copyWith(
@@ -488,5 +552,15 @@ class FacilityBloc extends Bloc<FacilityEvent, FacilityState> {
         bookmarkStatus: FacilityStatus.initial,
       ),
     );
+  }
+
+  @override
+  Future<void> close() {
+    // Cancel all pending bookmark debounce timers on bloc disposal.
+    for (final timer in _bookmarkTimers.values) {
+      timer?.cancel();
+    }
+    _bookmarkTimers.clear();
+    return super.close();
   }
 }

@@ -16,8 +16,7 @@ import '../../home/maps/map_launcher.dart';
 // its own LoadFacilityDetail — it does not assume the caller already did,
 // so it works correctly from any entry point (grid card, map pin, deep link).
 
-const _tealColor = Color(0xFF00897B);
-const _tealLight = Color(0xFF4DB6AC);
+const _tealColor = Color(0xFF2A7D8F);
 
 class FacilityDetailScreen extends StatefulWidget {
   final String facilityId;
@@ -140,7 +139,7 @@ class _DetailContent extends StatelessWidget {
                 child: Text(
                   detail.name,
                   style: const TextStyle(
-                    fontSize: 22,
+                    fontSize: 20,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -234,7 +233,7 @@ class _DetailContent extends StatelessWidget {
               icon: const Icon(Icons.directions_rounded),
               label: const Text('GET DIRECTIONS'),
               style: FilledButton.styleFrom(
-                backgroundColor: _tealLight,
+                backgroundColor: Color(0xFF2A7D8F),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
@@ -268,7 +267,7 @@ class _DetailContent extends StatelessWidget {
             const SizedBox(height: 20),
             ...detail.tags.map(
               (tag) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.only(bottom: 10),
                 child: Row(
                   children: [
                     const Icon(Icons.circle, size: 6, color: Colors.grey),
@@ -285,22 +284,33 @@ class _DetailContent extends StatelessWidget {
   }
 }
 
-class _BookmarkButton extends StatelessWidget {
+class _BookmarkButton extends StatefulWidget {
   final String facilityId;
   const _BookmarkButton({required this.facilityId});
 
   @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<FacilityBloc, FacilityState>(
-      buildWhen: (previous, current) =>
-          previous.bookmarkedIds != current.bookmarkedIds,
-      builder: (context, state) {
-        final isBookmarked = state.isBookmarked(facilityId);
+  State<_BookmarkButton> createState() => _BookmarkButtonState();
+}
 
+class _BookmarkButtonState extends State<_BookmarkButton> {
+  bool _cooldown = false;
+
+  void _onPressed() {
+    if (_cooldown) return;
+    setState(() => _cooldown = true);
+    context.read<FacilityBloc>().add(ToggleBookmark(widget.facilityId));
+    Future<void>.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) setState(() => _cooldown = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<FacilityBloc, FacilityState, bool>(
+      selector: (state) => state.isBookmarked(widget.facilityId),
+      builder: (context, isBookmarked) {
         return IconButton(
-          onPressed: () {
-            context.read<FacilityBloc>().add(ToggleBookmark(facilityId));
-          },
+          onPressed: _onPressed,
           icon: Icon(
             isBookmarked
                 ? Icons.bookmark_rounded

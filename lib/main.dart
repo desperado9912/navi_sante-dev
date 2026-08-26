@@ -20,13 +20,16 @@ void main() async {
 
   //Hive initialization
   await Hive.initFlutter();
-  await Hive.openBox('mapCache');
   await FacilityLocal.init();
   await NavigationSettings.init();
 
   //Init map cache manager (not supported on web — no temp directory)
   if (!kIsWeb) {
-    await MapCacheManager.instance.initialize();
+    try {
+      await MapCacheManager.instance.initialize();
+    } catch (e) {
+      debugPrint('[main] Map cache init failed (non-fatal): $e');
+    }
   }
 
   //orientation lock
@@ -56,7 +59,7 @@ void main() async {
 
   await GoogleSignIn.instance.initialize(
     clientId: kIsWeb
-        ? webClientId                          // Web plugin requires clientId
+        ? webClientId // Web plugin requires clientId
         : (Platform.isIOS ? iosClientId : null), // iOS uses iosClientId
     serverClientId: kIsWeb ? null : webClientId, // Not supported on web
   );

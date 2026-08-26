@@ -98,7 +98,7 @@ class _ImagePlaceholder extends StatelessWidget {
       width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF26A69A), Color(0xFF4DB6AC)],
+          colors: [Color(0xFF26A69A), Color(0xFF2A7D8F)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

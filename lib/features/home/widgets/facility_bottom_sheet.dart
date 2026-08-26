@@ -128,7 +128,7 @@ class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
                 onVerticalDragEnd: _onHandleDragEnd,
                 child: SizedBox(
                   width: double.infinity,
-                  height: 40, // generous hit-target height for buttons
+                  height: 60, // generous hit-target height for buttons
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
@@ -150,7 +150,7 @@ class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
                             if (detail == null) return const SizedBox.shrink();
 
                             return IconButton(
-                              icon: const Icon(Icons.ios_share_rounded, size: 32, color: Color(0xFF888780)),
+                              icon: const Icon(Icons.ios_share_rounded, size: 30, color: Color(0xFF888780)),
                               onPressed: () {
                                 final url = MapLauncher.generateShareUrl(
                                   latitude: detail.latitude,
@@ -169,7 +169,7 @@ class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
                       Positioned(
                         right: 12,
                         child: IconButton(
-                          icon: const Icon(Icons.close_rounded, size: 32, color: Color(0xFF888780)),
+                          icon: const Icon(Icons.close_rounded, size: 30, color: Color(0xFF888780)),
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ),
@@ -186,7 +186,7 @@ class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
                     if (state.isDetailLoading) {
                       return const Center(
                         child: CircularProgressIndicator(
-                          color: Color(0xFF4DB6AC),
+                          color: Color(0xFF2A7D8F),
                         ),
                       );
                     }
@@ -216,22 +216,22 @@ class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
                               borderRadius: BorderRadius.circular(16),
                               child: CachedNetworkImage(
                                 imageUrl: detail.primaryImageUrl!,
-                                height: 160,
+                                height: 170,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
                                 placeholder: (context, url) => _Placeholder(
                                   type: detail.type,
-                                  height: 160,
+                                  height: 170,
                                 ),
                                 errorWidget: (context, url, error) =>
                                     _Placeholder(
                                       type: detail.type,
-                                      height: 160,
+                                      height: 170,
                                     ),
                               ),
                             )
                           else
-                            _Placeholder(type: detail.type, height: 160),
+                            _Placeholder(type: detail.type, height: 170),
 
                           const SizedBox(height: 16),
 
@@ -290,7 +290,7 @@ class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
                                       ),
-                                      backgroundColor: const Color(0xFFE0F2F1),
+                                      backgroundColor: const Color(0xFFD7EEF3),
                                       side: BorderSide.none,
                                       materialTapTargetSize:
                                           MaterialTapTargetSize.shrinkWrap,
@@ -345,7 +345,7 @@ class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
                               icon: const Icon(Icons.directions_rounded),
                               label: const Text('GET DIRECTIONS'),
                               style: FilledButton.styleFrom(
-                                backgroundColor: const Color(0xFF4DB6AC),
+                                backgroundColor: const Color(0xFF2A7D8F),
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 14,
@@ -375,9 +375,9 @@ class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
                                 );
                               },
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF4DB6AC),
+                                foregroundColor: const Color(0xFF2A7D8F),
                                 side: const BorderSide(
-                                  color: Color(0xFF4DB6AC),
+                                  color: Color(0xFF2A7D8F),
                                 ),
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 14,
@@ -417,7 +417,7 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: const Color(0xFF4DB6AC)),
+          Icon(icon, size: 20, color: const Color(0xFF2A7D8F)),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -450,7 +450,7 @@ class _Placeholder extends StatelessWidget {
       width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF26A69A), Color(0xFF4DB6AC)],
+          colors: [Color(0xFF26A69A), Color(0xFF2A7D8F)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -459,7 +459,7 @@ class _Placeholder extends StatelessWidget {
         child: Icon(
           _icon,
           color: Colors.white.withValues(alpha: 0.8),
-          size: 32,
+          size: 34,
         ),
       ),
     );

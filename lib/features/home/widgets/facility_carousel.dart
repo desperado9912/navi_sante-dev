@@ -33,6 +33,7 @@ class HighlightsCarousel extends StatelessWidget {
         return SizedBox(
           height: 146,
           child: ListView.separated(
+            key: const PageStorageKey<String>('highlights_carousel_list'),
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -49,6 +50,41 @@ class HighlightsCarousel extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+// Single facility card displayed in the carousel position when a pin or search suggestion is selected.
+class SelectedFacilityCard extends StatelessWidget {
+  final FacilityModel facility;
+  final double? userLat;
+  final double? userLng;
+  final void Function(FacilityModel facility) onCardTap;
+
+  const SelectedFacilityCard({
+    super.key,
+    required this.facility,
+    this.userLat,
+    this.userLng,
+    required this.onCardTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 146,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: FacilityCardUI(
+            facility: facility,
+            userLat: userLat,
+            userLng: userLng,
+            onTap: () => onCardTap(facility),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -182,13 +218,13 @@ class _TypeBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: const Color(0xFF4DB6AC).withValues(alpha: 0.15),
+        color: const Color(0xFFD7EEF3).withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         _label,
         style: const TextStyle(
-          color: Color(0xFF00897B),
+          color: Color(0xFF2A7D8F),
           fontSize: 9,
           fontWeight: FontWeight.w600,
         ),
@@ -218,7 +254,7 @@ class _FacilityPlaceholder extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF26A69A), Color(0xFF4DB6AC)],
+          colors: [Color(0xFF26A69A), Color(0xFF2A7D8F)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

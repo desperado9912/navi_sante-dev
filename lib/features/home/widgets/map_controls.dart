@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:navi_sante/features/home/screens/ai_chat.dart';
 import '../controller/map_cubit.dart';
 import 'map_info_sheet.dart';
@@ -36,15 +37,13 @@ class MapControls extends StatelessWidget {
             ),
             const SizedBox(height: 10),
 
-            // Locate Me Button
+            // Locate Me Button — always tappable, uses instant last-known position
             _GlassmorphicButton(
               icon: CupertinoIcons.location_fill,
               iconColor: CupertinoColors.systemBlue,
               tooltip: '',
               isLoading: false,
-              onTap: () {
-                mapCubit.locateUser(requestPermission: true);
-              },
+              onTap: () => mapCubit.locateUser(requestPermission: true),
             ),
             const SizedBox(height: 10),
 
@@ -56,16 +55,29 @@ class MapControls extends StatelessWidget {
             ),
             const SizedBox(height: 40),
 
-            //ai chat button
-            _GlassmorphicButton(
-              icon: CupertinoIcons.chat_bubble_text_fill,
-              iconColor: const Color(0xFF2A7D8F),
-              tooltip: 'AI Chat',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const AIChatPage()),
-                );
-              },
+            // AI Chat Button
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _AIChatButton(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const AIChatPage(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Navi AI',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+              ],
             ),
           ],
         );
@@ -75,19 +87,19 @@ class MapControls extends StatelessWidget {
 }
 
 void _showMapInfoSheet(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      barrierColor: kCupertinoModalBarrierColor,
-      isScrollControlled: true,
-      enableDrag: true,
-      sheetAnimationStyle: AnimationStyle(
-        duration: const Duration(milliseconds: 250),
-        reverseDuration: const Duration(milliseconds: 200),
-      ),
-      builder: (_) => const MapInfoSheet(),
-    );
-  }
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    barrierColor: kCupertinoModalBarrierColor,
+    isScrollControlled: true,
+    enableDrag: true,
+    sheetAnimationStyle: AnimationStyle(
+      duration: const Duration(milliseconds: 250),
+      reverseDuration: const Duration(milliseconds: 200),
+    ),
+    builder: (_) => const MapInfoSheet(),
+  );
+}
 
 /// A highly polished, custom glassmorphic button with built-in micro-animations on tap.
 class _GlassmorphicButton extends StatefulWidget {
@@ -191,6 +203,92 @@ class _GlassmorphicButtonState extends State<_GlassmorphicButton>
                         color: widget.iconColor,
                       ),
                     ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AIChatButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _AIChatButton({required this.onTap});
+
+  @override
+  State<_AIChatButton> createState() => _AIChatButtonState();
+}
+
+class _AIChatButtonState extends State<_AIChatButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _animationController;
+  late final Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: Tooltip(
+        message: 'AI Chat',
+        child: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: const Color(0xFF2A7D8F),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 16,
+                spreadRadius: 2,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTapDown: (_) => _animationController.forward(),
+              onTapUp: (_) => _animationController.reverse(),
+              onTapCancel: () => _animationController.reverse(),
+              onTap: widget.onTap,
+              child: Center(
+                child: ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFFF2B035),
+                      Color(0xFFC9DEE3), // Light cyan gradient
+                    ],
+                  ).createShader(bounds),
+                  child: const FaIcon(
+                    FontAwesomeIcons
+                        .hexagonNodes, //or 'openai' or 'robot' or 'gemini'
+                    size: 18,
+                    color: Colors.white,
                   ),
                 ),
               ),

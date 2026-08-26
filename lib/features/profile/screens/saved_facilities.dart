@@ -284,16 +284,31 @@ class _IconTile extends StatelessWidget {
   }
 }
 
-class _RemoveBookmarkButton extends StatelessWidget {
+class _RemoveBookmarkButton extends StatefulWidget {
   final String facilityId;
 
   const _RemoveBookmarkButton({required this.facilityId});
 
   @override
+  State<_RemoveBookmarkButton> createState() => _RemoveBookmarkButtonState();
+}
+
+class _RemoveBookmarkButtonState extends State<_RemoveBookmarkButton> {
+  bool _cooldown = false;
+
+  void _onPressed() {
+    if (_cooldown) return;
+    setState(() => _cooldown = true);
+    context.read<FacilityBloc>().add(ToggleBookmark(widget.facilityId));
+    Future<void>.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) setState(() => _cooldown = false);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return IconButton(
-      onPressed: () =>
-          context.read<FacilityBloc>().add(ToggleBookmark(facilityId)),
+      onPressed: _onPressed,
       icon: const Icon(
         Icons.bookmark_rounded,
         color: Color(0xFF00897B),
@@ -301,7 +316,6 @@ class _RemoveBookmarkButton extends StatelessWidget {
       ),
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-      // tooltip: 'Remove from saved',
     );
   }
 }

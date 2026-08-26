@@ -43,14 +43,19 @@ abstract class MapState extends Equatable {
     double? zoom,
     LatLng? userLocation,
     bool? animateToState,
-    String? errorSignal,
+    Object? errorSignal = _unset,
     MapInteractionState? interactionState,
   }) {
+    final String? resolvedErrorSignal = identical(errorSignal, _unset)
+        ? this.errorSignal
+        : errorSignal as String?;
+
     if (this is MapLoadingState) {
       return MapLoadingState(
         center: center ?? this.center,
         zoom: zoom ?? this.zoom,
         userLocation: userLocation ?? this.userLocation,
+        interactionState: interactionState ?? this.interactionState,
       );
     } else if (this is MapErrorState) {
       final err = this as MapErrorState;
@@ -61,7 +66,7 @@ abstract class MapState extends Equatable {
         isNetworkError: err.isNetworkError,
         userLocation: userLocation ?? this.userLocation,
         animateToState: animateToState ?? this.animateToState,
-        errorSignal: errorSignal ?? this.errorSignal,
+        errorSignal: resolvedErrorSignal,
         interactionState: interactionState ?? this.interactionState,
       );
     } else {
@@ -70,12 +75,14 @@ abstract class MapState extends Equatable {
         zoom: zoom ?? this.zoom,
         userLocation: userLocation ?? this.userLocation,
         animateToState: animateToState ?? this.animateToState,
-        errorSignal: errorSignal ?? this.errorSignal,
+        errorSignal: resolvedErrorSignal,
         interactionState: interactionState ?? this.interactionState,
       );
     }
   }
 }
+
+const Object _unset = Object();
 
 /// Initial state while checking permissions or fetching first GPS coordinate.
 class MapLoadingState extends MapState {
@@ -119,8 +126,11 @@ class MapErrorState extends MapState {
   List<Object?> get props => [...super.props, errorMessage, isNetworkError];
 }
 
-abstract class MapInteractionState {
+abstract class MapInteractionState extends Equatable {
   const MapInteractionState();
+
+  @override
+  List<Object?> get props => const [];
 }
 
 // Default: all pins visible, carousel showing 5 closest.
@@ -132,25 +142,24 @@ class MapIdle extends MapInteractionState {
 class MapPinSelected extends MapInteractionState {
   final String facilityId; // Which pin is highlighted
   const MapPinSelected(this.facilityId);
-}
 
-// User is searching: matching pins highlighted, non-matching dimmed.
-// Carousel hidden, single result card shown at bottom.
-class MapSearchActive extends MapInteractionState {
-  final String query;
-  const MapSearchActive(this.query);
+  @override
+  List<Object?> get props => [facilityId];
 }
 
 // Bottom sheet is expanded (came from pin tap or carousel card tap).
 class MapDetailSheet extends MapInteractionState {
   final String facilityId;
   const MapDetailSheet(this.facilityId);
+
+  @override
+  List<Object?> get props => [facilityId];
 }
 
 /// Manages the state of the home map, including coordinates, zoom level, and tracking.
 class MapCubit extends Cubit<MapState> {
   final MapService _mapService;
-  // bool _isCameraMoving = false;
+  final LocationAccuracyFilter _accuracyFilter = const LocationAccuracyFilter();
   StreamSubscription<LocationResult>? _locationStreamSub;
 
   MapCubit({MapService? mapService})
@@ -163,69 +172,135 @@ class MapCubit extends Cubit<MapState> {
       );
 
   /// Initializes the map. Attempts to locate the user immediately.
-  /// Fallback to Yaounde on failure or denied location access.
+  /// Uses last-known position for instant first render, then refines
+  /// with a fresh GPS fix. Fallback to Yaounde on failure or denied access.
   Future<void> initMap() async {
-    emit(MapLoadingState(center: state.center, zoom: state.zoom));
+    emit(
+      MapLoadingState(
+        center: state.center,
+        zoom: state.zoom,
+        userLocation: state.userLocation,
+        interactionState: state.interactionState,
+      ),
+    );
+
+    // Show last-known position instantly while waiting for fresh GPS.
+    final LocationResult? lastKnown = await _mapService.getLastKnownLocation();
+    if (!isClosed && lastKnown is LocationSuccess) {
+      emit(
+        MapLocatedState(
+          center: lastKnown.position,
+          zoom: MapConfig.initialZoom,
+          userLocation: lastKnown.position,
+          animateToState: false, // No animation on first render
+          interactionState: state.interactionState,
+        ),
+      );
+    }
+
+    // Now fetch a fresh, accurate fix (may take a few seconds).
     await locateUser(requestPermission: true, isInit: true);
     _startLocationStream();
   }
 
+  bool _isLocating = false;
+
   /// Attempts to fetch the user's location and animate the map to center on them.
+  ///
+  /// When triggered by the locate button (isInit=false), does NOT emit
+  /// MapLoadingState so the UI stays interactive. Instead, it instantly
+  /// pans to the OS-cached last-known position, then refines with a
+  /// fresh GPS fix.
   Future<void> locateUser({
     bool requestPermission = true,
     bool isInit = false,
   }) async {
-    // If not initializing, show loading indicators or just trigger fetch
-    if (!isInit) {
+    // If not initializing and we already know where they are, just pan instantly.
+    // This avoids triggering the GPS hardware again and causing freezes/delays.
+    if (!isInit && state.userLocation != null) {
       emit(
-        MapLoadingState(
-          center: state.center,
-          zoom: state.zoom,
+        MapLocatedState(
+          center: state.userLocation!,
+          zoom: MapConfig.initialZoom,
           userLocation: state.userLocation,
+          animateToState: true,
+          interactionState: state.interactionState,
         ),
       );
+      return;
     }
-    LocationResult result = await _mapService.getCurrentLocation(
-      requestIfNeeded: requestPermission,
-    );
 
-    if (isClosed) return;
+    if (_isLocating) return;
+    _isLocating = true;
+    try {
+      // Fetch fresh, accurate GPS fix.
+      LocationResult result = await _mapService.getCurrentLocation(
+        requestIfNeeded: requestPermission,
+      );
 
-    switch (result) {
-      case LocationSuccess(:final position):
-        emit(
-          MapLocatedState(
-            center: position,
-            zoom: MapConfig.initialZoom,
-            userLocation: position,
-            animateToState: true,
-          ),
-        );
+      if (isClosed) return;
 
-      case LocationPermissionDenied(:final message):
-        emit(
-          MapErrorState(
-            center: MapConfig.yaoundeLatLng,
-            zoom: MapConfig.initialZoom,
-            userLocation: null,
-            errorMessage: message,
-            errorSignal: message,
-            animateToState: !isInit,
-          ),
-        );
+      switch (result) {
+        case LocationSuccess(:final position):
+          emit(
+            MapLocatedState(
+              center: position,
+              zoom: MapConfig.initialZoom,
+              userLocation: position,
+              animateToState: true,
+              interactionState: state.interactionState,
+            ),
+          );
 
-      case LocationFailure(:final message, :final isNetworkError):
-        emit(
-          MapErrorState(
-            center: MapConfig.yaoundeLatLng,
-            zoom: MapConfig.initialZoom,
-            userLocation: null,
-            errorMessage: message,
-            isNetworkError: isNetworkError,
-            errorSignal: message,
-            animateToState: !isInit,
-          ),
-        );
+        case LocationPermissionDenied(:final message):
+          // If we already showed a last-known position, keep it visible
+          // but still signal the permission error.
+          final LatLng? currentUserLoc = state.userLocation;
+          emit(
+            MapErrorState(
+              center: currentUserLoc ?? MapConfig.yaoundeLatLng,
+              zoom: MapConfig.initialZoom,
+              userLocation: currentUserLoc,
+              errorMessage: message,
+              errorSignal: message,
+              animateToState: !isInit && currentUserLoc == null,
+              interactionState: state.interactionState,
+            ),
+          );
+
+        case LocationFailure(:final message, :final isNetworkError):
+          // If we already have a position (from last-known or stream),
+          // keep showing it — don't wipe the pin on a transient GPS timeout.
+          final LatLng? currentUserLoc = state.userLocation;
+          if (currentUserLoc != null) {
+            // Keep current state, just signal the error transiently.
+            emit(
+              MapLocatedState(
+                center: state.center,
+                zoom: state.zoom,
+                userLocation: currentUserLoc,
+                animateToState: false,
+                errorSignal: message,
+                interactionState: state.interactionState,
+              ),
+            );
+          } else {
+            emit(
+              MapErrorState(
+                center: MapConfig.yaoundeLatLng,
+                zoom: MapConfig.initialZoom,
+                userLocation: null,
+                errorMessage: message,
+                isNetworkError: isNetworkError,
+                errorSignal: message,
+                animateToState: !isInit,
+                interactionState: state.interactionState,
+              ),
+            );
+          }
+      }
+    } finally {
+      _isLocating = false;
     }
   }
 
@@ -242,31 +317,34 @@ class MapCubit extends Cubit<MapState> {
   void _onLiveLocationUpdate(LocationResult result) {
     if (isClosed || result is! LocationSuccess) return; // Skip stream errors
 
-    emit(
-      state.copyWith(
-        userLocation: result.position,
-        animateToState: state is MapLoadingState,
-      ),
-    );
+    final bool hasExistingFix = state.userLocation != null;
+    if (hasExistingFix &&
+        !_accuracyFilter.isAcceptable(result.accuracyMeters)) {
+      return; // Keep showing the last good fix instead of a noisy one.
+    }
 
-    final MapState current = state;
+    final MapState previous = state;
 
-    if (current is MapLocatedState) {
+    if (previous is MapLocatedState) {
       emit(
         MapLocatedState(
-          center: current.center, // ← preserve camera position
-          zoom: current.zoom,
-          userLocation: result.position, // ← only the pin moves
+          center: previous.center,
+          zoom: previous.zoom,
+          userLocation: result.position,
           animateToState: false,
+          errorSignal: previous.errorSignal,
+          interactionState: previous.interactionState,
         ),
       );
-    } else if (current is MapErrorState || current is MapLoadingState) {
+    } else {
       emit(
         MapLocatedState(
           center: result.position,
           zoom: MapConfig.initialZoom,
           userLocation: result.position,
           animateToState: true,
+          errorSignal: previous.errorSignal,
+          interactionState: previous.interactionState,
         ),
       );
     }
@@ -286,6 +364,8 @@ class MapCubit extends Cubit<MapState> {
           zoom: targetZoom,
           userLocation: state.userLocation,
           animateToState: true,
+          errorSignal: state.errorSignal,
+          interactionState: state.interactionState,
         ),
       );
     }
@@ -304,6 +384,8 @@ class MapCubit extends Cubit<MapState> {
           zoom: targetZoom,
           userLocation: state.userLocation,
           animateToState: true,
+          errorSignal: state.errorSignal,
+          interactionState: state.interactionState,
         ),
       );
     }
@@ -322,6 +404,8 @@ class MapCubit extends Cubit<MapState> {
           userLocation: current.userLocation,
           animateToState:
               false, // User is manually dragging, don't trigger animation feedback
+          errorSignal: current.errorSignal,
+          interactionState: current.interactionState,
         ),
       );
     } else {
@@ -331,6 +415,8 @@ class MapCubit extends Cubit<MapState> {
           zoom: newZoom,
           userLocation: current.userLocation,
           animateToState: false,
+          errorSignal: current.errorSignal,
+          interactionState: current.interactionState,
         ),
       );
     }
@@ -358,11 +444,6 @@ class MapCubit extends Cubit<MapState> {
   /// User tapped the expand button on the mini card.
   void expandSheet(String facilityId) {
     emit(state.copyWith(interactionState: MapDetailSheet(facilityId)));
-  }
-
-  /// User started typing in the map search bar.
-  void activateSearch(String query) {
-    emit(state.copyWith(interactionState: MapSearchActive(query)));
   }
 
   /// User tapped the map background, cleared search, or dragged sheet down.

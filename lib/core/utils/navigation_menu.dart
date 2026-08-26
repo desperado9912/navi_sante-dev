@@ -38,6 +38,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
     return Obx(
       () => Scaffold(
         extendBody: true,
+        resizeToAvoidBottomInset: false,
 
         //all screens bg color
         backgroundColor: const Color(0xFFF8F9F8),
@@ -50,9 +51,9 @@ class _NavigationMenuState extends State<NavigationMenu> {
         // Bottom  navbar container
         bottomNavigationBar: SafeArea(
           child: Container(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(26.0),
+              borderRadius: BorderRadius.circular(28.0),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.300),
@@ -65,10 +66,10 @@ class _NavigationMenuState extends State<NavigationMenu> {
 
             // Navbar design
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(26.0),
+              borderRadius: BorderRadius.circular(28.0),
               child: NavigationBarTheme(
                 data: NavigationBarThemeData(
-                  height: 68,
+                  height: 60,
                   elevation: 0,
                   backgroundColor: Colors.white,
                   indicatorColor: const Color(0xFFD8F6FF),
@@ -164,7 +165,7 @@ class NavigationController extends GetxController {
 }
 
 // Adding a bottom padding so screen content dont get stuck behind navbar.
-const double navBottomPadding = 150.0;
+const double navBottomPadding = 130.0;
 
 class ScreenWrapper extends StatelessWidget {
   final Widget child;

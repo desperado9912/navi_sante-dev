@@ -1,19 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../controllers/profile_controller.dart';
 
 /// Profile header section.
 /// Displays:
 /// - Avatar or initials fallback
 /// - Display name and email from user metadata
 /// - Email verified badge
-/// - Health score with trend indicator (via [ProfileController])
-
 class ProfileHeader extends StatelessWidget {
-  final ProfileController controller;
-
-  const ProfileHeader({super.key, required this.controller});
+  const ProfileHeader({super.key});
 
   /// Derives initials from a full name.
   /// "John Doe" → "JD"   |   "Alice" → "A"   |   "" → "?"
@@ -108,76 +103,6 @@ class ProfileHeader extends StatelessWidget {
                     ),
                   ],
                 ),
-
-              const SizedBox(height: 18),
-              const Divider(color: Color(0xFFF0F0F0), height: 1),
-              const SizedBox(height: 18),
-
-              // Health Score
-              ListenableBuilder(
-                listenable: controller,
-                builder: (context, _) => Column(
-                  children: [
-                    const Text(
-                      'Health Score',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF5F6368),
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        // Score number
-                        Text(
-                          controller.healthScore.toStringAsFixed(0),
-                          style: const TextStyle(
-                            fontSize: 40,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2A7D8F),
-                            height: 1,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-
-                        // Trend indicator
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Row(
-                            children: [
-                              Icon(
-                                controller.isTrendPositive
-                                    ? Icons.trending_up_rounded
-                                    : Icons.trending_down_rounded,
-                                color: controller.isTrendPositive
-                                    ? Colors.green
-                                    : const Color(0xFFC0392B),
-                                size: 18,
-                              ),
-                              const SizedBox(width: 2),
-                              Text(
-                                '${controller.isTrendPositive ? '+' : '-'}'
-                                '${controller.healthScoreTrend}%',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: controller.isTrendPositive
-                                      ? Colors.green
-                                      : const Color(0xFFC0392B),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         );

@@ -9,7 +9,8 @@ import 'package:permission_handler/permission_handler.dart';
 class MapConfig {
   static const String cartoLightUrl =
       'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-  static const List<String> subdomains = ['a', 'b', 'c', 'd'];
+  static const List<String> subdomains = ['a'];
+  static String get tileSubdomain => subdomains.first;
   static const String userAgentPackageName = 'com.navisante.app';
 
   static const Map<String, String> tileHeaders = {
@@ -18,17 +19,15 @@ class MapConfig {
   };
 
   // Zoom parameters
-  static const double initialZoom = 17.0;
-  static const double minZoom = 3.0;
-  static const double maxZoom = 19.0;
+  static const double initialZoom = 16.0;
+  static const double minZoom = 5.0;
+  static const double maxZoom = 18.0;
   static const double zoomStep = 1.0;
 
-  // Prevenet location pulse pin from misplacing location.
-  // Fires new user position only after 10 metres.
-  static const int trackingDistanceFilter = 10; //metres
-
-  // Fires new user position only after 1 seconds.
-  static const int trackingTimeFilter = 1; //seconds
+  // Live tracking should not wait for a large distance jump. The Cubit still
+  // filters weak-accuracy fixes, while the pulser animates every good update.
+  static const int trackingDistanceFilter = 0; // metres
+  static const Duration trackingInterval = Duration(milliseconds: 350);
 
   // Fallback Coordinates (Yaoundé, Cameroon)
   static final LatLng yaoundeLatLng = LatLng(3.8480, 11.5021);
@@ -41,7 +40,16 @@ sealed class LocationResult {
 
 class LocationSuccess extends LocationResult {
   final LatLng position;
-  const LocationSuccess(this.position);
+  final double accuracyMeters;
+
+  const LocationSuccess(this.position, {required this.accuracyMeters});
+
+  factory LocationSuccess.fromPosition(Position position) {
+    return LocationSuccess(
+      LatLng(position.latitude, position.longitude),
+      accuracyMeters: position.accuracy,
+    );
+  }
 }
 
 class LocationPermissionDenied extends LocationResult {
@@ -55,8 +63,31 @@ class LocationFailure extends LocationResult {
   const LocationFailure(this.message, {this.isNetworkError = false});
 }
 
+// Filters location results and drops unreliable locations. Prevents the UI from
+// displaying low-confidence readings as the user's exact position.
+class LocationAccuracyFilter {
+  const LocationAccuracyFilter({this.maxAcceptableAccuracyMeters = 50});
+  final double maxAcceptableAccuracyMeters;
+
+  bool isAcceptable(double accuracyMeters) =>
+      accuracyMeters <= maxAcceptableAccuracyMeters;
+}
+
 /// A service to cleanly handle permissions and GPS coordinates fetching.
 class MapService {
+
+  /// Returns the OS-cached last known position instantly (no GPS radio needed).
+  /// Returns null if no cached position exists.
+  Future<LocationResult?> getLastKnownLocation() async {
+    try {
+      final Position? position = await Geolocator.getLastKnownPosition();
+      if (position == null) return null;
+      return LocationSuccess.fromPosition(position);
+    } catch (_) {
+      return null;
+    }
+  }
+
   // Requests permission and fetches the current device position.
   Future<LocationResult> getCurrentLocation({
     bool requestIfNeeded = true,
@@ -89,22 +120,22 @@ class MapService {
         );
       }
 
-      // 3. Fetch current location
-      // Setting a reasonable timeout to handle situations where GPS is slow or blocked.
+      // 3. Fetch current location with high accuracy.
+      // 8s timeout is a safety net — the caller should have already shown
+      // a last-known position so the user isn't staring at a blank map.
       final Position position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.best,
-          timeLimit: Duration(seconds: 10),
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 8),
         ),
       );
 
-      return LocationSuccess(LatLng(position.latitude, position.longitude));
+      return LocationSuccess.fromPosition(position);
     } on TimeoutException {
       return const LocationFailure(
         'GPS signal acquisition timed out. Please try again.',
       );
     } catch (e) {
-      // Return a general error message
       return LocationFailure('Failed to fetch location: ${e.toString()}');
     }
   }
@@ -138,30 +169,30 @@ class MapService {
           distanceFilter: MapConfig.trackingDistanceFilter,
         );
 
-        // Android
+        // Android — high accuracy is sufficient for a facility finder and
+        // avoids the device overload / crash seen with bestForNavigation.
       } else if (Platform.isAndroid) {
         settings = AndroidSettings(
-              accuracy: LocationAccuracy.high,
-              distanceFilter: MapConfig.trackingDistanceFilter,
-              // Minimum interval between updates — prevents battery drain
-              intervalDuration: const Duration(seconds: 1),
-            );
+          accuracy: LocationAccuracy.high,
+          distanceFilter: MapConfig.trackingDistanceFilter,
+          intervalDuration: MapConfig.trackingInterval,
+        );
 
         // iOS
       } else {
         settings = AppleSettings(
-              accuracy: LocationAccuracy.bestForNavigation,
-              distanceFilter: MapConfig.trackingDistanceFilter,
-              activityType: ActivityType.fitness,
-              // Don't let iOS auto-pause tracking when the user is still
-              pauseLocationUpdatesAutomatically: false,
-            );
+          accuracy: LocationAccuracy.high,
+          distanceFilter: MapConfig.trackingDistanceFilter,
+          activityType: ActivityType.otherNavigation,
+          // Don't let iOS auto-pause tracking when the user is still
+          pauseLocationUpdatesAutomatically: false,
+        );
       }
 
       await for (final Position position in Geolocator.getPositionStream(
         locationSettings: settings,
       )) {
-        yield LocationSuccess(LatLng(position.latitude, position.longitude));
+        yield LocationSuccess.fromPosition(position);
       }
     } catch (e) {
       yield LocationFailure('Location tracking error: ${e.toString()}');

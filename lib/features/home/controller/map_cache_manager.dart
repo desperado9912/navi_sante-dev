@@ -4,117 +4,229 @@ import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import 'package:dio_cache_interceptor_hive_store/dio_cache_interceptor_hive_store.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 /// Manages Hive- Map tile caching for the NaviSante map.
 ///
 /// Responsibilities:
-///   - Initialises HiveCacheStore inside the OS temporary directory so the
-///     OS can reclaim storage automatically when the device runs low.
-///   - Enforces a 500 MB storage cap.
-///   - Removes tiles older than 30 days on startup and every 24 hours.
+///   - Initialises HiveCacheStore under [getApplicationSupportDirectory].
+///   - Storage is split into three [TileZoomBand] shards, each wrapped
+///     with a small in-memory layer via the [BackupCacheStore],
+///     so tiles seen earlier re-render instantly.
+///   - OS can purge device storage layer under pressure which would silently
+///     wipe all cahed tiles and reproduce a slow first load at random.
+///   - Three band storage; overview 80mb, district 150, street 270. capped at 500mb
+
+// Separate tile storage for each zoom band
+// Each band gets its own box (smaller key index → faster to open),
+/// its own eviction budget, and its own retention window
+enum TileZoomBand {
+  overview(
+    minZoom: 3,
+    maxZoom: 11,
+    maxCacheBytes: 80 * 1024 * 1024,
+    maxStale: Duration(days: 20),
+    memCacheBytes: 3 * 1024 * 1024,
+  ),
+  district(
+    minZoom: 12,
+    maxZoom: 15,
+    maxCacheBytes: 150 * 1024 * 1024,
+    maxStale: Duration(days: 30),
+    memCacheBytes: 5 * 1024 * 1024,
+  ),
+  street(
+    minZoom: 16,
+    maxZoom: 19,
+    maxCacheBytes: 270 * 1024 * 1024,
+    maxStale: Duration(days: 30),
+    memCacheBytes: 6 * 1024 * 1024,
+  );
+
+  const TileZoomBand({
+    required this.minZoom,
+    required this.maxZoom,
+    required this.maxCacheBytes,
+    required this.maxStale,
+    required this.memCacheBytes,
+  });
+
+  final int minZoom;
+  final int maxZoom;
+  final int maxCacheBytes;
+  final Duration maxStale;
+  final int memCacheBytes;
+
+  static TileZoomBand forZoom(int zoom) {
+    for (final band in TileZoomBand.values) {
+      if (zoom >= band.minZoom && zoom <= band.maxZoom) return band;
+    }
+    return zoom < TileZoomBand.overview.minZoom
+        ? TileZoomBand.overview
+        : TileZoomBand.street;
+  }
+}
 
 class MapCacheManager {
   MapCacheManager._internal();
   static final MapCacheManager instance = MapCacheManager._internal();
 
-  // Cache folder disk size, duration, hive box name constants.
-  static const int maxCacheSizeBytes = 524 * 1024 * 1024;
-  static const Duration cacheTtl = Duration(days: 30);
-  static const String _hiveBoxName = 'navisante_map_tiles';
-
-  HiveCacheStore? _store;
+  final Map<TileZoomBand, CacheStore> _stores = {};
+  Completer<void> _readyCompleter = Completer<void>();
+  Future<void>? _initializationFuture;
+  bool _ready = false;
   String? _cachePath;
-  Timer? _cleanupTimer;
+  Timer? _maintenanceTimer;
 
-  CacheStore get store {
-    assert(_store != null, 'Call initialize() before accessing store.');
-    return _store!;
-  }
+  Future<void> get whenReady => _readyCompleter.future;
+  bool get isReady => _ready;
 
-  /// Initialises Hive in the device's OS temporary directory
-  Future<HiveCacheStore> initialize() async {
-    final tempDir = await getTemporaryDirectory();
-    _cachePath = '${tempDir.path}/navisante_tile_cache';
-    _store = HiveCacheStore(_cachePath!, hiveBoxName: _hiveBoxName);
-
-    // Clean any stale tiles left from the previous session.
-    await _cleanStaleEntries();
-    // Enforce the 500 MB cap right after stale cleanup.
-    await _enforceSizeLimit();
-
-    // Schedule recurring cleanup every 24 hours.
-    _cleanupTimer = Timer.periodic(const Duration(hours: 24), (_) async {
-      await _cleanStaleEntries();
-      await _enforceSizeLimit();
-    });
-
-    debugPrint(
-      '[MapCache] Raedy | path: $_cachePath'
-      ' | max ${maxCacheSizeBytes ~/ (1024 * 1024)} MB'
-      ' | TTL ${cacheTtl.inDays} days',
+  CacheStore storeFor(TileZoomBand band) {
+    final CacheStore? store = _stores[band];
+    assert(
+      store != null,
+      'MapCacheManager.storeFor() called before initialize()/whenReady completed.',
     );
-
-    return _store!;
+    return store!;
   }
 
-  /// Cancels the cleanup timer and dispose the Hive box.
-  Future<void> dispose() async {
-    _cleanupTimer?.cancel();
-    _cleanupTimer = null;
-    await _store?.close();
-    _store = null;
+  // Opens all band hive boxes.
+  Future<void> initialize() async {
+    if (_ready) return;
+    final Future<void>? inFlight = _initializationFuture;
+    if (inFlight != null) return inFlight;
+
+    _initializationFuture = _initializeStores();
+    return _initializationFuture;
   }
 
-  /// Removes only entries whose maxStale duration has been exceeded.
-  Future<void> _cleanStaleEntries() async {
+  Future<void> _initializeStores() async {
     try {
-      await _store?.clean(staleOnly: true);
-      debugPrint('[MapCache] Stale tile cleanup complete.');
-    } catch (e) {
-      debugPrint('[MapCache] Cleanup error (non-fatal): $e');
-    }
-  }
+      final Directory baseDir = await getApplicationSupportDirectory();
+      _cachePath = '${baseDir.path}/navisante_tile_cache';
 
-  /// Calculates the cache directory size to enforce 500 MB cap as Hive does not directly handle this.
-  Future<void> _enforceSizeLimit() async {
-    if (_cachePath == null) return;
-    try {
-      final int size = await _directorySizeBytes(_cachePath!);
+      for (final band in TileZoomBand.values) {
+        final String bandPath = '$_cachePath/${band.name}';
+        final String boxName = 'navisante_map_tiles_${band.name}';
 
-      if (size <= maxCacheSizeBytes) return; // Within budget — nothing to do.
+        // Proactively test for Hive box corruption.
+        // A corrupted box will block tile reads and cause long delays.
+        try {
+          final box = await Hive.openBox(boxName, path: bandPath);
+          await box.close();
+        } catch (e) {
+          debugPrint('[MapCache] Detected corrupted Hive box for ${band.name}. Wiping... Error: $e');
+          final dir = Directory(bandPath);
+          try {
+            if (await dir.exists()) {
+              await dir.delete(recursive: true);
+            }
+          } catch (deleteError) {
+            debugPrint('[MapCache] Failed to delete corrupted directory (ignoring): $deleteError');
+          }
+        }
 
-      final int sizeMb = size ~/ (1024 * 1024);
-      debugPrint(
-        '[MapCache] Cache is $sizeMb MB — over limit. Pruning stale entries...',
-      );
-
-      // Step 1: remove stale-only (already done in scheduler, but repeat
-      // here because enforce is also called right after initialize()).
-      await _store?.clean(staleOnly: true);
-
-      final int sizeAfter = await _directorySizeBytes(_cachePath!);
-      if (sizeAfter <= maxCacheSizeBytes) {
-        debugPrint(
-          '[MapCache] Pruned to ${sizeAfter ~/ (1024 * 1024)} MB — OK.',
+        final HiveCacheStore hiveStore = HiveCacheStore(
+          bandPath,
+          hiveBoxName: boxName,
         );
-        return;
+        _stores[band] = BackupCacheStore(
+          primary: MemCacheStore(maxSize: band.memCacheBytes),
+          secondary: hiveStore,
+        );
       }
 
-      // Step 2: still over limit — full wipe.
-      await _store?.clean();
+      _ready = true;
+      if (!_readyCompleter.isCompleted) {
+        _readyCompleter.complete();
+      }
       debugPrint(
-        '[MapCache] Full wipe: cache exceeded ${maxCacheSizeBytes ~/ (1024 * 1024)} MB hard cap.',
+        '[MapCache] Ready | path: $_cachePath'
+        ' | bands: ${TileZoomBand.values.map((b) => b.name).join(', ')}',
       );
-    } catch (e) {
-      debugPrint('[MapCache] Size enforcement error (non-fatal): $e');
+
+      // Maintenance timer.
+      // Runs a detached hive cleaner on init and after the recurring time period.
+      unawaited(_runMaintenance());
+      _maintenanceTimer?.cancel();
+      _maintenanceTimer = Timer.periodic(
+        const Duration(hours: 48),
+        (_) => unawaited(_runMaintenance()),
+      );
+    } catch (e, stackTrace) {
+      if (!_readyCompleter.isCompleted) {
+        _readyCompleter.completeError(e, stackTrace);
+      }
+      _readyCompleter = Completer<void>();
+      _initializationFuture = null;
+      rethrow;
     }
   }
 
-  /// Recursively sums the byte size of all files in [dirPath].
-  Future<int> _directorySizeBytes(String dirPath) async {
-    final dir = Directory(dirPath);
-    if (!await dir.exists()) return 0;
+  Future<void> dispose() async {
+    _maintenanceTimer?.cancel();
+    _maintenanceTimer = null;
+    for (final CacheStore store in _stores.values) {
+      await store.close();
+    }
+    _stores.clear();
+    _ready = false;
+    _initializationFuture = null;
+    if (_readyCompleter.isCompleted) {
+      _readyCompleter = Completer<void>();
+    }
+  }
 
+  Future<void> _runMaintenance() async {
+    for (final TileZoomBand band in TileZoomBand.values) {
+      final CacheStore? store = _stores[band];
+      if (store == null) continue;
+      try {
+        await store.clean(staleOnly: true);
+      } catch (e) {
+        debugPrint(
+          '[MapCache] Stale cleanup error for ${band.name} (non-fatal): $e',
+        );
+      }
+      await _enforceBandSizeLimit(band);
+    }
+  }
+
+  Future<void> _enforceBandSizeLimit(TileZoomBand band) async {
+    if (_cachePath == null) return;
+
+    final String bandPath = '$_cachePath/${band.name}';
+
+    try {
+      final int size = await _directorySizeBytes(bandPath);
+      if (size <= band.maxCacheBytes) return;
+
+      debugPrint(
+        '[MapCache] ${band.name} is ${size ~/ (1024 * 1024)} MB'
+        ' — over ${band.maxCacheBytes ~/ (1024 * 1024)} MB cap. Pruning...',
+      );
+
+      // Evict prefetched-but-never-viewed tiles first
+      await _stores[band]?.clean(priorityOrBelow: CachePriority.low);
+
+      final int sizeAfter = await _directorySizeBytes(bandPath);
+      if (sizeAfter > band.maxCacheBytes) {
+        // Still over cap — wipe this band only; other bands are untouched.
+        await _stores[band]?.clean();
+        debugPrint(
+          '[MapCache] Full wipe of ${band.name}: still over cap after low-priority prune.',
+        );
+      }
+    } catch (e) {
+      debugPrint(
+        '[MapCache] Size enforcement error for ${band.name} (non-fatal): $e',
+      );
+    }
+  }
+
+  Future<int> _directorySizeBytes(String dirPath) async {
+    final Directory dir = Directory(dirPath);
+    if (!await dir.exists()) return 0;
     int total = 0;
     await for (final entity in dir.list(recursive: true, followLinks: false)) {
       if (entity is File) {

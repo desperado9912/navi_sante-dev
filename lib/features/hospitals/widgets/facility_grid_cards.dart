@@ -60,7 +60,7 @@ class FacilityGridCard extends StatelessWidget {
           _CardImage(facility: facility),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -105,8 +105,8 @@ class FacilityGridCard extends StatelessWidget {
                         child: OutlinedButton(
                           onPressed: onDetailsTap,
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF00897B),
-                            side: const BorderSide(color: Color(0xFF00897B)),
+                            foregroundColor: const Color(0xFF2A7D8F),
+                            side: const BorderSide(color: Color(0xFF2A7D8F)),
                             padding: const EdgeInsets.symmetric(vertical: 6),
                             minimumSize: Size.zero,
                             shape: RoundedRectangleBorder(
@@ -216,21 +216,38 @@ class _CardImage extends StatelessWidget {
 // this widget just reflects whatever state it currently holds.
 // =============================================================================
 
-class _BookmarkButton extends StatelessWidget {
+class _BookmarkButton extends StatefulWidget {
   final String facilityId;
 
   const _BookmarkButton({required this.facilityId});
 
   @override
+  State<_BookmarkButton> createState() => _BookmarkButtonState();
+}
+
+class _BookmarkButtonState extends State<_BookmarkButton> {
+  /// Tap cooldown — prevents rapid duplicate events from reaching the bloc.
+  /// 300ms matches the bloc-level debounce window.
+  bool _cooldown = false;
+
+  void _onTap() {
+    if (_cooldown) return;
+    setState(() => _cooldown = true);
+    context.read<FacilityBloc>().add(ToggleBookmark(widget.facilityId));
+    Future<void>.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) setState(() => _cooldown = false);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     // BlocSelector rebuilds only when this facility's bookmark status changes.
     return BlocSelector<FacilityBloc, FacilityState, bool>(
-      selector: (state) => state.isBookmarked(facilityId),
+      selector: (state) => state.isBookmarked(widget.facilityId),
       builder: (context, isBookmarked) {
         return GestureDetector(
           // Stop the tap from bubbling up to the card's onTap (no navigation).
-          onTap: () =>
-              context.read<FacilityBloc>().add(ToggleBookmark(facilityId)),
+          onTap: _onTap,
           child: Container(
             padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
@@ -242,7 +259,7 @@ class _BookmarkButton extends StatelessWidget {
                   ? Icons.bookmark_rounded
                   : Icons.bookmark_border_rounded,
               size: 16,
-              color: isBookmarked ? const Color(0xFF00897B) : Colors.grey[700],
+              color: isBookmarked ? const Color(0xFF2A7D8F) : Colors.grey[700],
             ),
           ),
         );
@@ -250,6 +267,7 @@ class _BookmarkButton extends StatelessWidget {
     );
   }
 }
+
 
 // =============================================================================
 // DIRECTIONS ICON BUTTON
@@ -284,7 +302,7 @@ class _DirectionsIconButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: const Color(0xFF00897B),
+          color: const Color(0xFF2A7D8F),
           borderRadius: BorderRadius.circular(8),
         ),
         child: const Icon(
@@ -436,7 +454,7 @@ class _Chip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: isOverflow ? Colors.grey[200] : const Color(0xFFE0F2F1),
+        color: isOverflow ? Colors.grey[200] : const Color(0xFFD7EEF3),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
@@ -444,7 +462,7 @@ class _Chip extends StatelessWidget {
         style: TextStyle(
           fontSize: 9,
           fontWeight: FontWeight.w600,
-          color: isOverflow ? Colors.grey[600] : const Color(0xFF00897B),
+          color: isOverflow ? Colors.grey[600] : const Color(0xFF2A7D8F),
         ),
       ),
     );
@@ -471,7 +489,7 @@ class _Placeholder extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF26A69A), Color(0xFF4DB6AC)],
+          colors: [Color(0xFF26A69A), Color(0xFF2A7D8F)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

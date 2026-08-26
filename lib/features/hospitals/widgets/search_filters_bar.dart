@@ -66,7 +66,7 @@ class _FacilityFilterBarState extends State<FacilityFilterBar> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(0),
       decoration: BoxDecoration(
         color:        Colors.grey[100],
         borderRadius: BorderRadius.circular(16),
@@ -123,10 +123,10 @@ class _FacilityFilterBarState extends State<FacilityFilterBar> {
                           ? null
                           : _priceRangeOptions[_selectedPriceLabel],
                     ),
-                    icon:  const Icon(Icons.search_rounded, size: 18),
+                    icon:  const Icon(CupertinoIcons.search, size: 18),
                     label: const Text('Search'),
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF00897B),
+                      backgroundColor: const Color(0xFF2A7D8F),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -249,7 +249,7 @@ class _PlatformAdaptiveDropdown extends StatelessWidget {
   // ── Material: standard DropdownButton (existing behaviour) ────────────────
   Widget _buildMaterialDropdown(BuildContext context) {
     return Container(
-      height: 44,
+      height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         color:        Colors.white,

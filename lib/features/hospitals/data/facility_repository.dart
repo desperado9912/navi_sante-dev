@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:collection';
 import 'facility_local.dart';
 import '../controller/facility_model.dart';
 import 'facility_remote.dart';
@@ -16,9 +18,9 @@ import 'facility_remote.dart';
 ///
 /// | Method                | Source                          |
 /// |-----------------------|---------------------------------|
-/// | `getAllFacilities()`  | Cache → Network (Stream×2)      |
+/// | `getAllFacilities()`  | Cache → shared in-flight network |
 /// | `getHighlights()`     | Cache only (sync, zero network) |
-/// | `searchFacilities()`  | Network only (never cached)     |
+/// | `searchFacilities()`  | Bounded cache + coalesced RPC   |
 /// | `getFacilityDetail()` | Cache-first, network on miss    |
 /// | `getUserBookmarks()`  | Network first, Cache fallback   |
 ///
@@ -26,7 +28,21 @@ import 'facility_remote.dart';
 class FacilityRepository {
   final FacilityLocal _local;
   final FacilityRemote _remote;
-  final Map<String, List<FacilityModel>> _searchCache = {};
+  final LinkedHashMap<String, List<FacilityModel>> _searchCache =
+      LinkedHashMap<String, List<FacilityModel>>();
+
+  static const int _maxSearchCacheEntries = 40;
+  static const int _minRemoteQueryLength = 3;
+  static const Duration _facilitiesTtl = Duration(minutes: 10);
+
+  Future<List<FacilityModel>>? _inFlightAllFacilities;
+  DateTime? _lastAllFacilitiesFetchAt;
+
+  Future<List<FacilityModel>>? _activeSearch;
+  String? _activeSearchKey;
+  int _searchEpoch = 0;
+  _SearchRequest? _queuedSearch;
+  Completer<List<FacilityModel>>? _queuedSearchCompleter;
 
   FacilityRepository({
     required FacilityLocal local,
@@ -34,19 +50,45 @@ class FacilityRepository {
   }) : _local = local,
        _remote = remote;
 
-  /// Returns a Stream that emits up to twice: from Hive cache then from Supabase
+  /// Returns a Stream that emits cached facilities immediately, then a
+  /// single shared network refresh when the cache is missing or stale.
   Stream<List<FacilityModel>> getAllFacilities() async* {
     final cached = _local.getAllFacilities();
     if (cached.isNotEmpty) yield cached;
 
+    if (_inFlightAllFacilities != null) {
+      try {
+        yield await _inFlightAllFacilities!;
+      } catch (error) {
+        if (cached.isEmpty) rethrow;
+      }
+      return;
+    }
+
+    final bool cacheIsFresh =
+        cached.isNotEmpty &&
+        _lastAllFacilitiesFetchAt != null &&
+        DateTime.now().difference(_lastAllFacilitiesFetchAt!) < _facilitiesTtl;
+    if (cacheIsFresh) return;
+
+    final future = _fetchAndCacheAllFacilities();
+    _inFlightAllFacilities = future;
     try {
-      final fresh = await _remote.getAllFacilities();
-      await _local.saveAllFacilities(fresh);
-      yield fresh;
+      yield await future;
     } catch (error) {
       if (cached.isEmpty) rethrow;
-      // Cache was already served — swallow the network error.
+    } finally {
+      if (identical(_inFlightAllFacilities, future)) {
+        _inFlightAllFacilities = null;
+      }
     }
+  }
+
+  Future<List<FacilityModel>> _fetchAndCacheAllFacilities() async {
+    final fresh = await _remote.getAllFacilities();
+    await _local.saveAllFacilities(fresh);
+    _lastAllFacilitiesFetchAt = DateTime.now();
+    return fresh;
   }
 
   /// Returns the [count] closest facilities to the user's position.
@@ -77,7 +119,11 @@ class FacilityRepository {
     }
   }
 
-  /// Searches facilities via the Supabase RPC. Always network.
+  /// Searches facilities via the Supabase RPC.
+  ///
+  /// Short queries without filters stay local. Identical in-flight searches
+  /// share one Future. Newer queries coalesce onto a single follow-up RPC
+  /// so intermediate keystrokes never spawn extra database work.
   Future<List<FacilityModel>> searchFacilities({
     required String query,
     String? typeFilter,
@@ -86,24 +132,129 @@ class FacilityRepository {
     String? priceRangeFilter,
     double minRating = 0.0,
   }) async {
-    final cacheKey =
-        '$query-$typeFilter-$cityFilter-$serviceFilter-$priceRangeFilter-$minRating';
-    if (_searchCache.containsKey(cacheKey)) {
-      return _searchCache[cacheKey]!;
-    }
-
-    final results = await _remote.searchFacilities(
-      query: query,
-      typeFilter: typeFilter,
-      cityFilter: cityFilter,
-      serviceFilter: serviceFilter,
-      priceRangeFilter: priceRangeFilter,
+    final request = _SearchRequest(
+      query: query.trim(),
+      typeFilter: _normalizeFilter(typeFilter),
+      cityFilter: _normalizeFilter(cityFilter),
+      serviceFilter: _normalizeFilter(serviceFilter),
+      priceRangeFilter: _normalizeFilter(priceRangeFilter),
       minRating: minRating,
     );
 
-    _searchCache[cacheKey] = results;
-    return results;
+    if (!request.hasRemoteWork) {
+      return searchCachedFacilities(request.query);
+    }
+
+    final cached = _takeSearchCache(request.cacheKey);
+    if (cached != null) return cached;
+
+    if (_activeSearch != null && _activeSearchKey == request.cacheKey) {
+      return _activeSearch!;
+    }
+
+    if (_activeSearch != null) {
+      _queuedSearch = request;
+      _queuedSearchCompleter ??= Completer<List<FacilityModel>>();
+      return _queuedSearchCompleter!.future;
+    }
+
+    return _executeSearch(request);
   }
+
+  /// Drops any coalesced follow-up search so a clear/unmount cannot start
+  /// another RPC after the in-flight call finishes.
+  void cancelPendingSearch() {
+    _searchEpoch++;
+    _queuedSearch = null;
+    final pending = _queuedSearchCompleter;
+    _queuedSearchCompleter = null;
+    if (pending != null && !pending.isCompleted) {
+      pending.complete(const []);
+    }
+  }
+
+  /// Accent-insensitive substring match over the Hive facility list.
+  List<FacilityModel> searchCachedFacilities(String query) {
+    final needle = query.trim().toLowerCase();
+    if (needle.isEmpty) return const [];
+    final all = _local.getAllFacilities();
+    if (all.isEmpty) return const [];
+    return all
+        .where((facility) => facility.name.toLowerCase().contains(needle))
+        .toList();
+  }
+
+  Future<List<FacilityModel>> _executeSearch(_SearchRequest request) async {
+    final epoch = _searchEpoch;
+    final future = _remote.searchFacilities(
+      query: request.query,
+      typeFilter: request.typeFilter,
+      cityFilter: request.cityFilter,
+      serviceFilter: request.serviceFilter,
+      priceRangeFilter: request.priceRangeFilter,
+      minRating: request.minRating,
+    );
+    _activeSearch = future;
+    _activeSearchKey = request.cacheKey;
+
+    try {
+      final results = await future;
+      if (epoch == _searchEpoch) {
+        _putSearchCache(request.cacheKey, results);
+      }
+      return results;
+    } finally {
+      if (identical(_activeSearch, future)) {
+        _activeSearch = null;
+        _activeSearchKey = null;
+      }
+      final queued = _queuedSearch;
+      final queuedCompleter = _queuedSearchCompleter;
+      _queuedSearch = null;
+      _queuedSearchCompleter = null;
+      if (queued != null &&
+          queuedCompleter != null &&
+          !queuedCompleter.isCompleted &&
+          epoch == _searchEpoch) {
+        unawaited(
+          _executeSearch(queued).then(queuedCompleter.complete).catchError((
+            Object error,
+            StackTrace stack,
+          ) {
+            if (!queuedCompleter.isCompleted) {
+              queuedCompleter.completeError(error, stack);
+            }
+          }),
+        );
+      } else if (queuedCompleter != null && !queuedCompleter.isCompleted) {
+        queuedCompleter.complete(const []);
+      }
+    }
+  }
+
+  List<FacilityModel>? _takeSearchCache(String key) {
+    final cached = _searchCache.remove(key);
+    if (cached == null) return null;
+    _searchCache[key] = cached;
+    return cached;
+  }
+
+  void _putSearchCache(String key, List<FacilityModel> results) {
+    _searchCache.remove(key);
+    _searchCache[key] = results;
+    while (_searchCache.length > _maxSearchCacheEntries) {
+      _searchCache.remove(_searchCache.keys.first);
+    }
+  }
+
+  String? _normalizeFilter(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    return trimmed;
+  }
+
+  Future<FacilityDetailModel?>? _inFlightDetail;
+  String? _inFlightDetailId;
 
   //  Facility Detail (cache-first).
   /// Cache hit → instant return, no network. Cache miss → fetches from
@@ -112,11 +263,25 @@ class FacilityRepository {
     final cached = _local.getFacilityDetail(facilityId);
     if (cached != null) return cached;
 
-    final detail = await _remote.getFacilityDetail(facilityId);
-    if (detail != null) {
-      await _local.saveFacilityDetail(detail);
+    if (_inFlightDetail != null && _inFlightDetailId == facilityId) {
+      return _inFlightDetail;
     }
-    return detail;
+
+    final future = _remote.getFacilityDetail(facilityId);
+    _inFlightDetail = future;
+    _inFlightDetailId = facilityId;
+    try {
+      final detail = await future;
+      if (detail != null) {
+        await _local.saveFacilityDetail(detail);
+      }
+      return detail;
+    } finally {
+      if (identical(_inFlightDetail, future)) {
+        _inFlightDetail = null;
+        _inFlightDetailId = null;
+      }
+    }
   }
 
   /// Records a facility as recently viewed (capped at 10 entries).
@@ -170,4 +335,35 @@ class FacilityRepository {
     }
     return services.toList()..sort();
   }
+}
+
+class _SearchRequest {
+  final String query;
+  final String? typeFilter;
+  final String? cityFilter;
+  final String? serviceFilter;
+  final String? priceRangeFilter;
+  final double minRating;
+
+  const _SearchRequest({
+    required this.query,
+    required this.typeFilter,
+    required this.cityFilter,
+    required this.serviceFilter,
+    required this.priceRangeFilter,
+    required this.minRating,
+  });
+
+  bool get hasFilters =>
+      typeFilter != null ||
+      cityFilter != null ||
+      serviceFilter != null ||
+      priceRangeFilter != null ||
+      minRating > 0;
+
+  bool get hasRemoteWork =>
+      hasFilters || query.length >= FacilityRepository._minRemoteQueryLength;
+
+  String get cacheKey =>
+      '${query.toLowerCase()}|$typeFilter|$cityFilter|$serviceFilter|$priceRangeFilter|$minRating';
 }

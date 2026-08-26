@@ -13,7 +13,6 @@ import 'package:navi_sante/features/profile/screens/notifications_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../features/auth/cubit/auth_cubit.dart';
 import '../../hospitals/controller/facility_bloc.dart';
-import '../controllers/profile_controller.dart';
 import '../widgets/language_sheet.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/settings_tiles.dart';
@@ -30,7 +29,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final _profileController = ProfileController();
 
   // Local language state only — app-level LanguageCubit will replace this.
   String _langCode = 'en';
@@ -60,16 +58,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     MemoryLeakTracker.logInit(this);
-    MemoryLeakTracker.logInit(_profileController);
-    _profileController.loadHealthScore();
     _navigationAppCode = NavigationSettings.getPreferredApp();
   }
 
   @override
   void dispose() {
     MemoryLeakTracker.logDispose(this);
-    MemoryLeakTracker.logDispose(_profileController);
-    _profileController.dispose();
     super.dispose();
   }
 
@@ -179,7 +173,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   //About Navisante button
   Future<void> _aboutNavisante(BuildContext context) async {
     final Uri webUri = Uri.parse(
-      'https://navisante.com/about',
+      'https://navisante.site/about',
     ); //TODO: Replace with real about link
 
     if (await canLaunchUrl(webUri)) {
@@ -359,7 +353,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Profile header ──────────────────────────────
-            ProfileHeader(controller: _profileController),
+            const ProfileHeader(),
             const SizedBox(height: 24),
 
             // ── Section label ───────────────────────────────
