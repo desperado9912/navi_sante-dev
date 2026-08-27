@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'features/hospitals/data/facility_local.dart';
+import 'features/pharmacy/data/medication_local.dart';
 import 'core/utils/navigation_settings.dart';
 import 'features/home/controller/map_cache_manager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -21,6 +22,7 @@ void main() async {
   //Hive initialization
   await Hive.initFlutter();
   await FacilityLocal.init();
+  await MedicationLocal.init();
   await NavigationSettings.init();
 
   //Init map cache manager (not supported on web — no temp directory)

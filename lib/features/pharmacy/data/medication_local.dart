@@ -1,0 +1,120 @@
+import 'dart:convert';
+import 'package:hive_flutter/hive_flutter.dart';
+import '../controller/pharmacy_model.dart';
+
+// Owns all Hive read/write operations for medication data. JSON-encoded
+// strings storage, same approach as FacilityLocal. No network calls —
+// the repository decides when to call this vs. MedicationRemote.
+
+const String _medicationsBox = 'medications';
+const String _recentSearchesBox = 'medication_recent_searches';
+const String _favouritesBox = 'medication_favourites';
+
+const String _allMedicationsKey = 'all';
+const String _quickFiltersKey = 'quick_filters';
+const String _recentSearchesKey = 'recent';
+const String _favouriteIdsKey = 'favourite_ids';
+
+/// Capped at 5 per your spec — recent searches are meant to be a short,
+/// glanceable row of chips, not a history log.
+const int _maxRecentSearches = 5;
+
+class MedicationLocal {
+  // Opens all medication-related Hive boxes.
+  static Future<void> init() async {
+    await Future.wait([
+      Hive.openBox<String>(_medicationsBox),
+      Hive.openBox<String>(_recentSearchesBox),
+      Hive.openBox<String>(_favouritesBox),
+    ]);
+  }
+
+  // MEDICATIONS
+  Future<void> saveAllMedications(List<MedicationModel> medications) async {
+    final box = Hive.box<String>(_medicationsBox);
+    final encoded = jsonEncode(medications.map((m) => m.toJson()).toList());
+    await box.put(_allMedicationsKey, encoded);
+  }
+
+  List<MedicationModel> getAllMedications() {
+    final box = Hive.box<String>(_medicationsBox);
+    final encoded = box.get(_allMedicationsKey);
+    if (encoded == null) return [];
+
+    final decoded = jsonDecode(encoded) as List<dynamic>;
+    return decoded
+        .map((e) => MedicationModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  // QUICK FILTERS — tiny, rarely changing list of condition names.
+  Future<void> saveQuickFilters(List<String> filters) async {
+    final box = Hive.box<String>(_medicationsBox);
+    await box.put(_quickFiltersKey, jsonEncode(filters));
+  }
+
+  List<String> getQuickFilters() {
+    final box = Hive.box<String>(_medicationsBox);
+    final encoded = box.get(_quickFiltersKey);
+    if (encoded == null) return [];
+    return (jsonDecode(encoded) as List<dynamic>).cast<String>();
+  }
+
+  // RECENT SEARCHES
+  /// Records [term] as a recent search. De-dupes case-insensitively (a
+  /// repeat search moves back to the front rather than appending again),
+  /// then caps the list at [_maxRecentSearches].
+  Future<void> addRecentSearch(String term) async {
+    final box = Hive.box<String>(_recentSearchesBox);
+    final encoded = box.get(_recentSearchesKey);
+    final List<String> terms = encoded != null
+        ? (jsonDecode(encoded) as List<dynamic>).cast<String>()
+        : [];
+
+    terms.removeWhere((t) => t.toLowerCase() == term.toLowerCase());
+    terms.insert(0, term);
+
+    if (terms.length > _maxRecentSearches) {
+      terms.removeRange(_maxRecentSearches, terms.length);
+    }
+    await box.put(_recentSearchesKey, jsonEncode(terms));
+  }
+
+  List<String> getRecentSearches() {
+    final box = Hive.box<String>(_recentSearchesBox);
+    final encoded = box.get(_recentSearchesKey);
+    if (encoded == null) return [];
+    return (jsonDecode(encoded) as List<dynamic>).cast<String>();
+  }
+
+  Future<void> clearRecentSearches() async {
+    await Hive.box<String>(_recentSearchesBox).delete(_recentSearchesKey);
+  }
+
+  // FAVOURITES
+  Future<void> saveFavouriteIds(Set<String> ids) async {
+    final box = Hive.box<String>(_favouritesBox);
+    await box.put(_favouriteIdsKey, jsonEncode(ids.toList()));
+  }
+
+  Set<String> getFavouriteIds() {
+    final box = Hive.box<String>(_favouritesBox);
+    final encoded = box.get(_favouriteIdsKey);
+    if (encoded == null) return {};
+    return (jsonDecode(encoded) as List<dynamic>).cast<String>().toSet();
+  }
+
+  Future<void> clearFavouriteIds() async {
+    await Hive.box<String>(_favouritesBox).delete(_favouriteIdsKey);
+  }
+
+  // Wipes all cached medication data. Next getAllMedications() call
+  // starts cold, next fetch pulls fresh from Supabase.
+  Future<void> clearAll() async {
+    await Future.wait([
+      Hive.box<String>(_medicationsBox).clear(),
+      Hive.box<String>(_recentSearchesBox).clear(),
+      Hive.box<String>(_favouritesBox).clear(),
+    ]);
+  }
+}

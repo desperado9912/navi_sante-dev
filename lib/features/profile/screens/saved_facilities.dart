@@ -96,7 +96,7 @@ class _EmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.bookmark_border_rounded,
+              CupertinoIcons.bookmark,
               size: 48,
               color: Colors.grey[400],
             ),

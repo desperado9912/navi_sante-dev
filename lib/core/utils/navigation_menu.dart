@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:navi_sante/features/home/screens/home_screen.dart';
 import 'package:navi_sante/features/hospitals/screens/hospitals.dart';
-import 'package:navi_sante/features/pharmacy/pharmacy.dart';
+import 'package:navi_sante/features/pharmacy/screens/pharmacy.dart';
 import 'package:navi_sante/features/profile/screens/profile_screen.dart';
 import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
 import 'package:navi_sante/core/performance/fade_indexed_stack.dart';
@@ -152,7 +152,7 @@ class NavigationController extends GetxController {
   final List<Widget> screens = [
     const RepaintBoundary(child: ScreenWrapper(child: HomeScreen())),
     const RepaintBoundary(child: ScreenWrapper(child: Hospitals())),
-    const RepaintBoundary(child: ScreenWrapper(child: Pharmacy())),
+    const RepaintBoundary(child: ScreenWrapper(child: PharmacyScreen())),
     const RepaintBoundary(child: ScreenWrapper(child: ProfileScreen())),
   ];
 

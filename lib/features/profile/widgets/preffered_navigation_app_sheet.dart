@@ -31,8 +31,6 @@ class NavigationAppBottomSheet extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // TODO: ADD ORIGINAL PLATFORM LOGOS TO ASSETS FOLDER.
-
             // Google Maps
             _NavAppOption(
               label: 'Google Maps',
