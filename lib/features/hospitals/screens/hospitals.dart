@@ -81,14 +81,18 @@ class _SearchField extends StatelessWidget {
       onChanged: onChanged,
       decoration: InputDecoration(
         hintText: 'hospitals, clinics or pharmacies',
-        prefixIcon: const Icon(Icons.search_rounded),
+        prefixIcon: const Icon(Icons.search_rounded, size: 22),
         // Clear (X) button only shows once there's text to clear.
         suffixIcon: ValueListenableBuilder<TextEditingValue>(
           valueListenable: controller,
           builder: (context, value, _) {
             if (value.text.isEmpty) return const SizedBox.shrink();
             return IconButton(
-              icon: const Icon(Icons.close_rounded, size: 18),
+              icon: const Icon(
+                Icons.close_rounded,
+                size: 18,
+                color: Color(0xFF5F6368),
+              ),
               onPressed: onClear,
             );
           },
@@ -387,9 +391,9 @@ class _ResultsGrid extends StatelessWidget {
         final displayList = isSearching
             ? filtered
             : (List<FacilityModel>.from(filtered)
-                ..sort((a, b) => b.rating.compareTo(a.rating)))
-                .take(10)
-                .toList();
+                    ..sort((a, b) => b.rating.compareTo(a.rating)))
+                  .take(10)
+                  .toList();
 
         // ── Empty state ─────────────────────────────────────────────────────
         if (displayList.isEmpty) {

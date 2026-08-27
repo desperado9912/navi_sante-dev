@@ -33,12 +33,7 @@ class MedicationSearchEngine {
   static const int _minWordLength = 3;
 
   /// Common French symptom/condition words mapped to their canonical
-  /// (English, as-stored) condition name, so a query like "paludisme"
-  /// or a sentence containing "tête" finds the same results as the
-  /// English term — without needing bilingual columns in the database.
-  /// Deliberately single-word keys: a multi-word key could only ever
-  /// match on an exact whole-phrase hit (step 1), never inside a longer
-  /// sentence once word-splitting (step 2) breaks it apart.
+  /// (English, as-stored) condition name.
   static const Map<String, String> _frenchToCanonicalCondition = {
     'paludisme': 'malaria',
     'palu': 'malaria',
@@ -51,6 +46,36 @@ class MedicationSearchEngine {
     'diarrhee': 'diarrhea',
     'gorge': 'sore throat', // "mal de gorge"
     'infection': 'infection',
+    'grippe': 'flu',
+    'rhume': 'cold',
+    'estomac': 'stomach',
+    'ventre': 'stomach',
+    'nausee': 'nausea',
+    'vomissement': 'vomiting',
+    'tension': 'hypertension',
+    'hypertension': 'hypertension',
+    'diabete': 'diabetes',
+    'allergie': 'allergy',
+  };
+
+  /// Reverse mapping for when conditions in DB are stored in French.
+  static const Map<String, String> _canonicalToFrenchCondition = {
+    'malaria': 'paludisme',
+    'fever': 'fievre',
+    'headache': 'tete',
+    'pain relief': 'douleur',
+    'pain': 'douleur',
+    'cough': 'toux',
+    'diarrhea': 'diarrhee',
+    'sore throat': 'gorge',
+    'infection': 'infection',
+    'flu': 'grippe',
+    'cold': 'rhume',
+    'stomach': 'estomac',
+    'nausea': 'nausee',
+    'hypertension': 'tension',
+    'diabetes': 'diabete',
+    'allergy': 'allergie',
   };
 
   MedicationSearchResult search(List<MedicationModel> pool, String rawQuery) {
@@ -67,7 +92,7 @@ class MedicationSearchEngine {
     if (wholePhraseMatches.isNotEmpty) {
       return MedicationSearchResult(
         matches: wholePhraseMatches,
-        chipTerm: query,
+        chipTerm: query.length >= _minWordLength ? _titleCase(query) : null,
       );
     }
 
@@ -102,13 +127,27 @@ class MedicationSearchEngine {
     final List<String> conditions = medication.conditions
         .map(_normalize)
         .toList();
+    final List<String> retailers = medication.retailers
+        .map((r) => _normalize(r.name))
+        .toList();
+    final String description = medication.description != null
+        ? _normalize(medication.description!)
+        : '';
 
     for (final String token in tokens) {
-      final String translated = _frenchToCanonicalCondition[token] ?? token;
+      final String frToEn = _frenchToCanonicalCondition[token] ?? token;
+      final String enToFr = _canonicalToFrenchCondition[token] ?? token;
 
-      if (name.contains(token)) return true;
-      if (brands.any((b) => b.contains(token))) return true;
-      if (conditions.any((c) => c.contains(token) || c.contains(translated))) {
+      if (name.contains(token) || name.contains(frToEn)) return true;
+      if (brands.any((b) => b.contains(token) || b.contains(frToEn))) return true;
+      if (conditions.any(
+        (c) => c.contains(token) || c.contains(frToEn) || c.contains(enToFr),
+      )) {
+        return true;
+      }
+      if (retailers.any((r) => r.contains(token) || r.contains(frToEn))) return true;
+      if (description.isNotEmpty &&
+          (description.contains(token) || description.contains(frToEn))) {
         return true;
       }
     }
@@ -126,13 +165,15 @@ class MedicationSearchEngine {
 
     for (final String word in words) {
       final String translated = _frenchToCanonicalCondition[word] ?? word;
-      if (allConditions.any((c) => c.contains(translated))) {
+      if (allConditions.any((c) => c.contains(translated) || c.contains(word))) {
         // Surface the human-readable canonical term — a "paludisme"
         // search still saves a "Malaria" chip, not the raw French word.
         return _titleCase(translated);
       }
     }
-    return words.isNotEmpty ? _titleCase(words.first) : null;
+    return words.isNotEmpty && words.first.length >= _minWordLength
+        ? _titleCase(words.first)
+        : null;
   }
 
   String _titleCase(String input) =>

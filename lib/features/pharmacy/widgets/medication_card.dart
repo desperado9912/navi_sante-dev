@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../home/maps/map_launcher.dart';
 import '../controller/pharmacy_model.dart';
@@ -30,7 +31,7 @@ class _MedicationCardState extends State<MedicationCard> {
   static const int _maxRetailersShown = 2;
 
   IconData get _formIcon => switch (widget.medication.form) {
-    MedicationForm.pill => Icons.medication_rounded,
+    MedicationForm.pill => CupertinoIcons.capsule_fill,
     MedicationForm.liquid => Icons.water_drop_rounded,
     MedicationForm.injection => Icons.vaccines_rounded,
     MedicationForm.topical => Icons.healing_rounded,
@@ -68,7 +69,11 @@ class _MedicationCardState extends State<MedicationCard> {
                   color: const Color(0xFFD8F6FF).withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(_formIcon, color: const Color(0xFF2A7D8F), size: 20),
+                child: Icon(
+                  _formIcon,
+                  color: const Color(0xFF2A7D8F),
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -106,7 +111,7 @@ class _MedicationCardState extends State<MedicationCard> {
                     color: widget.isFavourited
                         ? const Color(0xFFE53935)
                         : Colors.grey[400],
-                    size: 20,
+                    size: 22,
                   ),
                 ),
               ),
@@ -128,7 +133,7 @@ class _MedicationCardState extends State<MedicationCard> {
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF2A7D8F),
+              color: Color(0xFF1A1A1A),
             ),
           ),
 
@@ -191,17 +196,23 @@ class _MedicationCardState extends State<MedicationCard> {
                   ),
           ),
 
-          Align(
-            alignment: Alignment.centerRight,
-            child: GestureDetector(
-              onTap: () => setState(() => _expanded = !_expanded),
-              child: Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Icon(
-                  _expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
-                  color: const Color(0xFF2A7D8F),
-                  size: 22,
-                ),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 8, bottom: 2),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Icon(
+                    _expanded
+                        ? CupertinoIcons.chevron_up
+                        : CupertinoIcons.chevron_down,
+                    color: const Color(0xFF2A7D8F),
+                    size: 22,
+                  ),
+                ],
               ),
             ),
           ),
@@ -240,6 +251,7 @@ class _DispensingBadge extends StatelessWidget {
   }
 }
 
+// Medication brand names chip
 class _InlineChip extends StatelessWidget {
   final String text;
   const _InlineChip({required this.text});
@@ -249,7 +261,7 @@ class _InlineChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: const Color(0xFFD8F6FF).withValues(alpha: 0.5),
+        color: const Color(0xFFD7EEF3).withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
@@ -257,7 +269,7 @@ class _InlineChip extends StatelessWidget {
         style: const TextStyle(
           fontSize: 11,
           color: Color(0xFF2A7D8F),
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
@@ -280,9 +292,9 @@ class _RetailerChip extends StatelessWidget {
       );
     } on MapLaunchException catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -293,7 +305,11 @@ class _RetailerChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.storefront_rounded, size: 12, color: Color(0xFF2A7D8F)),
+          const Icon(
+            Icons.storefront_rounded,
+            size: 12,
+            color: Color(0xFF2A7D8F),
+          ),
           const SizedBox(width: 3),
           Text(
             retailer.name,

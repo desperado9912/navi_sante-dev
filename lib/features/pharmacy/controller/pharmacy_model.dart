@@ -108,27 +108,54 @@ class MedicationModel extends Equatable {
   /// Parses a single row from the get_all_medications() RPC.
   factory MedicationModel.fromJson(Map<String, dynamic> json) {
     return MedicationModel(
-      medicationId: json['medication_id'] as String,
-      name: json['name'] as String,
+      medicationId: (json['medication_id'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
       brandNames: (json['brand_names'] as List<dynamic>? ?? [])
-          .map((e) => e as String)
+          .map((e) {
+            if (e is String) return e;
+            if (e is Map) {
+              return (e['name'] ?? e['brand_name'] ?? '').toString();
+            }
+            return e.toString();
+          })
+          .where((s) => s.isNotEmpty)
           .toList(),
       dosages: (json['dosages'] as List<dynamic>? ?? [])
-          .map((e) => e as String)
+          .map((e) {
+            if (e is String) return e;
+            if (e is Map) {
+              return (e['dosage'] ?? e['name'] ?? '').toString();
+            }
+            return e.toString();
+          })
+          .where((s) => s.isNotEmpty)
           .toList(),
-      form: MedicationForm.fromString(json['form'] as String),
+      form: MedicationForm.fromString(json['form']?.toString() ?? ''),
       dispensingClass: DispensingClass.fromString(
-        json['dispensing_class'] as String,
+        json['dispensing_class']?.toString() ?? '',
       ),
       priceMinCfa: (json['price_min_cfa'] as num?)?.toInt(),
       priceMaxCfa: (json['price_max_cfa'] as num?)?.toInt(),
       description: json['description'] as String?,
       defaultRank: (json['default_rank'] as num?)?.toInt(),
       conditions: (json['conditions'] as List<dynamic>? ?? [])
-          .map((e) => e as String)
+          .map((e) {
+            if (e is String) return e;
+            if (e is Map) {
+              return (e['name'] ??
+                      e['condition_name'] ??
+                      e['condition'] ??
+                      e['title'] ??
+                      '')
+                  .toString();
+            }
+            return e.toString();
+          })
+          .where((s) => s.isNotEmpty)
           .toList(),
       retailers: (json['retailers'] as List<dynamic>? ?? [])
-          .map((e) => MedicationRetailer.fromJson(e as Map<String, dynamic>))
+          .whereType<Map<String, dynamic>>()
+          .map((e) => MedicationRetailer.fromJson(e))
           .toList(),
     );
   }

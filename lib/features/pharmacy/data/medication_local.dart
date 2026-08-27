@@ -61,17 +61,32 @@ class MedicationLocal {
   }
 
   // RECENT SEARCHES
-  /// Records [term] as a recent search. De-dupes case-insensitively (a
-  /// repeat search moves back to the front rather than appending again),
-  /// then caps the list at [_maxRecentSearches].
-  Future<void> addRecentSearch(String term) async {
+  /// Records [term] as a recent search. Filters out fragments (< 3 chars),
+  /// removes shorter prefixes and caps the list at [_maxRecentSearches].
+  Future<void> addRecentSearch(String rawTerm) async {
+    final String term = rawTerm.trim();
+    if (term.length < 3) return;
+
     final box = Hive.box<String>(_recentSearchesBox);
     final encoded = box.get(_recentSearchesKey);
     final List<String> terms = encoded != null
         ? (jsonDecode(encoded) as List<dynamic>).cast<String>()
         : [];
 
-    terms.removeWhere((t) => t.toLowerCase() == term.toLowerCase());
+    final String lower = term.toLowerCase();
+
+    // If an existing term already starts with this term and is longer,
+    // don't add the shorter fragment (e.g. don't add "ibu" if "ibuprofen" exists).
+    if (terms.any((t) => t.toLowerCase().startsWith(lower) && t.length > term.length)) {
+      return;
+    }
+
+    // Remove any exact match or existing shorter prefixes (e.g. remove "ibu" when "ibuprofen" is added).
+    terms.removeWhere((t) {
+      final String tLower = t.toLowerCase();
+      return tLower == lower || lower.startsWith(tLower);
+    });
+
     terms.insert(0, term);
 
     if (terms.length > _maxRecentSearches) {

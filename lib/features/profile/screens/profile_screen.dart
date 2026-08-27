@@ -150,11 +150,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   //help & support button
   Future<void> _helpAndSupport(BuildContext context) async {
-    final Uri emailUri = Uri(
-      scheme: 'mailto',
-      path: 'contact@navisante.com', //TODO: Add real contact email.
-      queryParameters: {'subject': 'NaviSanté Contact'},
-    );
+    const email = 'contact@navisante.site'; //TODO: Add real contact email.
+    final subject = Uri.encodeComponent('NaviSanté Contact');
+    final emailUri = Uri.parse('mailto:$email?subject=$subject');
 
     if (await canLaunchUrl(emailUri)) {
       await launchUrl(emailUri);
@@ -165,7 +163,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         context,
         type: FeedbackType.info,
         message:
-            'No email app found. Please contact contact@navisante.com directly.',
+            'No email app found. Please contact $email directly.',
       );
     }
   }

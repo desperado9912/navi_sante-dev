@@ -2,7 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
-import 'package:navi_sante/core/utils/navigation_menu.dart' show navBottomPadding;
+import 'package:navi_sante/core/utils/navigation_menu.dart'
+    show navBottomPadding;
 import '../controller/pharmacy_bloc.dart';
 import '../controller/pharmacy_model.dart';
 import '../widgets/medical_notice_strip.dart';
@@ -106,148 +107,158 @@ class _PharmacyScreenState extends State<PharmacyScreen> {
     // PlatformAdaptiveAppBar and SafeArea for this tab.
     return ColoredBox(
       color: const Color(0xFFF8F9F8),
-      child: Column(
-        children: [
-          // ── Header: subtitle + search bar + quick filters + notice ──
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Find medications by name or symptom.',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 12),
-                MedicationSearchBar(
-                  controller: _controller,
-                  onChanged: _onQueryChanged,
-                  onClear: _onClearSearch,
-                ),
-
-                // Quick filters — only rebuilds when filters/recents change.
-                BlocBuilder<PharmacyBloc, PharmacyState>(
-                  buildWhen: (prev, curr) =>
-                      prev.commonQuickFilters != curr.commonQuickFilters ||
-                      prev.recentSearches != curr.recentSearches ||
-                      prev.activeQuery != curr.activeQuery,
-                  builder: (context, state) {
-                    if (state.mergedQuickFilters.isEmpty) {
-                      return const SizedBox.shrink();
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: QuickFilterChips(
-                        filters: state.mergedQuickFilters,
-                        activeFilter: state.activeQuery,
-                        canClear: state.recentSearches.isNotEmpty,
-                        onTap: _onChipTap,
-                        onClear: () => context
-                            .read<PharmacyBloc>()
-                            .add(ClearRecentSearches()),
+      child: BlocBuilder<PharmacyBloc, PharmacyState>(
+        buildWhen: (prev, curr) =>
+            prev.medications != curr.medications ||
+            prev.medicationsStatus != curr.medicationsStatus ||
+            prev.activeQuery != curr.activeQuery ||
+            prev.searchResults != curr.searchResults ||
+            prev.commonQuickFilters != curr.commonQuickFilters ||
+            prev.recentSearches != curr.recentSearches ||
+            prev.favouriteIds != curr.favouriteIds,
+        builder: (context, state) {
+          return CustomScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            slivers: [
+              // ── Header: subtitle + search bar + quick filters + notice ──
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      MedicationSearchBar(
+                        controller: _controller,
+                        onChanged: _onQueryChanged,
+                        onClear: _onClearSearch,
                       ),
-                    );
-                  },
+
+                      // Quick filters
+                      if (state.mergedQuickFilters.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: QuickFilterChips(
+                            filters: state.mergedQuickFilters,
+                            activeFilter: state.activeQuery,
+                            canClear: state.recentSearches.isNotEmpty,
+                            onTap: _onChipTap,
+                            onClear: () => context.read<PharmacyBloc>().add(
+                              ClearRecentSearches(),
+                            ),
+                          ),
+                        ),
+
+                      const SizedBox(height: 12),
+
+                      // Medical notice label
+                      const MedicalNoticeStrip(),
+                      const SizedBox(height: 14),
+                    ],
+                  ),
                 ),
+              ),
 
-                const SizedBox(height: 12),
-                const MedicalNoticeStrip(),
-                const SizedBox(height: 4),
-              ],
-            ),
-          ),
-
-          // ── Results section ─────────────────────────────────────────
-          Expanded(
-            child: BlocBuilder<PharmacyBloc, PharmacyState>(
-              buildWhen: (prev, curr) =>
-                  prev.medications != curr.medications ||
-                  prev.medicationsStatus != curr.medicationsStatus ||
-                  prev.activeQuery != curr.activeQuery ||
-                  prev.searchResults != curr.searchResults ||
-                  prev.favouriteIds != curr.favouriteIds,
-              builder: (context, state) => _buildResults(context, state),
-            ),
-          ),
-        ],
+              // ── Results section ─────────────────────────────────────────
+              ..._buildResultsSlivers(context, state),
+            ],
+          );
+        },
       ),
     );
   }
 
-  // ── Results body ────────────────────────────────────────────────────
+  // ── Results slivers ─────────────────────────────────────────────────
 
-  Widget _buildResults(BuildContext context, PharmacyState state) {
+  List<Widget> _buildResultsSlivers(BuildContext context, PharmacyState state) {
     // 1. Loading — only show spinner when there's truly nothing cached.
     if (state.isMedicationsLoading && state.medications.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF2A7D8F)),
-      );
+      return const [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(
+            child: CircularProgressIndicator(color: Color(0xFF2A7D8F)),
+          ),
+        ),
+      ];
     }
 
     // 2. Error — only shown when no cached data is available.
     if (state.medicationsStatus == MedicationStatus.error &&
         state.medications.isEmpty) {
-      return _ErrorRetryView(
-        message: state.errorMessage ?? 'Unable to load medications.',
-        onRetry: () => context.read<PharmacyBloc>().add(LoadMedications()),
-      );
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: _ErrorRetryView(
+            message: state.errorMessage ?? 'Unable to load medications.',
+            onRetry: () => context.read<PharmacyBloc>().add(LoadMedications()),
+          ),
+        ),
+      ];
     }
 
     // 3. Search performed but no results.
     if (state.hasNoResults) {
-      return NoResultsView(query: state.activeQuery);
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: NoResultsView(query: state.activeQuery),
+        ),
+      ];
     }
 
     // 4. Normal display — search results or default medications.
     final bool searching = state.isSearching;
-    final List<MedicationModel> displayList =
-        searching ? state.searchResults : state.defaultMedications;
+    final List<MedicationModel> displayList = searching
+        ? state.searchResults
+        : state.defaultMedications;
 
     if (displayList.isEmpty) {
-      // Default view with nothing flagged default_rank yet (empty
-      // catalog / seed not run) — not a "no results" search state.
-      return const SizedBox.shrink();
+      return const [SliverToBoxAdapter(child: SizedBox.shrink())];
     }
 
     final String headerLabel = searching
         ? 'Found ${displayList.length} result${displayList.length == 1 ? '' : 's'}'
         : 'Common medications';
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+    // Medicatiosn cards Area
+    return [
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
           child: Text(
             headerLabel,
             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
           ),
         ),
-        Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, navBottomPadding),
-            itemCount: displayList.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 10),
-            itemBuilder: (context, index) {
-              final MedicationModel medication = displayList[index];
-              return MedicationCard(
-                key: ValueKey(medication.medicationId),
-                medication: medication,
-                isFavourited: state.isFavourited(medication.medicationId),
-                onToggleFavourite: () => context
-                    .read<PharmacyBloc>()
-                    .add(ToggleFavourite(medication.medicationId)),
-              );
-            },
-          ),
+      ),
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, navBottomPadding),
+        sliver: SliverList.separated(
+          itemCount: displayList.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 10),
+          itemBuilder: (context, index) {
+            final MedicationModel medication = displayList[index];
+            return MedicationCard(
+              key: ValueKey(medication.medicationId),
+              medication: medication,
+              isFavourited: state.isFavourited(medication.medicationId),
+              onToggleFavourite: () => context.read<PharmacyBloc>().add(
+                ToggleFavourite(medication.medicationId),
+              ),
+            );
+          },
         ),
-      ],
-    );
+      ),
+    ];
   }
 }
 
 // ── Error + retry ──────────────────────────────────────────────────────
 
+// TODO: Convert to Network connection Error state reusable widget for Facility, Medications and AI chat screens.
 class _ErrorRetryView extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;

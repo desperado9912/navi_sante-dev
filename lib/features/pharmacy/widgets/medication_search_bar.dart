@@ -21,12 +21,12 @@ class MedicationSearchBar extends StatelessWidget {
       height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFD8F6FF).withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          const Icon(Icons.search_rounded, color: Color(0xFF2A7D8F), size: 20),
+          const Icon(Icons.search_rounded, size: 22),
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
@@ -35,11 +35,11 @@ class MedicationSearchBar extends StatelessWidget {
               textInputAction: TextInputAction.search,
               decoration: const InputDecoration(
                 hintText: "Try searching 'Malaria' or 'Ibuprofen'",
-                hintStyle: TextStyle(fontSize: 14, color: Color(0xFF5F6368)),
+                hintStyle: TextStyle(fontSize: 16, color: Color(0xFF5F6368)),
                 border: InputBorder.none,
                 isDense: true,
               ),
-              style: const TextStyle(fontSize: 14, color: Colors.black87),
+              style: const TextStyle(fontSize: 16, color: Colors.black87),
             ),
           ),
           // Bound directly to the controller (a ValueListenable) rather

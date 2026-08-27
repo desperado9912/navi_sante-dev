@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 /// Permanent, compact notice strip — sits below the quick filters and
@@ -15,19 +16,24 @@ class MedicalNoticeStrip extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Icon(Icons.info_rounded, color: Color(0xFF2A7D8F), size: 15),
-          const SizedBox(width: 7),
+          Icon(
+            CupertinoIcons.info_circle_fill,
+            color: Color(0xFF2A7D8F),
+            size: 20,
+          ),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Always consult a doctor or pharmacist before taking medication.',
+              'Certain medications require medical supervision. Please always consult a healthcare professional before use.',
               style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey[800],
-                fontWeight: FontWeight.w500,
+                fontSize: 12,
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w700,
+                height: 1.2,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              softWrap: true,
             ),
           ),
         ],
