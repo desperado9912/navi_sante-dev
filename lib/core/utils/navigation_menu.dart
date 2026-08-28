@@ -5,6 +5,7 @@ import 'package:navi_sante/features/home/screens/home_screen.dart';
 import 'package:navi_sante/features/hospitals/screens/hospitals.dart';
 import 'package:navi_sante/features/pharmacy/screens/pharmacy.dart';
 import 'package:navi_sante/features/profile/screens/profile_screen.dart';
+import 'package:navi_sante/core/utils/connectivity_banner.dart';
 import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
 import 'package:navi_sante/core/performance/fade_indexed_stack.dart';
 
@@ -36,109 +37,114 @@ class _NavigationMenuState extends State<NavigationMenu> {
   @override
   Widget build(BuildContext context) {
     return Obx(
-      () => Scaffold(
-        extendBody: true,
-        resizeToAvoidBottomInset: false,
+      () => Stack(
+        children: [
+          Scaffold(
+            extendBody: true,
+            resizeToAvoidBottomInset: false,
 
-        //all screens bg color
-        backgroundColor: const Color(0xFFF8F9F8),
-        appBar: controller.selectedIndex.value == 0
-            ? null
-            : PlatformAdaptiveAppBar(
-                title: controller.titles[controller.selectedIndex.value],
-              ),
+            //all screens bg color
+            backgroundColor: const Color(0xFFF8F9F8),
+            appBar: controller.selectedIndex.value == 0
+                ? null
+                : PlatformAdaptiveAppBar(
+                    title: controller.titles[controller.selectedIndex.value],
+                  ),
 
-        // Bottom  navbar container
-        bottomNavigationBar: SafeArea(
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28.0),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.300),
-                  blurRadius: 38,
-                  spreadRadius: 0,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-
-            // Navbar design
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(28.0),
-              child: NavigationBarTheme(
-                data: NavigationBarThemeData(
-                  height: 60,
-                  elevation: 0,
-                  backgroundColor: Colors.white,
-                  indicatorColor: const Color(0xFFD8F6FF),
-                  indicatorShape: const StadiumBorder(),
-                  labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((
-                    states,
-                  ) {
-                    final isSelected = states.contains(WidgetState.selected);
-                    return TextStyle(
-                      color: isSelected ? _activeColor : _inactiveColor,
-                      fontWeight: isSelected
-                          ? FontWeight.w700
-                          : FontWeight.w600,
-                      fontSize: 10,
-                    );
-                  }),
-                  iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((
-                    states,
-                  ) {
-                    final isSelected = states.contains(WidgetState.selected);
-                    return IconThemeData(
-                      color: isSelected ? _activeColor : _inactiveColor,
-                      size: 26,
-                    );
-                  }),
-                ),
-
-                child: NavigationBar(
-                  selectedIndex: controller.selectedIndex.value,
-                  labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-                  onDestinationSelected: (index) =>
-                      controller.selectedIndex.value = index,
-                  destinations: const [
-                    NavigationDestination(
-                      icon: Icon(CupertinoIcons.map),
-                      selectedIcon: Icon(CupertinoIcons.map_fill),
-                      label: 'Discover',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(CupertinoIcons.plus_app),
-                      selectedIcon: Icon(CupertinoIcons.plus_app_fill),
-                      label: 'Hospitals',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(CupertinoIcons.capsule),
-                      selectedIcon: Icon(CupertinoIcons.capsule_fill),
-                      label: 'Medications',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(CupertinoIcons.person),
-                      selectedIcon: Icon(CupertinoIcons.person_fill),
-                      label: 'Profile',
+            // Bottom  navbar container
+            bottomNavigationBar: SafeArea(
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(28.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.300),
+                      blurRadius: 38,
+                      spreadRadius: 0,
+                      offset: const Offset(0, 10),
                     ),
                   ],
                 ),
+
+                // Navbar design
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(28.0),
+                  child: NavigationBarTheme(
+                    data: NavigationBarThemeData(
+                      height: 60,
+                      elevation: 0,
+                      backgroundColor: Colors.white,
+                      indicatorColor: const Color(0xFFD8F6FF),
+                      indicatorShape: const StadiumBorder(),
+                      labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((
+                        states,
+                      ) {
+                        final isSelected = states.contains(WidgetState.selected);
+                        return TextStyle(
+                          color: isSelected ? _activeColor : _inactiveColor,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w600,
+                          fontSize: 10,
+                        );
+                      }),
+                      iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((
+                        states,
+                      ) {
+                        final isSelected = states.contains(WidgetState.selected);
+                        return IconThemeData(
+                          color: isSelected ? _activeColor : _inactiveColor,
+                          size: 26,
+                        );
+                      }),
+                    ),
+
+                    child: NavigationBar(
+                      selectedIndex: controller.selectedIndex.value,
+                      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+                      onDestinationSelected: (index) =>
+                          controller.selectedIndex.value = index,
+                      destinations: const [
+                        NavigationDestination(
+                          icon: Icon(CupertinoIcons.map),
+                          selectedIcon: Icon(CupertinoIcons.map_fill),
+                          label: 'Discover',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(CupertinoIcons.plus_app),
+                          selectedIcon: Icon(CupertinoIcons.plus_app_fill),
+                          label: 'Hospitals',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(CupertinoIcons.capsule),
+                          selectedIcon: Icon(CupertinoIcons.capsule_fill),
+                          label: 'Medications',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(CupertinoIcons.person),
+                          selectedIcon: Icon(CupertinoIcons.person_fill),
+                          label: 'Profile',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Body elements scroll behind navbar
+            body: SafeArea(
+              top: controller.selectedIndex.value != 0,
+              bottom: false,
+              child: FadeIndexedStack(
+                index: controller.selectedIndex.value,
+                children: controller.screens,
               ),
             ),
           ),
-        ),
-
-        // Body elements scroll behind navbar
-        body: SafeArea(
-          top: controller.selectedIndex.value != 0,
-          bottom: false,
-          child: FadeIndexedStack(
-            index: controller.selectedIndex.value,
-            children: controller.screens,
-          ),
-        ),
+          const ConnectivityBanner(),
+        ],
       ),
     );
   }
