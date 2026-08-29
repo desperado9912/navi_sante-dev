@@ -1,14 +1,31 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// Configuration constants for the OpenStreetMap (Carto Light style).
 class MapConfig {
-  static const String cartoLightUrl =
-      'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  static String get _apiKey => dotenv.env['CARTO_API_KEY']?.trim() ?? '';
+
+  static String get cartoLightUrl {
+    final key = _apiKey;
+    if (key.isNotEmpty) {
+      return 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=$key';
+    }
+    return 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  }
+
+  static String get fallbackUrl {
+    final key = _apiKey;
+    if (key.isNotEmpty) {
+      return 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png?key=$key';
+    }
+    return 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png';
+  }
+
   static const List<String> subdomains = ['a'];
   static String get tileSubdomain => subdomains.first;
   static const String userAgentPackageName = 'com.navisante.app';

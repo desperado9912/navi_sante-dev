@@ -17,7 +17,7 @@ import '../widgets/language_sheet.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/settings_tiles.dart';
 import '../widgets/preffered_navigation_app_sheet.dart';
-import 'package:navi_sante/core/utils/navigation_settings.dart';
+import 'package:navi_sante/features/profile/controllers/navigationApp_settings.dart';
 import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
 import 'package:navi_sante/core/utils/app_error_ui.dart';
 

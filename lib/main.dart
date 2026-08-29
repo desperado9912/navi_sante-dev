@@ -6,7 +6,7 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'features/hospitals/data/facility_local.dart';
 import 'features/pharmacy/data/medication_local.dart';
-import 'core/utils/navigation_settings.dart';
+import 'features/profile/controllers/navigationApp_settings.dart';
 import 'features/home/controller/map_cache_manager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';

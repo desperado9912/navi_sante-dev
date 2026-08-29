@@ -5,7 +5,7 @@ import 'package:navi_sante/features/home/screens/home_screen.dart';
 import 'package:navi_sante/features/hospitals/screens/hospitals.dart';
 import 'package:navi_sante/features/pharmacy/screens/pharmacy.dart';
 import 'package:navi_sante/features/profile/screens/profile_screen.dart';
-import 'package:navi_sante/core/utils/connectivity_banner.dart';
+import 'package:navi_sante/core/utils/network_banner/connectivity_banner.dart';
 import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
 import 'package:navi_sante/core/performance/fade_indexed_stack.dart';
 

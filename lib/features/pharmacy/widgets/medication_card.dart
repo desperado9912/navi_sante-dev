@@ -27,8 +27,8 @@ class MedicationCard extends StatefulWidget {
 class _MedicationCardState extends State<MedicationCard> {
   bool _expanded = false;
 
-  static const int _maxConditionsShown = 3;
-  static const int _maxRetailersShown = 2;
+  static const int _maxConditionsShown = 4;
+  static const int _maxRetailersShown = 3;
 
   IconData get _formIcon => switch (widget.medication.form) {
     MedicationForm.pill => CupertinoIcons.capsule_fill,
@@ -148,7 +148,7 @@ class _MedicationCardState extends State<MedicationCard> {
           ],
 
           if (m.retailers.isNotEmpty) ...[
-            const SizedBox(height: 5),
+            const SizedBox(height: 8),
             Wrap(
               spacing: 10,
               runSpacing: 4,
@@ -307,14 +307,14 @@ class _RetailerChip extends StatelessWidget {
         children: [
           const Icon(
             Icons.storefront_rounded,
-            size: 12,
+            size: 16,
             color: Color(0xFF2A7D8F),
           ),
           const SizedBox(width: 3),
           Text(
             retailer.name,
             style: const TextStyle(
-              fontSize: 11,
+              fontSize: 12,
               color: Color(0xFF2A7D8F),
               decoration: TextDecoration.underline,
             ),

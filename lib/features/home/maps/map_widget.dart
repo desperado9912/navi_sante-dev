@@ -242,8 +242,7 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
       return [
         TileLayer(
           urlTemplate: MapConfig.cartoLightUrl,
-          fallbackUrl:
-              'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+          fallbackUrl: MapConfig.fallbackUrl,
           subdomains: MapConfig.subdomains,
           userAgentPackageName: MapConfig.userAgentPackageName,
           tileProvider: NetworkTileProvider(
@@ -268,8 +267,7 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
       for (final TileZoomBand band in TileZoomBand.values)
         TileLayer(
           urlTemplate: MapConfig.cartoLightUrl,
-          fallbackUrl:
-              'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+          fallbackUrl: MapConfig.fallbackUrl,
           subdomains: MapConfig.subdomains,
           userAgentPackageName: MapConfig.userAgentPackageName,
           retinaMode: useRetina,
