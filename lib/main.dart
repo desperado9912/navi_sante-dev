@@ -6,12 +6,13 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'features/hospitals/data/facility_local.dart';
 import 'features/pharmacy/data/medication_local.dart';
-import 'features/profile/controllers/navigationApp_settings.dart';
+import 'features/profile/controllers/navigation_app_settings.dart';
 import 'features/home/controller/map_cache_manager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'app.dart';
+import 'core/utils/onboarding_screen/onboarding_screen.dart';
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +25,7 @@ void main() async {
   await FacilityLocal.init();
   await MedicationLocal.init();
   await NavigationSettings.init();
+  await OnboardingScreen.init();
 
   //Init map cache manager (not supported on web — no temp directory)
   if (!kIsWeb) {

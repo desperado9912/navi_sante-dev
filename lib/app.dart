@@ -6,7 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'features/auth/cubit/auth_cubit.dart';
 import 'features/auth/cubit/language_cubit.dart';
 import 'features/auth/screens/login.dart';
-import 'features/auth/services/auth_gate.dart';
 import 'features/home/controller/map_cubit.dart';
 import 'features/hospitals/controller/facility_bloc.dart';
 import 'features/hospitals/data/facility_local.dart';
@@ -17,6 +16,7 @@ import 'features/pharmacy/data/medication_local.dart';
 import 'features/pharmacy/data/medication_remote.dart';
 import 'features/pharmacy/data/medication_repository.dart';
 import 'core/utils/navigation_menu.dart';
+import 'core/utils/onboarding_screen/onboarding_screen.dart';
 
 class NaviSanteApp extends StatelessWidget {
   const NaviSanteApp({super.key});
@@ -69,7 +69,7 @@ class NaviSanteApp extends StatelessWidget {
             '/login': (_) => const LoginScreen(),
             '/home': (_) => const NavigationMenu(),
           },
-          home: const AuthGate(),
+          home: const StartupWrapper(),
         ),
       ),
     );
