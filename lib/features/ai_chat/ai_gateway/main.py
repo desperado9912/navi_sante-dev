@@ -34,8 +34,8 @@ OPENROUTER_MODEL = os.getenv(
 GATEWAY_SECRET = os.getenv("GATEWAY_SECRET", "").strip()
 
 MAX_OUTPUT_TOKENS = 400
-REQUEST_TIMEOUT_S = 18.0
-CONNECT_TIMEOUT_S = 8.0
+REQUEST_TIMEOUT_S = 30.0
+CONNECT_TIMEOUT_S = 15.0
 RATE_LIMIT_PER_MIN = 8
 HISTORY_TURNS = 6
 HISTORY_CHARS = 400
@@ -201,8 +201,8 @@ def _msg(lang: str, en: str, fr: str) -> str:
 
 def _rate_limit(user_key: str, msg_hash: str, lang: str) -> str | None:
     now = time.time()
-    b = _buckets.get(user_key)
-    if b is None or now > b["reset_at"]:
+    b: dict[str, Any] = _buckets.get(user_key) or {}
+    if not b or now > b["reset_at"]:
         b = {
             "count": 0,
             "reset_at": now + 60,
@@ -282,25 +282,35 @@ def _openrouter(
                 "Authorization": f"Bearer {OPENROUTER_API_KEY}",
                 "Content-Type": "application/json",
                 "HTTP-Referer": "https://navisante.app",
-                "X-Title": "NaviSanté Navi AI",
+                "X-Title": "NaviSante Navi AI",
             },
             json=payload,
         )
     except httpx.TimeoutException as exc:
+        logger.warning("OpenRouter timeout: %s", exc)
         raise HTTPException(status_code=504, detail="timeout") from exc
     except httpx.HTTPError as exc:
+        logger.error("OpenRouter HTTP error: %s", exc)
         raise HTTPException(status_code=502, detail="gateway") from exc
+    except Exception as exc:
+        logger.exception("OpenRouter unexpected error: %s", exc)
+        raise HTTPException(status_code=502, detail="unexpected") from exc
     if res.status_code == 401:
+        logger.error("OpenRouter 401 Unauthorized - check OPENROUTER_API_KEY: %s", res.text)
         raise HTTPException(status_code=502, detail="llm_auth")
     if res.status_code == 402:
+        logger.error("OpenRouter 402 Payment Required - check credits: %s", res.text)
         raise HTTPException(status_code=502, detail="llm_credits")
     if res.status_code == 429:
+        logger.warning("OpenRouter 429 Rate Limit: %s", res.text)
         raise HTTPException(status_code=429, detail="llm_rate")
     if res.status_code >= 400:
+        logger.error("OpenRouter error %s: %s", res.status_code, res.text)
         raise HTTPException(status_code=502, detail="llm_error")
     try:
         return res.json()
     except Exception as exc:
+        logger.exception("Failed to parse OpenRouter JSON: %s", exc)
         raise HTTPException(status_code=502, detail="llm_error") from exc
 
 
@@ -504,8 +514,10 @@ def chat(
             medication_ids=medication_ids[:3],
         )
     except HTTPException as exc:
+        logger.warning("Chat request failed with HTTP %s: %s", exc.status_code, exc.detail)
         return _fail_from_http(exc, lang)
-    except Exception:
+    except Exception as exc:
+        logger.exception("Unexpected error handling chat request: %s", exc)
         return ChatResponse(
             ok=False,
             error=_msg(
