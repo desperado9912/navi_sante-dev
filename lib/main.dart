@@ -13,6 +13,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'app.dart';
 import 'core/utils/onboarding_screen/onboarding_screen.dart';
+import 'features/ai_chat/data/ai_chat_local.dart';
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +25,7 @@ void main() async {
   await Hive.initFlutter();
   await FacilityLocal.init();
   await MedicationLocal.init();
+  await AiChatLocal.init();
   await NavigationSettings.init();
   await OnboardingScreen.init();
 

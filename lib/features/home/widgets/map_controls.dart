@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:navi_sante/features/Ai%20chat/ai_chat.dart';
+import 'package:navi_sante/features/ai_chat/screens/ai_chat.dart';
 import '../controller/map_cubit.dart';
 import 'map_info_sheet.dart';
 

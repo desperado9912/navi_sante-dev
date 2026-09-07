@@ -7,7 +7,7 @@
 *.env
 *.bin
 .env.*
-
+*.pyc
 
 
 # APIs
@@ -53,6 +53,10 @@ node_modules
 .flutter-plugins
 .flutter-plugins-dependencies
 /coverage/
+
+# Phython 
+.venv/
+__pycache__/
 
 # Symbolication related
 app.*.symbols
