@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'features/auth/cubit/auth_cubit.dart';
-import 'features/auth/cubit/language_cubit.dart';
+import 'core/utils/language_cubit/auth_language_cubit.dart';
 import 'features/auth/screens/login.dart';
 import 'features/home/controller/map_cubit.dart';
 import 'features/hospitals/controller/facility_bloc.dart';
@@ -56,20 +56,27 @@ class NaviSanteApp extends StatelessWidget {
           ),
         ],
 
-        child: GetMaterialApp(
-          title: 'NaviSanté',
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            colorSchemeSeed: const Color(0xFF2A7D8F),
-            useMaterial3: true,
-            scaffoldBackgroundColor: const Color(0xFFF5F5F5),
-            textTheme: GoogleFonts.plusJakartaSansTextTheme(),
-          ),
-          routes: {
-            '/login': (_) => const LoginScreen(),
-            '/home': (_) => const NavigationMenu(),
+        child: BlocBuilder<LanguageCubit, LanguageState>(
+          builder: (context, langState) {
+            return GetMaterialApp(
+              title: 'NaviSanté',
+              debugShowCheckedModeBanner: false,
+              locale: langState.locale,
+              translations: AppTranslations(),
+              fallbackLocale: const Locale('en', 'US'),
+              theme: ThemeData(
+                colorSchemeSeed: const Color(0xFF2A7D8F),
+                useMaterial3: true,
+                scaffoldBackgroundColor: const Color(0xFFF5F5F5),
+                textTheme: GoogleFonts.plusJakartaSansTextTheme(),
+              ),
+              routes: {
+                '/login': (_) => const LoginScreen(),
+                '/home': (_) => const NavigationMenu(),
+              },
+              home: const StartupWrapper(),
+            );
           },
-          home: const StartupWrapper(),
         ),
       ),
     );

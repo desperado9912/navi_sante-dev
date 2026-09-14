@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:navi_sante/core/utils/language_cubit/app_translations.dart';
 import '../../hospitals/controller/facility_bloc.dart';
 import '../../hospitals/controller/facility_model.dart';
 import '../../hospitals/widgets/facility_details_screen.dart';
@@ -340,12 +341,12 @@ class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
                                 } on MapLaunchException catch (e) {
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(e.message)),
+                                    SnackBar(content: Text(context.tr(e.message))),
                                   );
                                 }
                               },
                               icon: const Icon(Icons.directions_rounded),
-                              label: const Text('GET DIRECTIONS'),
+                              label: Text(context.tr('GET DIRECTIONS')),
                               style: FilledButton.styleFrom(
                                 backgroundColor: const Color(0xFF2A7D8F),
                                 foregroundColor: Colors.white,
@@ -388,7 +389,7 @@ class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              child: const Text('VIEW FULL DETAILS'),
+                              child: Text(context.tr('VIEW FULL DETAILS')),
                             ),
                           ),
                         ],

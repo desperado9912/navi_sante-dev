@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:navi_sante/core/utils/language_cubit/app_translations.dart';
+
 /// Pharmacy screen's search field. Purely presentational — debouncing and
 /// dispatching SearchMedications live in the parent screen, not here, so
 /// this widget stays trivially reusable/testable.
@@ -33,9 +35,9 @@ class MedicationSearchBar extends StatelessWidget {
               controller: controller,
               onChanged: onChanged,
               textInputAction: TextInputAction.search,
-              decoration: const InputDecoration(
-                hintText: "Try searching 'Malaria' or 'Ibuprofen'",
-                hintStyle: TextStyle(fontSize: 16, color: Color(0xFF5F6368)),
+              decoration: InputDecoration(
+                hintText: context.tr("Try searching 'Malaria' or 'Ibuprofen'"),
+                hintStyle: const TextStyle(fontSize: 16, color: Color(0xFF5F6368)),
                 border: InputBorder.none,
                 isDense: true,
               ),

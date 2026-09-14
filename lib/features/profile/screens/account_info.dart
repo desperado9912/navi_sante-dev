@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
+import 'package:navi_sante/core/utils/language_cubit/app_translations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 import 'package:navi_sante/features/profile/controllers/security_controller.dart';
 import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
@@ -105,16 +106,18 @@ class _AccountInfoState extends State<AccountInfo> {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Delete Account'),
-          content: const Text(
-            'This action is permanent and cannot be undone. All your personal data, saved facilities, and settings will be permanently erased. Are you sure you want to proceed?',
+          title: Text(
+            context.t ('Delete Account', 'Supprimer le compte')),
+          content: Text(
+            context.t ('This action is permanent and cannot be undone. All your personal data, saved facilities, and settings will be permanently erased. Are you sure you want to proceed?',
+            'Cette action est irréversible. Toutes vos données personnelles, les établissements enregistrés et les paramètres seront définitivement supprimés. Êtes-vous sûr de vouloir continuer ?'),
             style: TextStyle(color: Color(0xFF5F6368), fontSize: 14),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text(
-                'Cancel',
+              child: Text(
+                context.t ('Cancel', 'Annuler'),
                 style: TextStyle(
                   color: CupertinoColors.activeBlue,
                   fontWeight: FontWeight.w600,
@@ -126,8 +129,8 @@ class _AccountInfoState extends State<AccountInfo> {
                 Navigator.pop(ctx);
                 _performDeleteAccount();
               },
-              child: const Text(
-                'Delete',
+              child: Text(
+                context.t ('Delete', 'Supprimer'),
                 style: TextStyle(
                   color: Color(0xFFC0392B),
                   fontWeight: FontWeight.bold,
@@ -141,18 +144,17 @@ class _AccountInfoState extends State<AccountInfo> {
       showCupertinoDialog(
         context: context,
         builder: (ctx) => CupertinoAlertDialog(
-          title: const Text('Delete Account'),
-          content: const Text(
-            'This action is permanent and cannot be undone. All your personal data, saved facilities, and settings will be permanently erased. Are you sure you want to proceed?',
-          ),
+          title: Text(context.t('Delete Account', 'Supprimer le compte')),
+          content: Text(context.t('This action is permanent and cannot be undone. All your personal data, saved facilities, and settings will be permanently erased. Are you sure you want to proceed?',
+          'Cette action est irréversible. Toutes vos données personnelles, les établissements enregistrés et les paramètres seront définitivement supprimés. Êtes-vous sûr de vouloir continuer ?')),
           actions: [
             CupertinoDialogAction(
-              child: const Text('Cancel'),
+              child: Text(context.t ('Cancel', 'Annuler')),
               onPressed: () => Navigator.pop(ctx),
             ),
             CupertinoDialogAction(
               isDestructiveAction: true,
-              child: const Text('Delete'),
+              child: Text(context.t ('Delete', 'Supprimer')),
               onPressed: () {
                 Navigator.pop(ctx);
                 _performDeleteAccount();
@@ -194,7 +196,7 @@ class _AccountInfoState extends State<AccountInfo> {
       if (mounted) {
         AppFeedback.showErrorDialog(
           context,
-          title: 'Error',
+          title: context.t('Error', 'Erreur'),
           message: errorMsg,
         );
       }
@@ -203,7 +205,10 @@ class _AccountInfoState extends State<AccountInfo> {
 
   // Platform adaptive username edit sheet entry point/launcher
   void _openEditSheet(String currentName) {
-    _nameController.text = currentName == 'Not set' ? '' : currentName;
+    _nameController.text =
+        (currentName == 'Not set' || currentName == 'Non défini')
+            ? ''
+            : currentName;
 
     final isAndroid = Theme.of(context).platform == TargetPlatform.android;
 
@@ -273,8 +278,8 @@ class _AccountInfoState extends State<AccountInfo> {
                             size: 24,
                           ),
                         ),
-                        const Text(
-                          'Edit Name',
+                        Text(
+                          context.t ('Edit Name', 'Modifier le nom'),
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 17,
@@ -321,16 +326,16 @@ class _AccountInfoState extends State<AccountInfo> {
                                                   context: context,
                                                   builder: (context) =>
                                                       CupertinoAlertDialog(
-                                                        title: const Text(
-                                                          'Success',
+                                                        title: Text(
+                                                          context.t('Success', 'Succès'),
                                                         ),
-                                                        content: const Text(
-                                                          'Name updated successfully.',
+                                                        content: Text(
+                                                          context.t('Name updated successfully.', 'Nom mis à jour avec succès.'),
                                                         ),
                                                         actions: [
                                                           CupertinoDialogAction(
-                                                            child: const Text(
-                                                              'OK',
+                                                            child: Text(
+                                                              context.t('OK', 'OK'),
                                                             ),
                                                             onPressed: () {
                                                               Navigator.pop(
@@ -349,16 +354,16 @@ class _AccountInfoState extends State<AccountInfo> {
                                                   context: context,
                                                   builder: (context) =>
                                                       CupertinoAlertDialog(
-                                                        title: const Text(
-                                                          'Error',
+                                                        title: Text(
+                                                          context.t('Error', 'Erreur'),
                                                         ),
-                                                        content: const Text(
-                                                          'Failed to update your name. Please try again.',
+                                                        content: Text(
+                                                          context.t('Failed to update your name. Please try again.', 'Échec de la mise à jour de votre nom. Veuillez réessayer.'),
                                                         ),
                                                         actions: [
                                                           CupertinoDialogAction(
-                                                            child: const Text(
-                                                              'OK',
+                                                            child: Text(
+                                                              context.t('OK', 'OK'),
                                                             ),
                                                             onPressed: () =>
                                                                 Navigator.pop(
@@ -403,7 +408,7 @@ class _AccountInfoState extends State<AccountInfo> {
                           width: 1,
                         ),
                       ),
-                      placeholder: "Enter full name",
+                      placeholder: context.t('Enter full name', 'Entrez le nom complet'),
                       enabled: !_isLoading,
                       onChanged: (text) {
                         String? error;
@@ -412,7 +417,7 @@ class _AccountInfoState extends State<AccountInfo> {
                         } else if (!RegExp(
                           r"^[a-zA-Z\s\-']+$",
                         ).hasMatch(text)) {
-                          error = "Special characters are not allowed";
+                          error = context.t('Special characters are not allowed', 'Les caractères spéciaux ne sont pas autorisés');
                         }
 
                         if (validationError != error) {
@@ -493,9 +498,9 @@ class _AccountInfoState extends State<AccountInfo> {
                             ? null
                             : () => Navigator.pop(context),
                       ),
-                      const Text(
-                        'Edit Name',
-                        style: TextStyle(
+                      Text(
+                        context.t('Edit Name', 'Modifier le nom'),
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
                         ),
@@ -549,9 +554,12 @@ class _AccountInfoState extends State<AccountInfo> {
                                                 context: context,
                                                 barrierDismissible: false,
                                                 builder: (context) => AlertDialog(
-                                                  title: const Text('Success'),
-                                                  content: const Text(
-                                                    'Name updated successfully.',
+                                                  title: Text(context.t('Success', 'Succès')),
+                                                  content: Text(
+                                                    context.t(
+                                                      'Name updated successfully.',
+                                                      'Nom mis à jour avec succès.',
+                                                    ),
                                                   ),
                                                   actions: [
                                                     TextButton(
@@ -563,7 +571,7 @@ class _AccountInfoState extends State<AccountInfo> {
                                                           context,
                                                         ); // close sheet
                                                       },
-                                                      child: const Text('OK'),
+                                                      child: Text(context.t('OK', 'OK')),
                                                     ),
                                                   ],
                                                 ),
@@ -572,9 +580,12 @@ class _AccountInfoState extends State<AccountInfo> {
                                               showDialog(
                                                 context: context,
                                                 builder: (context) => AlertDialog(
-                                                  title: const Text('Error'),
-                                                  content: const Text(
-                                                    'Failed to update your name. Please try again.',
+                                                  title: Text(context.t('Error', 'Erreur')),
+                                                  content: Text(
+                                                    context.t(
+                                                      'Failed to update your name. Please try again.',
+                                                      'Échec de la mise à jour de votre nom. Veuillez réessayer.',
+                                                    ),
                                                   ),
                                                   actions: [
                                                     TextButton(
@@ -582,7 +593,7 @@ class _AccountInfoState extends State<AccountInfo> {
                                                           Navigator.pop(
                                                             context,
                                                           ),
-                                                      child: const Text('OK'),
+                                                      child: Text(context.t('OK', 'OK')),
                                                     ),
                                                   ],
                                                 ),
@@ -603,7 +614,7 @@ class _AccountInfoState extends State<AccountInfo> {
                         30, // Shows standard material character counter badge
                     inputFormatters: [LengthLimitingTextInputFormatter(30)],
                     decoration: InputDecoration(
-                      hintText: "Enter full name",
+                      hintText: context.t('Enter full name', 'Entrez le nom complet'),
                       errorText:
                           validationError, // Built-in Material error handler
                       focusedBorder: const UnderlineInputBorder(
@@ -619,7 +630,7 @@ class _AccountInfoState extends State<AccountInfo> {
                       if (text.trim().isEmpty) {
                         error = null;
                       } else if (!RegExp(r"^[a-zA-Z\s\-']+$").hasMatch(text)) {
-                        error = "Special characters are not allowed";
+                        error = context.t('Special characters are not allowed', 'Les caractères spéciaux ne sont pas autorisés');
                       }
 
                       if (validationError != error) {
@@ -676,7 +687,9 @@ class _AccountInfoState extends State<AccountInfo> {
             const SizedBox(width: 14),
             Expanded(
               child: Text(
-                'Change Password',
+                hasPassword
+                    ? context.t('Change Password', 'Modifier le mot de passe')
+                    : context.t('Create Password', 'Créer un mot de passe'),
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
@@ -778,7 +791,9 @@ class _AccountInfoState extends State<AccountInfo> {
                             ),
                           ),
                           Text(
-                            hasPassword ? 'Change Password' : 'Create Password',
+                            hasPassword
+                                ? context.t('Change Password', 'Modifier le mot de passe')
+                                : context.t('Create Password', 'Créer un mot de passe'),
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 17,
@@ -829,15 +844,21 @@ class _AccountInfoState extends State<AccountInfo> {
                                               showCupertinoDialog(
                                                 context: this.context,
                                                 builder: (ctx) => CupertinoAlertDialog(
-                                                  title: const Text('Success'),
+                                                  title: Text(context.t('Success', 'Succès')),
                                                   content: Text(
                                                     hasPassword
-                                                        ? 'Your password has been changed successfully.'
-                                                        : 'Password created successfully! You can now log in with your email and password.',
+                                                        ? context.t(
+                                                            'Your password has been changed successfully.',
+                                                            'Votre mot de passe a été modifié avec succès.',
+                                                          )
+                                                        : context.t(
+                                                            'Password created successfully! You can now log in with your email and password.',
+                                                            'Mot de passe créé avec succès ! Vous pouvez maintenant vous connecter avec votre e-mail et votre mot de passe.',
+                                                          ),
                                                   ),
                                                   actions: [
                                                     CupertinoDialogAction(
-                                                      child: const Text('OK'),
+                                                      child: Text(context.t('OK', 'OK')),
                                                       onPressed: () =>
                                                           Navigator.pop(ctx),
                                                     ),
@@ -875,7 +896,10 @@ class _AccountInfoState extends State<AccountInfo> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
-                            'Setting a password allows you to log in with your email in the future.',
+                            context.t(
+                              'Setting a password allows you to log in with your email in the future.',
+                              'Définir un mot de passe vous permet de vous connecter avec votre e-mail à l\'avenir.',
+                            ),
                             style: const TextStyle(
                               fontSize: 13,
                               color: CupertinoColors.activeBlue,
@@ -888,9 +912,9 @@ class _AccountInfoState extends State<AccountInfo> {
                       ],
 
                       if (hasPassword) ...[
-                        const Text(
-                          'Current Password',
-                          style: TextStyle(
+                        Text(
+                          context.t('Current Password', 'Mot de passe actuel'),
+                          style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: CupertinoColors.label,
@@ -901,7 +925,7 @@ class _AccountInfoState extends State<AccountInfo> {
                         CupertinoTextField(
                           controller: currentPasswordController,
                           obscureText: obscureCurrent,
-                          placeholder: "Enter current password",
+                          placeholder: context.t('Enter current password', 'Entrez le mot de passe actuel'),
                           enabled: !isSheetLoading,
                           decoration: BoxDecoration(
                             color: CupertinoColors.extraLightBackgroundGray,
@@ -931,9 +955,9 @@ class _AccountInfoState extends State<AccountInfo> {
                         const SizedBox(height: 16),
                       ],
 
-                      const Text(
-                        'New Password',
-                        style: TextStyle(
+                      Text(
+                        context.t('New Password', 'Nouveau mot de passe'),
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: CupertinoColors.label,
@@ -944,7 +968,7 @@ class _AccountInfoState extends State<AccountInfo> {
                       CupertinoTextField(
                         controller: newPasswordController,
                         obscureText: obscureNew,
-                        placeholder: "Enter new password",
+                        placeholder: context.t('Enter new password', 'Entrez le nouveau mot de passe'),
                         enabled: !isSheetLoading,
                         decoration: BoxDecoration(
                           color: CupertinoColors.extraLightBackgroundGray,
@@ -971,9 +995,9 @@ class _AccountInfoState extends State<AccountInfo> {
                       ),
                       const SizedBox(height: 16),
 
-                      const Text(
-                        'Confirm Password',
-                        style: TextStyle(
+                      Text(
+                        context.t('Confirm Password', 'Confirmer le mot de passe'),
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: CupertinoColors.label,
@@ -984,7 +1008,7 @@ class _AccountInfoState extends State<AccountInfo> {
                       CupertinoTextField(
                         controller: confirmPasswordController,
                         obscureText: obscureConfirm,
-                        placeholder: "Confirm new password",
+                        placeholder: context.t('Confirm new password', 'Confirmez le nouveau mot de passe'),
                         enabled: !isSheetLoading,
                         decoration: BoxDecoration(
                           color: CupertinoColors.extraLightBackgroundGray,
@@ -1014,19 +1038,28 @@ class _AccountInfoState extends State<AccountInfo> {
                       const SizedBox(height: 24),
 
                       // Validation checklist
-                      _buildValidationRule('At least 8 characters', isLengthOk),
+                      _buildValidationRule(
+                        context.t('At least 8 characters', 'Au moins 8 caractères'),
+                        isLengthOk,
+                      ),
                       const SizedBox(height: 8),
                       _buildValidationRule(
-                        'At least one uppercase letter (A-Z)',
+                        context.t(
+                          'At least one uppercase letter (A-Z)',
+                          'Au moins une lettre majuscule (A-Z)',
+                        ),
                         hasUppercase,
                       ),
                       const SizedBox(height: 8),
                       _buildValidationRule(
-                        'At least one number (0-9)',
+                        context.t('At least one number (0-9)', 'Au moins un chiffre (0-9)'),
                         hasNumber,
                       ),
                       const SizedBox(height: 8),
-                      _buildValidationRule('Passwords match', passwordsMatch),
+                      _buildValidationRule(
+                        context.t('Passwords match', 'Les mots de passe correspondent'),
+                        passwordsMatch,
+                      ),
 
                       if (sheetError != null) ...[
                         const SizedBox(height: 16),
@@ -1126,7 +1159,9 @@ class _AccountInfoState extends State<AccountInfo> {
                               : () => Navigator.pop(context),
                         ),
                         Text(
-                          hasPassword ? 'Change Password' : 'Create Password',
+                          hasPassword
+                              ? context.t('Change Password', 'Modifier le mot de passe')
+                              : context.t('Create Password', 'Créer un mot de passe'),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
@@ -1184,15 +1219,21 @@ class _AccountInfoState extends State<AccountInfo> {
                                             showDialog(
                                               context: this.context,
                                               builder: (ctx) => AlertDialog(
-                                                title: const Text('Success'),
+                                                title: Text(this.context.t('Success', 'Succès')),
                                                 content: Text(
                                                   hasPassword
-                                                      ? 'Your password has been changed successfully.'
-                                                      : 'Password created successfully! You can now log in with your email and password.',
+                                                      ? this.context.t(
+                                                          'Your password has been changed successfully.',
+                                                          'Votre mot de passe a été modifié avec succès.',
+                                                        )
+                                                      : this.context.t(
+                                                          'Password created successfully! You can now log in with your email and password.',
+                                                          'Mot de passe créé avec succès ! Vous pouvez maintenant vous connecter avec votre e-mail et mot de passe.',
+                                                        ),
                                                 ),
                                                 actions: [
                                                   TextButton(
-                                                    child: const Text('OK'),
+                                                    child: Text(this.context.t('OK', 'OK')),
                                                     onPressed: () =>
                                                         Navigator.pop(ctx),
                                                   ),
@@ -1222,7 +1263,10 @@ class _AccountInfoState extends State<AccountInfo> {
                           border: Border.all(color: Colors.blue.shade200),
                         ),
                         child: Text(
-                          'You signed in via social login. Setting a password allows you to log in with your email ($email) in the future.',
+                          context.t(
+                            'You signed in via social login. Setting a password allows you to log in with your email ($email) in the future.',
+                            'Vous vous êtes connecté via un réseau social. Définir un mot de passe vous permet de vous connecter avec votre e-mail ($email) à l\'avenir.',
+                          ),
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.blue.shade800,
@@ -1237,7 +1281,7 @@ class _AccountInfoState extends State<AccountInfo> {
                         controller: currentPasswordController,
                         obscureText: obscureCurrent,
                         decoration: InputDecoration(
-                          labelText: 'Current Password',
+                          labelText: context.t('Current Password', 'Mot de passe actuel'),
                           labelStyle: const TextStyle(color: Color(0xFF2A7D8F)),
                           focusedBorder: const UnderlineInputBorder(
                             borderSide: BorderSide(
@@ -1269,7 +1313,7 @@ class _AccountInfoState extends State<AccountInfo> {
                       controller: newPasswordController,
                       obscureText: obscureNew,
                       decoration: InputDecoration(
-                        labelText: 'New Password',
+                        labelText: context.t('New Password', 'Nouveau mot de passe'),
                         labelStyle: const TextStyle(color: Color(0xFF2A7D8F)),
                         focusedBorder: const UnderlineInputBorder(
                           borderSide: BorderSide(
@@ -1298,7 +1342,7 @@ class _AccountInfoState extends State<AccountInfo> {
                       controller: confirmPasswordController,
                       obscureText: obscureConfirm,
                       decoration: InputDecoration(
-                        labelText: 'Confirm New Password',
+                        labelText: context.t('Confirm New Password', 'Confirmez le nouveau mot de passe'),
                         labelStyle: const TextStyle(color: Color(0xFF2A7D8F)),
                         focusedBorder: const UnderlineInputBorder(
                           borderSide: BorderSide(
@@ -1326,19 +1370,28 @@ class _AccountInfoState extends State<AccountInfo> {
                     const SizedBox(height: 24),
 
                     // Validation checklist
-                    _buildValidationRule('At least 8 characters', isLengthOk),
+                    _buildValidationRule(
+                      context.t('At least 8 characters', 'Au moins 8 caractères'),
+                      isLengthOk,
+                    ),
                     const SizedBox(height: 8),
                     _buildValidationRule(
-                      'At least one uppercase letter (A-Z)',
+                      context.t(
+                        'At least one uppercase letter (A-Z)',
+                        'Au moins une lettre majuscule (A-Z)',
+                      ),
                       hasUppercase,
                     ),
                     const SizedBox(height: 8),
                     _buildValidationRule(
-                      'At least one number (0-9)',
+                      context.t('At least one number (0-9)', 'Au moins un chiffre (0-9)'),
                       hasNumber,
                     ),
                     const SizedBox(height: 8),
-                    _buildValidationRule('Passwords match', passwordsMatch),
+                    _buildValidationRule(
+                      context.t('Passwords match', 'Les mots de passe correspondent'),
+                      passwordsMatch,
+                    ),
 
                     if (sheetError != null) ...[
                       const SizedBox(height: 16),
@@ -1395,14 +1448,14 @@ class _AccountInfoState extends State<AccountInfo> {
             opacity: _isDeletePressed
                 ? 0.7
                 : 1.0, // Fades only the content on press
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(CupertinoIcons.trash, size: 20, color: Color(0xFFC0392B)),
-                SizedBox(width: 10),
+                const Icon(CupertinoIcons.trash, size: 20, color: Color(0xFFC0392B)),
+                const SizedBox(width: 10),
                 Text(
-                  'Delete Account',
-                  style: TextStyle(
+                  context.t('Delete Account', 'Supprimer le compte'),
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                     color: Color(0xFFC0392B),
@@ -1432,12 +1485,12 @@ class _AccountInfoState extends State<AccountInfo> {
         final displayName =
             (resolvedName != null && resolvedName.trim().isNotEmpty)
             ? resolvedName
-            : 'Not set';
-        final email = user?.email ?? 'Not set';
+            : context.t('Not set', 'Non défini');
+        final email = user?.email ?? context.t('Not set', 'Non défini');
         final isEmailVerified = user?.emailConfirmedAt != null;
         final verificationStatus = isEmailVerified
-            ? 'Verified'
-            : 'Not verified';
+            ? context.t('Verified', 'Vérifié')
+            : context.t('Not verified', 'Non vérifié');
 
         return Scaffold(
           appBar: const PlatformAdaptiveAppBar(title: 'Account Information'),
@@ -1473,9 +1526,9 @@ class _AccountInfoState extends State<AccountInfo> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Full name',
-                                    style: TextStyle(
+                                  Text(
+                                    context.t('Full name', 'Nom complet'),
+                                    style: const TextStyle(
                                       color: Color(0xFF1A1A1A),
                                       fontSize: 14,
                                     ),
@@ -1520,9 +1573,9 @@ class _AccountInfoState extends State<AccountInfo> {
                                 children: [
                                   Row(
                                     children: [
-                                      const Text(
-                                        'Email address',
-                                        style: TextStyle(
+                                      Text(
+                                        context.t('Email address', 'Adresse e-mail'),
+                                        style: const TextStyle(
                                           color: Color(0xFF1A1A1A),
                                           fontSize: 14,
                                         ),

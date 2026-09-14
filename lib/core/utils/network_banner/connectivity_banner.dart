@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'connectivity_service.dart';
 import 'package:flutter/cupertino.dart';
+import '../language_cubit/language_cubit.dart';
 
 /// Small, non-blocking connectivity banner UI.
 ///
@@ -132,8 +133,8 @@ class _ConnectivityBannerState extends State<ConnectivityBanner>
             : Icons.wifi_off_rounded;
 
         final text = isRestored
-            ? 'Internet connection restored'
-            : 'No internet connection';
+            ? context.t('Internet connection restored', 'Connexion internet rétablie')
+            : context.t('No internet connection', 'Pas de connexion internet');
 
         return SafeArea(
           bottom: false,

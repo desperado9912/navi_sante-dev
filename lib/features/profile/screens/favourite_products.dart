@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
 import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
+import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
 import '../../pharmacy/controller/pharmacy_bloc.dart';
 import '../../pharmacy/widgets/medication_card.dart';
 
@@ -97,13 +98,13 @@ class _EmptyState extends StatelessWidget {
               color: Colors.grey[400],
             ),
             const SizedBox(height: 16),
-            const Text(
-              'No favourite medications yet',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            Text(
+              context.t('No favourite medications yet', 'Aucun favoris pour le moment'),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             Text(
-              'Tap the heart icon on any medication to save it here.',
+              context.tr('Tap the heart icon on any medication to save it here.'),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13, color: Colors.grey[600]),
             ),

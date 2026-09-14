@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
 
 /// Atomic settings tile UI widget.
 /// Accepts an [icon], [title], [onTap] callback, and an optional [trailing] widget.
@@ -38,13 +39,13 @@ class SettingsTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, color: Color(0xFF1A1A1A), size: 24),
+            Icon(icon, color: const Color(0xFF1A1A1A), size: 24),
             const SizedBox(width: 14),
 
             // Title
             Expanded(
               child: Text(
-                title,
+                context.tr(title),
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,

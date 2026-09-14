@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
 import '../controller/facility_bloc.dart';
 import '../controller/facility_model.dart';
 import '../data/facility_repository.dart';
@@ -47,14 +48,14 @@ class _ScreenHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.fromLTRB(22, 8, 22, 0),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(22, 8, 22, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Find health facilities around you',
-            style: TextStyle(fontSize: 13, color: Color(0xFF5F6368)),
+            context.tr('Find health facilities around you'),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF5F6368)),
           ),
         ],
       ),
@@ -80,7 +81,7 @@ class _SearchField extends StatelessWidget {
       controller: controller,
       onChanged: onChanged,
       decoration: InputDecoration(
-        hintText: 'hospitals, clinics or pharmacies',
+        hintText: context.tr('hospitals, clinics or pharmacies'),
         prefixIcon: const Icon(Icons.search_rounded, size: 22),
         // Clear (X) button only shows once there's text to clear.
         suffixIcon: ValueListenableBuilder<TextEditingValue>(
@@ -147,16 +148,16 @@ class _RecentHistorySection extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Recent History',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                  Text(
+                    context.tr('Recent History'),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                   ),
                   GestureDetector(
                     onTap: () =>
                         context.read<FacilityBloc>().add(ClearRecentlyViewed()),
-                    child: const Text(
-                      'Clear all',
-                      style: TextStyle(
+                    child: Text(
+                      context.t('Clear all', 'Tout effacer'),
+                      style: const TextStyle(
                         fontSize: 12,
                         color: Color(0xFF2A7D8F),
                         fontWeight: FontWeight.w600,
@@ -403,7 +404,9 @@ class _ResultsGrid extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.only(top: 40),
                 child: Text(
-                  isSearching ? 'No results found' : 'No facilities available',
+                  isSearching
+                      ? context.tr('No results found')
+                      : context.tr('No facilities available'),
                   style: const TextStyle(color: Colors.grey),
                 ),
               ),
@@ -421,8 +424,8 @@ class _ResultsGrid extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Text(
                     isSearching
-                        ? 'Search Results (${displayList.length})'
-                        : 'Top Rated Nearby',
+                        ? '${context.tr('Search Results')} (${displayList.length})'
+                        : context.tr('Top Rated Nearby'),
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,

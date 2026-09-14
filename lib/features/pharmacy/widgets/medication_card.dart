@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:navi_sante/core/utils/language_cubit/app_translations.dart';
 import '../../home/maps/map_launcher.dart';
 import '../controller/pharmacy_model.dart';
 
@@ -129,7 +130,7 @@ class _MedicationCardState extends State<MedicationCard> {
 
           const SizedBox(height: 6),
           Text(
-            m.priceRangeLabel,
+            context.tr(m.priceRangeLabel),
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -140,7 +141,7 @@ class _MedicationCardState extends State<MedicationCard> {
           if (m.conditions.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
-              'Treats: ${_capped(m.conditions, _maxConditionsShown)}',
+              '${context.tr('Treats: ')}${_capped(m.conditions, _maxConditionsShown)}',
               style: TextStyle(fontSize: 11.5, color: Colors.grey[600]),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -159,7 +160,7 @@ class _MedicationCardState extends State<MedicationCard> {
                     .map((r) => _RetailerChip(retailer: r)),
                 if (m.retailers.length > _maxRetailersShown)
                   Text(
-                    '+${m.retailers.length - _maxRetailersShown} more',
+                    '+${m.retailers.length - _maxRetailersShown} ${context.tr('more')}',
                     style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                   ),
               ],
@@ -184,7 +185,7 @@ class _MedicationCardState extends State<MedicationCard> {
                           ),
                         const SizedBox(height: 6),
                         Text(
-                          m.dispensingNote,
+                          context.tr(m.dispensingNote),
                           style: TextStyle(
                             fontSize: 11.5,
                             fontStyle: FontStyle.italic,
@@ -294,7 +295,7 @@ class _RetailerChip extends StatelessWidget {
       if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(e.message)));
+      ).showSnackBar(SnackBar(content: Text(context.tr(e.message))));
     }
   }
 

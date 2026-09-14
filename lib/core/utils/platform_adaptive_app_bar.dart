@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'language_cubit/language_cubit.dart';
 
 // Custom app bar used accross all widget screens.
 // Replaces the default [AppBar] with a platform-specific design.
@@ -35,7 +36,7 @@ class PlatformAdaptiveAppBar extends StatelessWidget
       title: Padding(
         padding: titlePadding,
         child: Text(
-          title,
+          context.tr(title),
           style: const TextStyle(
             fontWeight: FontWeight.w600,
             color: Colors.black,

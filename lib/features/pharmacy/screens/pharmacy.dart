@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
+import 'package:navi_sante/core/utils/language_cubit/app_translations.dart';
 import 'package:navi_sante/core/utils/navigation_menu.dart'
     show navBottomPadding;
 import '../controller/pharmacy_bloc.dart';
@@ -220,8 +221,10 @@ class _PharmacyScreenState extends State<PharmacyScreen> {
     }
 
     final String headerLabel = searching
-        ? 'Found ${displayList.length} result${displayList.length == 1 ? '' : 's'}'
-        : 'Common medications';
+        ? (context.isFrench
+            ? '${displayList.length} résultat${displayList.length == 1 ? '' : 's'} trouvé${displayList.length == 1 ? '' : 's'}'
+            : 'Found ${displayList.length} result${displayList.length == 1 ? '' : 's'}')
+        : context.tr('Common medications');
 
     // Medicatiosn cards Area
     return [
@@ -275,7 +278,7 @@ class _ErrorRetryView extends StatelessWidget {
             Icon(Icons.wifi_off_rounded, size: 44, color: Colors.grey[400]),
             const SizedBox(height: 14),
             Text(
-              message,
+              context.tr(message),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13.5, color: Colors.grey[700]),
             ),
@@ -286,7 +289,7 @@ class _ErrorRetryView extends StatelessWidget {
                 foregroundColor: const Color(0xFF2A7D8F),
                 side: const BorderSide(color: Color(0xFF2A7D8F)),
               ),
-              child: const Text('Retry'),
+              child: Text(context.tr('Retry')),
             ),
           ],
         ),

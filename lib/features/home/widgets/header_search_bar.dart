@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:navi_sante/core/utils/language_cubit/app_translations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../hospitals/controller/facility_bloc.dart';
 import '../../hospitals/controller/facility_model.dart';
@@ -202,9 +203,9 @@ class HeaderSearchState extends State<HeaderSearch> {
                             focusNode: _focusNode,
                             onChanged: _onQueryChanged,
                             textInputAction: TextInputAction.search,
-                            decoration: const InputDecoration(
-                              hintText: 'Search hospitals, pharmacies, clinics',
-                              hintStyle: TextStyle(
+                            decoration: InputDecoration(
+                              hintText: context.tr('Search hospitals, pharmacies, clinics'),
+                              hintStyle: const TextStyle(
                                 color: Color(0xFF5F6368),
                                 fontSize: 15,
                                 fontWeight: FontWeight.w400,
@@ -367,7 +368,9 @@ class _SuggestionsBox extends StatelessWidget {
           ? Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               child: Text(
-                'No Results for "$query"',
+                context.isFrench
+                    ? 'Aucun résultat pour "$query"'
+                    : 'No Results for "$query"',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 13, color: Color(0xFF5F6368)),
               ),
@@ -403,7 +406,7 @@ class _SuggestionsBox extends StatelessWidget {
                       ),
                     ),
                     subtitle: Text(
-                      _facilityTypeLabel(suggestions[i].type),
+                      context.tr(_facilityTypeLabel(suggestions[i].type)),
                       style: const TextStyle(
                         fontSize: 12,
                         color: Color(0xFF5F6368),

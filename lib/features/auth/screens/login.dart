@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubit/auth_cubit.dart';
-import '../cubit/language_cubit.dart';
+import '../../../core/utils/language_cubit/auth_language_cubit.dart';
 import '../widgets/auth_text_field.dart';
 import '../widgets/language_picker.dart';
 import 'signup.dart';

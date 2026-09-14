@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:navi_sante/features/home/screens/home_screen.dart';
 import 'package:navi_sante/features/hospitals/screens/hospitals.dart';
 import 'package:navi_sante/features/pharmacy/screens/pharmacy.dart';
@@ -8,6 +9,7 @@ import 'package:navi_sante/features/profile/screens/profile_screen.dart';
 import 'package:navi_sante/core/utils/network_banner/connectivity_banner.dart';
 import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
 import 'package:navi_sante/core/performance/fade_indexed_stack.dart';
+import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
 
 // Apps core naviagtion widget (Navigation menu)
 // Main entry point from auth holds all other main screens, using index stack.
@@ -36,20 +38,24 @@ class _NavigationMenuState extends State<NavigationMenu> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => Stack(
-        children: [
-          Scaffold(
-            extendBody: true,
-            resizeToAvoidBottomInset: false,
+    return BlocBuilder<LanguageCubit, LanguageState>(
+      builder: (context, langState) {
+        return Obx(
+          () => Stack(
+            children: [
+              Scaffold(
+                extendBody: true,
+                resizeToAvoidBottomInset: false,
 
-            //all screens bg color
-            backgroundColor: const Color(0xFFF8F9F8),
-            appBar: controller.selectedIndex.value == 0
-                ? null
-                : PlatformAdaptiveAppBar(
-                    title: controller.titles[controller.selectedIndex.value],
-                  ),
+                //all screens bg color
+                backgroundColor: const Color(0xFFF8F9F8),
+                appBar: controller.selectedIndex.value == 0
+                    ? null
+                    : PlatformAdaptiveAppBar(
+                        title: context.tr(
+                          controller.titles[controller.selectedIndex.value],
+                        ),
+                      ),
 
             // Bottom  navbar container
             bottomNavigationBar: SafeArea(
@@ -105,26 +111,26 @@ class _NavigationMenuState extends State<NavigationMenu> {
                       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
                       onDestinationSelected: (index) =>
                           controller.selectedIndex.value = index,
-                      destinations: const [
+                      destinations: [
                         NavigationDestination(
-                          icon: Icon(CupertinoIcons.map),
-                          selectedIcon: Icon(CupertinoIcons.map_fill),
-                          label: 'Discover',
+                          icon: const Icon(CupertinoIcons.map),
+                          selectedIcon: const Icon(CupertinoIcons.map_fill),
+                          label: context.tr('Discover'),
                         ),
                         NavigationDestination(
-                          icon: Icon(CupertinoIcons.plus_app),
-                          selectedIcon: Icon(CupertinoIcons.plus_app_fill),
-                          label: 'Hospitals',
+                          icon: const Icon(CupertinoIcons.plus_app),
+                          selectedIcon: const Icon(CupertinoIcons.plus_app_fill),
+                          label: context.tr('Hospitals'),
                         ),
                         NavigationDestination(
-                          icon: Icon(CupertinoIcons.capsule),
-                          selectedIcon: Icon(CupertinoIcons.capsule_fill),
-                          label: 'Medications',
+                          icon: const Icon(CupertinoIcons.capsule),
+                          selectedIcon: const Icon(CupertinoIcons.capsule_fill),
+                          label: context.tr('Medications'),
                         ),
                         NavigationDestination(
-                          icon: Icon(CupertinoIcons.person),
-                          selectedIcon: Icon(CupertinoIcons.person_fill),
-                          label: 'Profile',
+                          icon: const Icon(CupertinoIcons.person),
+                          selectedIcon: const Icon(CupertinoIcons.person_fill),
+                          label: context.tr('Profile'),
                         ),
                       ],
                     ),
@@ -147,6 +153,8 @@ class _NavigationMenuState extends State<NavigationMenu> {
         ],
       ),
     );
+  },
+);
   }
 }
 

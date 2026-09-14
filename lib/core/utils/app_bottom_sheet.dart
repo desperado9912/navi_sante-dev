@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'language_cubit/language_cubit.dart';
 
 /// A reusable bottom sheet widget that encapsulates the core visual styling and behavior.
 /// This acts as a single source of truth for the bottom sheet containers in the app.
@@ -50,7 +51,7 @@ class AppBottomSheet extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    title!,
+                    context.tr(title!),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,

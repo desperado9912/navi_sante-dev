@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
-import '../../auth/cubit/language_cubit.dart';
+import '../../../core/utils/language_cubit/auth_language_cubit.dart';
 import '../../home/controller/map_cubit.dart';
 import '../../hospitals/controller/facility_bloc.dart';
 import '../../hospitals/data/facility_repository.dart';

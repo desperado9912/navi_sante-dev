@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
 import '../controller/facility_bloc.dart';
 import '../controller/facility_model.dart';
 import '../../home/maps/map_launcher.dart';
@@ -113,9 +114,9 @@ class FacilityGridCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: const Text(
-                            'Details →',
-                            style: TextStyle(
+                          child: Text(
+                            '${context.tr('Details')} →',
+                            style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -293,7 +294,7 @@ class _DirectionsIconButton extends StatelessWidget {
       if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(e.message)));
+      ).showSnackBar(SnackBar(content: Text(AppTranslations.tr(e.message, context))));
     }
   }
 

@@ -20,6 +20,7 @@ import '../widgets/preffered_navigation_app_sheet.dart';
 import 'package:navi_sante/features/profile/controllers/navigation_app_settings.dart';
 import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
 import 'package:navi_sante/core/utils/app_error_ui.dart';
+import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -29,11 +30,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-
-  // Local language state only — app-level LanguageCubit will replace this.
-  String _langCode = 'en';
-  String get _langLabel => _langCode == 'en' ? 'English' : 'Français';
-
   // preferred navigation app state
   String _navigationAppCode = 'google';
   String get _navAppLabel {
@@ -73,6 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   //language picker
   Future<void> _openLanguagePicker() async {
+    final cubit = context.read<LanguageCubit>();
     final selected = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -82,12 +79,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         duration: const Duration(milliseconds: 250),
         reverseDuration: const Duration(milliseconds: 200),
       ),
-      builder: (_) => LanguageBottomSheet(currentCode: _langCode),
+      builder: (_) => LanguageBottomSheet(currentCode: cubit.state.code),
     );
 
     if (selected != null && mounted) {
-      setState(() => _langCode = selected);
-      // TODO: propagate to app-level LanguageCubit when localisation is built
+      if (selected == 'fr') {
+        await cubit.setFrench();
+      } else {
+        await cubit.setEnglish();
+      }
+      setState(() {});
     }
   }
 
@@ -193,20 +194,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Log Out',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        title: Text(
+          context.tr('Log Out'),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
-        content: const Text(
-          'Are you sure you want to log out of your account?',
-          style: TextStyle(fontSize: 14, color: Color(0xFF5F6368)),
+        content: Text(
+          context.tr('Are you sure you want to log out of your account?'),
+          style: const TextStyle(fontSize: 14, color: Color(0xFF5F6368)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
+            child: Text(
+              context.tr('Cancel'),
+              style: const TextStyle(
                 color: Color(0xFF888780),
                 fontWeight: FontWeight.w600,
               ),
@@ -214,9 +215,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
-              'Log Out',
-              style: TextStyle(
+            child: Text(
+              context.tr('Log Out'),
+              style: const TextStyle(
                 color: Color(0xFFC0392B),
                 fontWeight: FontWeight.w700,
               ),
@@ -281,32 +282,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // ────────────────────────────────────────────────────────────────
   // Language tile trailing widget
   // ────────────────────────────────────────────────────────────────
-  Widget get _langTrailing => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: const Color(0xFF2A7D8F).withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          _langLabel,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF2A7D8F),
+  Widget get _langTrailing {
+    final langState = context.watch<LanguageCubit>().state;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF2A7D8F).withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            langState.displayName,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF2A7D8F),
+            ),
           ),
         ),
-      ),
-      const SizedBox(width: 6),
-      const Icon(
-        CupertinoIcons.chevron_right,
-        size: 16,
-        color: Color(0xFF888780),
-      ),
-    ],
-  );
+        const SizedBox(width: 6),
+        const Icon(
+          CupertinoIcons.chevron_right,
+          size: 16,
+          color: Color(0xFF888780),
+        ),
+      ],
+    );
+  }
 
   // ────────────────────────────────────────────────────────────────
   // Preffered Navigation app tile trailing widget
@@ -355,11 +359,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 24),
 
             // ── Section label ───────────────────────────────
-            const Padding(
-              padding: EdgeInsets.only(left: 24, bottom: 10),
+            Padding(
+              padding: const EdgeInsets.only(left: 24, bottom: 10),
               child: Text(
-                'Settings',
-                style: TextStyle(
+                context.tr('Settings'),
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF888780),
@@ -497,14 +501,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   minimumSize: const Size(double.infinity, 40),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.logout, size: 20, color: Color(0xFFC0392B)),
-                    SizedBox(width: 8),
+                    const Icon(Icons.logout, size: 20, color: Color(0xFFC0392B)),
+                    const SizedBox(width: 8),
                     Text(
-                      'Log Out',
-                      style: TextStyle(
+                      context.tr('Log Out'),
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                         color: Color(0xFFC0392B),

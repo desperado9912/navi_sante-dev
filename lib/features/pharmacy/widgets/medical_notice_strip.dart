@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:navi_sante/core/utils/language_cubit/app_translations.dart';
 
 /// Permanent, compact notice strip — sits below the quick filters and
 /// above the results list, so it's always visible without scrolling and
@@ -26,7 +27,9 @@ class MedicalNoticeStrip extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Certain medications require medical supervision. Please always consult a healthcare professional before use.',
+              context.tr(
+                'Certain medications require medical supervision. Please always consult a healthcare professional before use.',
+              ),
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[700],

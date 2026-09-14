@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:navi_sante/core/utils/language_cubit/app_translations.dart';
 import '../../hospitals/controller/facility_bloc.dart';
 import '../../hospitals/controller/facility_model.dart';
 
@@ -222,7 +223,7 @@ class _TypeBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        _label,
+        context.tr(_label),
         style: const TextStyle(
           color: Color(0xFF2A7D8F),
           fontSize: 9,

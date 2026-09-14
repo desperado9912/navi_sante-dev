@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
+import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
 import 'package:navi_sante/features/hospitals/controller/facility_bloc.dart';
 import 'package:navi_sante/features/hospitals/widgets/facility_details_image_carousel.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -93,7 +94,7 @@ class _DetailContent extends StatelessWidget {
       if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(e.message)));
+      ).showSnackBar(SnackBar(content: Text(AppTranslations.tr(e.message, context))));
     }
   }
 
@@ -106,7 +107,7 @@ class _DetailContent extends StatelessWidget {
       await launchUrl(uri);
     } else if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to open the phone app.')),
+        SnackBar(content: Text(context.tr('Unable to open the phone app.'))),
       );
     }
   }
@@ -231,9 +232,9 @@ class _DetailContent extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: () => _openDirections(context),
               icon: const Icon(Icons.directions_rounded),
-              label: const Text('GET DIRECTIONS'),
+              label: Text(context.tr('GET DIRECTIONS')),
               style: FilledButton.styleFrom(
-                backgroundColor: Color(0xFF2A7D8F),
+                backgroundColor: const Color(0xFF2A7D8F),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
@@ -249,7 +250,7 @@ class _DetailContent extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: () => _call(context, detail.phone!),
                 icon: const Icon(Icons.call_rounded),
-                label: const Text('CALL'),
+                label: Text(context.tr('CALL')),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: _tealColor,
                   side: const BorderSide(color: _tealColor),
@@ -371,7 +372,7 @@ class _ErrorView extends StatelessWidget {
             FilledButton(
               onPressed: onRetry,
               style: FilledButton.styleFrom(backgroundColor: _tealColor),
-              child: const Text('Retry'),
+              child: Text(context.tr('Retry')),
             ),
           ],
         ),

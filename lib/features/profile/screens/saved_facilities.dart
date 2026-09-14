@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 // import 'package:cached_network_image/cached_network_image.dart';
 import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
 import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
+import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../hospitals/controller/facility_bloc.dart';
 import '../../hospitals/controller/facility_model.dart';
@@ -101,13 +102,15 @@ class _EmptyState extends StatelessWidget {
               color: Colors.grey[400],
             ),
             const SizedBox(height: 16),
-            const Text(
-              'No saved facilities yet',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            Text(
+              context.tr('No saved facilities yet'),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             Text(
-              'Tap the bookmark icon on any hospital to save your favorite facilities here.',
+              context.tr(
+                'Tap the bookmark icon on any hospital to save your favorite facilities here.',
+              ),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13, color: Colors.grey[600]),
             ),
@@ -129,9 +132,10 @@ class SavedFacilityCard extends StatelessWidget {
     required this.onTap,
   });
 
-  String get _typeLabel {
+  String _typeLabel(BuildContext context) {
     final raw = facility.type.name;
-    return raw[0].toUpperCase() + raw.substring(1);
+    final capitalized = raw[0].toUpperCase() + raw.substring(1);
+    return context.tr(capitalized);
   }
 
   @override
@@ -178,8 +182,8 @@ class SavedFacilityCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     facility.address != null && facility.address!.isNotEmpty
-                        ? '$_typeLabel • ${facility.address}'
-                        : _typeLabel,
+                        ? '${_typeLabel(context)} • ${facility.address}'
+                        : _typeLabel(context),
                     style: TextStyle(fontSize: 12.5, color: Colors.grey[600]),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

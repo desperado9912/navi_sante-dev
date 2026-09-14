@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'language_cubit/language_cubit.dart';
 
 // Centralized UI feedback utility for consistent error/warning/info/success
 // presentation across the entire app.
@@ -51,6 +52,9 @@ class AppFeedback {
     Duration duration = const Duration(seconds: 2),
     SnackBarAction? action,
   }) {
+    final translatedMessage = AppTranslations.tr(message, context);
+    final translatedTitle =
+        title != null ? AppTranslations.tr(title, context) : null;
     final color = _colorFor(type);
     final icon = _iconFor(type);
 
@@ -59,20 +63,20 @@ class AppFeedback {
       ..showSnackBar(
         SnackBar(
           content: Row(
-            crossAxisAlignment: title != null
+            crossAxisAlignment: translatedTitle != null
                 ? CrossAxisAlignment.start
                 : CrossAxisAlignment.center,
             children: [
               Icon(icon, color: Colors.white, size: 20),
               const SizedBox(width: 12),
               Expanded(
-                child: title != null
+                child: translatedTitle != null
                     ? Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            title,
+                            translatedTitle,
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -81,7 +85,7 @@ class AppFeedback {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            message,
+                            translatedMessage,
                             style: const TextStyle(
                               fontSize: 13,
                               color: Colors.white,
@@ -90,7 +94,7 @@ class AppFeedback {
                         ],
                       )
                     : Text(
-                        message,
+                        translatedMessage,
                         style: const TextStyle(
                           fontSize: 14,
                           color: Colors.white,
@@ -118,16 +122,19 @@ class AppFeedback {
     required String message,
   }) {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final translatedTitle = AppTranslations.tr(title, context);
+    final translatedMessage = AppTranslations.tr(message, context);
+    final okLabel = AppTranslations.tr('OK', context);
 
     if (isIOS) {
       showCupertinoDialog(
         context: context,
         builder: (ctx) => CupertinoAlertDialog(
-          title: Text(title),
-          content: Text(message),
+          title: Text(translatedTitle),
+          content: Text(translatedMessage),
           actions: [
             CupertinoDialogAction(
-              child: const Text('OK'),
+              child: Text(okLabel),
               onPressed: () => Navigator.pop(ctx),
             ),
           ],
@@ -140,17 +147,17 @@ class AppFeedback {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          title: Text(title),
+          title: Text(translatedTitle),
           content: Text(
-            message,
+            translatedMessage,
             style: const TextStyle(fontSize: 14, color: Color(0xFF5F6368)),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text(
-                'OK',
-                style: TextStyle(
+              child: Text(
+                okLabel,
+                style: const TextStyle(
                   color: Color(0xFF2A7D8F),
                   fontWeight: FontWeight.w600,
                 ),
@@ -163,8 +170,10 @@ class AppFeedback {
   }
 
   /// Returns a styled inline error container for use inside bottom sheets.
-  static Widget inlineError(String? error) {
+  static Widget inlineError(String? error, [BuildContext? context]) {
     if (error == null) return const SizedBox.shrink();
+
+    final translatedError = AppTranslations.tr(error, context);
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -180,8 +189,8 @@ class AppFeedback {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              error,
-              style: TextStyle(
+              translatedError,
+              style: const TextStyle(
                 color: _errorColor,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,

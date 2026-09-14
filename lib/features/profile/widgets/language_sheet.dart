@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
 
 /// Immutable model for a language option shown in the picker.
 class _LangOption {
@@ -64,9 +65,9 @@ class LanguageBottomSheet extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Select language',
-                  style: TextStyle(
+                Text(
+                  context.tr('Select language'),
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF1A1A1A),

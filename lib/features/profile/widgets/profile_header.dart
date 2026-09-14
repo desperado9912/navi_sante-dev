@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
 
 /// Profile header section.
 /// Displays:
@@ -90,16 +91,19 @@ class ProfileHeader extends StatelessWidget {
               if (isVerified)
                 Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Icon(
+                  children: [
+                    const Icon(
                       Icons.verified_rounded,
                       color: CupertinoColors.systemBlue,
                       size: 15,
                     ),
-                    SizedBox(width: 4),
+                    const SizedBox(width: 4),
                     Text(
-                      'Email Verified',
-                      style: TextStyle(fontSize: 13, color: Color(0xFF5F6368)),
+                      context.t('Email Verified', 'Email vérifié'),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF5F6368),
+                      ),
                     ),
                   ],
                 ),

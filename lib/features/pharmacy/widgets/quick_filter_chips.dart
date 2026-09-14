@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:navi_sante/core/utils/language_cubit/app_translations.dart';
 
 /// Renders PharmacyState.mergedQuickFilters as tappable chips. Doesn't
 /// distinguish visually between "recent" and "common" chips — per your
@@ -28,16 +29,16 @@ class QuickFilterChips extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Quick Filters:',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+            Text(
+              context.tr('Quick Filters:'),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
             ),
             if (canClear)
               GestureDetector(
                 onTap: onClear,
-                child: const Text(
-                  'Clear',
-                  style: TextStyle(
+                child: Text(
+                  context.tr('Clear'),
+                  style: const TextStyle(
                     fontSize: 12,
                     color: Color(0xFF2A7D8F),
                     fontWeight: FontWeight.w600,
@@ -71,7 +72,7 @@ class QuickFilterChips extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      filter,
+                      context.tr(filter),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,

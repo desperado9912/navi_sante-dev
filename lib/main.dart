@@ -13,6 +13,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'app.dart';
 import 'core/utils/onboarding_screen/onboarding_screen.dart';
+import 'core/utils/language_cubit/language_cubit.dart';
 import 'features/ai_chat/data/ai_chat_local.dart';
 
 void main() async {
@@ -28,6 +29,7 @@ void main() async {
   await AiChatLocal.init();
   await NavigationSettings.init();
   await OnboardingScreen.init();
+  await LanguageCubit.init();
 
   //Init map cache manager (not supported on web — no temp directory)
   if (!kIsWeb) {

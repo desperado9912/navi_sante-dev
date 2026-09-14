@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:navi_sante/core/utils/app_bottom_sheet.dart';
+import 'package:navi_sante/core/utils/language_cubit/app_translations.dart';
 
 /// Bottom sheet that shows map attribution and data source information.
 class MapInfoSheet extends StatelessWidget {
@@ -37,19 +38,21 @@ class MapInfoSheet extends StatelessWidget {
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text(
-                        '© OpenStreetMap and other contributors',
-                        style: TextStyle(
+                        context.tr('© OpenStreetMap and other contributors'),
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF1A1A1A),
                         ),
                       ),
-                      SizedBox(height: 3),
+                      const SizedBox(height: 3),
                       Text(
-                        'Map data is licensed under the Open Database License (ODbL).',
-                        style: TextStyle(
+                        context.tr(
+                          'Map data is licensed under the Open Database License (ODbL).',
+                        ),
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFF5F6368),
                           height: 1.4,
@@ -107,7 +110,7 @@ class _InfoRow extends StatelessWidget {
           Icon(icon, size: 18, color: const Color(0xFF1A1A1A)),  
           const SizedBox(width: 12),
           Text(
-            label,
+            context.tr(label),
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,

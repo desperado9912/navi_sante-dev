@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:navi_sante/core/utils/language_cubit/app_translations.dart';
 import 'package:navi_sante/features/auth/services/auth_gate.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 
@@ -72,12 +73,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.03),
                     child: Text(
-                      'Managing your health has never been easier.',
+                      context.tr('Managing your health has never been easier.'),
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 23,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF1A1A1A),
+                        color: Color(0xFF1A1A1A),
                         height: 1.5,
                       ),
                     ),
@@ -87,11 +88,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
               const SizedBox(height: 12),
               Text(
-                'With fast search assisted by a robust AI, quickly find medical facilities according to your medical needs.',
+                context.tr(
+                  'With fast search assisted by a robust AI, quickly find medical facilities according to your medical needs.',
+                ),
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
-                  color: const Color(0xFF5F6368),
+                  color: Color(0xFF5F6368),
                   height: 1.5,
                 ),
               ),
@@ -116,8 +119,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     Expanded(
                       child: _buildFeatureItem(
                         icon: Icons.location_on,
-                        title: 'Health map',
-                        desc: 'Find hospitals, clinics and pharmacies nearby.',
+                        title: context.tr('Health map'),
+                        desc: context.tr('Find hospitals, clinics and pharmacies nearby.'),
                       ),
                     ),
                     // Divider line between 1 and 2
@@ -130,8 +133,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     Expanded(
                       child: _buildFeatureItem(
                         icon: CupertinoIcons.chat_bubble_text,
-                        title: 'AI Chat',
-                        desc: 'Ask health questions and get reliable answers.',
+                        title: context.tr('AI Chat'),
+                        desc: context.tr('Ask health questions and get reliable answers.'),
                       ),
                     ),
                     // Divider line between 2 and 3
@@ -144,8 +147,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     Expanded(
                       child: _buildFeatureItem(
                         icon: CupertinoIcons.capsule,
-                        title: 'Medication',
-                        desc: 'Search for a medications and compare prices.',
+                        title: context.tr('Medication'),
+                        desc: context.tr('Search for a medications and compare prices.'),
                       ),
                     ),
                   ],
@@ -182,9 +185,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Get Started',
-                          style: TextStyle(
-                          fontSize: 16,
+                          context.tr('Get Started'),
+                          style: const TextStyle(
+                            fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
                           ),

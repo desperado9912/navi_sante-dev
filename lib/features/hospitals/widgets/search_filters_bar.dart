@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
 
 // =============================================================================
 // facility_filter_bar.dart
@@ -124,7 +125,7 @@ class _FacilityFilterBarState extends State<FacilityFilterBar> {
                           : _priceRangeOptions[_selectedPriceLabel],
                     ),
                     icon:  const Icon(CupertinoIcons.search, size: 18),
-                    label: const Text('Search'),
+                    label: Text(context.tr('Search')),
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFF2A7D8F),
                       foregroundColor: Colors.white,
@@ -191,7 +192,7 @@ class _PlatformAdaptiveDropdown extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                value ?? hint,
+                value != null ? context.tr(value!) : context.tr(hint),
                 style: TextStyle(
                   fontSize: 12,
                   color: value != null ? Colors.black87 : Colors.grey[600],
@@ -215,7 +216,7 @@ class _PlatformAdaptiveDropdown extends StatelessWidget {
     showCupertinoModalPopup<void>(
       context: context,
       builder: (ctx) => CupertinoActionSheet(
-        title: Text(hint),
+        title: Text(context.tr(hint)),
         actions: [
           // "All" option clears the selection.
           CupertinoActionSheetAction(
@@ -224,7 +225,7 @@ class _PlatformAdaptiveDropdown extends StatelessWidget {
               onChanged(null);
               Navigator.pop(ctx);
             },
-            child: const Text('All'),
+            child: Text(context.tr('All')),
           ),
           ...items.map(
             (item) => CupertinoActionSheetAction(
@@ -233,14 +234,14 @@ class _PlatformAdaptiveDropdown extends StatelessWidget {
                 onChanged(item);
                 Navigator.pop(ctx);
               },
-              child: Text(item),
+              child: Text(context.tr(item)),
             ),
           ),
         ],
         cancelButton: CupertinoActionSheetAction(
           isDestructiveAction: true,
           onPressed: () => Navigator.pop(ctx),
-          child: const Text('Cancel'),
+          child: Text(context.tr('Cancel')),
         ),
       ),
     );
@@ -259,15 +260,15 @@ class _PlatformAdaptiveDropdown extends StatelessWidget {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value:           value,
-          hint:            Text(hint, style: const TextStyle(fontSize: 12)),
+          hint:            Text(context.tr(hint), style: const TextStyle(fontSize: 12)),
           isExpanded:      true,
           icon:            const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
           style:           const TextStyle(fontSize: 12, color: Colors.black87),
           // Allows clearing a selection by re-selecting the current value's
           // "None" option — implemented by prepending a clear entry.
           items: [
-            const DropdownMenuItem(value: null, child: Text('All')),
-            ...items.map((item) => DropdownMenuItem(value: item, child: Text(item))),
+            DropdownMenuItem(value: null, child: Text(context.tr('All'))),
+            ...items.map((item) => DropdownMenuItem(value: item, child: Text(context.tr(item)))),
           ],
           onChanged: onChanged,
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:navi_sante/core/utils/app_bottom_sheet.dart';
+import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
 
 // Bottom sheet in settings tiles for users to select preffered navigation app
 class NavigationAppBottomSheet extends StatelessWidget {
@@ -21,9 +22,11 @@ class NavigationAppBottomSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Choose which app NaviSanté uses for directions and live navigation.',
-              style: TextStyle(
+            Text(
+              context.tr(
+                'Choose which app NaviSanté uses for directions and live navigation.',
+              ),
+              style: const TextStyle(
                 fontSize: 14,
                 color: Color(0xFF5F6368),
                 height: 1.4,
