@@ -32,6 +32,15 @@ const int _maxRecentlyViewed = 10;
 
 
 class FacilityLocal {
+  // In-memory cache — avoids re-parsing the full JSON blob on every read.
+  // Invalidated only by saveAllFacilities() and clearAll().
+  List<FacilityModel>? _cachedFacilities;
+
+  // In-memory cache for detail models (keyed by facilityId).
+  // Additive — new details are inserted without evicting existing ones,
+  // so subsequently added facility details remain accessible.
+  final Map<String, FacilityDetailModel> _detailCache = {};
+
   // Opens all facility related Hive boxes.
   static Future<void> init() async {
     await Future.wait([
@@ -45,6 +54,7 @@ class FacilityLocal {
   // FACILITIES HIVE BOX
   // Overwrites the cached facility list with [facilities].
   Future<void> saveAllFacilities(List<FacilityModel> facilities) async {
+    _cachedFacilities = facilities;
     final box = Hive.box<String>(_facilitiesBox);
     final encoded = jsonEncode(facilities.map((f) => f.toJson()).toList());
     await box.put(_allFacilitiesKey, encoded);
@@ -52,35 +62,47 @@ class FacilityLocal {
 
   // Returns the cached facility list, or an empty list if the cache is cold.
   List<FacilityModel> getAllFacilities() {
+    if (_cachedFacilities != null) return _cachedFacilities!;
+
     final box = Hive.box<String>(_facilitiesBox);
     final encoded = box.get(_allFacilitiesKey);
     if (encoded == null) return [];
 
     final decoded = jsonDecode(encoded) as List<dynamic>;
-    return decoded
+    _cachedFacilities = decoded
         .map((e) => FacilityModel.fromJson(e as Map<String, dynamic>))
         .toList();
+    return _cachedFacilities!;
   }
 
   bool hasFacilities() {
-    return Hive.box<String>(_facilitiesBox).containsKey(_allFacilitiesKey);
+    return _cachedFacilities != null ||
+        Hive.box<String>(_facilitiesBox).containsKey(_allFacilitiesKey);
   }
 
   // Caches a single facility's full detail payload, keyed by its ID.
   Future<void> saveFacilityDetail(FacilityDetailModel detail) async {
+    _detailCache[detail.facilityId] = detail;
     final box = Hive.box<String>(_detailsBox);
     await box.put(detail.facilityId, jsonEncode(detail.toJson()));
   }
 
   /// Returns the cached detail for [facilityId], or `null` on a miss.
   FacilityDetailModel? getFacilityDetail(String facilityId) {
+    // Check in-memory cache first (instant).
+    final memoryCached = _detailCache[facilityId];
+    if (memoryCached != null) return memoryCached;
+
+    // Fall back to Hive.
     final box = Hive.box<String>(_detailsBox);
     final encoded = box.get(facilityId);
     if (encoded == null) return null;
 
-    return FacilityDetailModel.fromJson(
+    final detail = FacilityDetailModel.fromJson(
       jsonDecode(encoded) as Map<String, dynamic>,
     );
+    _detailCache[facilityId] = detail;
+    return detail;
   }
 
   // RECENTLY VIEWED FACILITIES HIVE BOX
@@ -150,6 +172,8 @@ class FacilityLocal {
   // Cache Management: wipes all cached facility data for storage.
   /// The next [getAllFacilities] emission will fetch fresh from database.
   Future<void> clearAll() async {
+    _cachedFacilities = null;
+    _detailCache.clear();
     await Future.wait([
       Hive.box<String>(_facilitiesBox).clear(),
       Hive.box<String>(_detailsBox).clear(),

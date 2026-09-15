@@ -39,7 +39,7 @@ class PlatformAdaptiveAppBar extends StatelessWidget
           context.tr(title),
           style: const TextStyle(
             fontWeight: FontWeight.w600,
-            color: Colors.black,
+            color: Color(0xFF1A1A1A),
             fontSize: 18,
           ),
         ),

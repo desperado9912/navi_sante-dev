@@ -117,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: GestureDetector(
             onTap: () => FocusScope.of(context).unfocus(),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -318,7 +318,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             builder: (context, lang) => Row(
                               children: [
                                 const Expanded(
-                                  child: Divider(color: Color(0xFFCCCCCC)),
+                                  child: Divider(color: Color(0xFFE0E0E0)),
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
@@ -335,7 +335,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                                 const Expanded(
-                                  child: Divider(color: Color(0xFFCCCCCC)),
+                                  child: Divider(color: Color(0xFFE0E0E0)),
                                 ),
                               ],
                             ),

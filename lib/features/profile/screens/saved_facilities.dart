@@ -44,7 +44,7 @@ class _SavedFacilitiesState extends State<SavedFacilities> {
         builder: (context, state) {
           if (state.isFacilitiesLoading && state.facilities.isEmpty) {
             return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF00897B)),
+              child: CircularProgressIndicator(color: Color(0xFF2A7D8F)),
             );
           }
           final saved = state.facilities
@@ -173,6 +173,7 @@ class SavedFacilityCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
+                      color: Color(0xFF1A1A1A),
                       height: 1.25,
                     ),
                     maxLines: 2,
@@ -184,7 +185,7 @@ class SavedFacilityCard extends StatelessWidget {
                     facility.address != null && facility.address!.isNotEmpty
                         ? '${_typeLabel(context)} • ${facility.address}'
                         : _typeLabel(context),
-                    style: TextStyle(fontSize: 12.5, color: Colors.grey[600]),
+                    style: const TextStyle(fontSize: 12.5, color: Color(0xFF5F6368)),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -203,6 +204,7 @@ class SavedFacilityCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
+                          color: Color(0xFF1A1A1A),
                         ),
                       ),
 
@@ -211,9 +213,9 @@ class SavedFacilityCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             facility.servicesList.join(', '),
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 12.5,
-                              color: Colors.grey[600],
+                              color: Color(0xFF5F6368),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -280,7 +282,7 @@ class _IconTile extends StatelessWidget {
           width: 38,
           height: 38,
           decoration: BoxDecoration(
-            color: const Color(0xFF00897B),
+            color: const Color(0xFF2A7D8F),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(_icon, color: Colors.white, size: 20),
@@ -317,7 +319,7 @@ class _RemoveBookmarkButtonState extends State<_RemoveBookmarkButton> {
       onPressed: _onPressed,
       icon: const Icon(
         Icons.bookmark_rounded,
-        color: Color(0xFF00897B),
+        color: Color(0xFF2A7D8F),
         size: 22,
       ),
       padding: EdgeInsets.zero,

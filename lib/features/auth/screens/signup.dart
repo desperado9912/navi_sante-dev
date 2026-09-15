@@ -116,7 +116,7 @@ class _SignupScreenState extends State<SignupScreen> {
           child: GestureDetector(
             onTap: () => FocusScope.of(context).unfocus(),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -436,9 +436,9 @@ class _PasswordRules extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0FBF7),
+        color: const Color(0xFFD8F6FF).withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFB2DFCF)),
+        border: Border.all(color: const Color(0xFF2A7D8F).withValues(alpha: 0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -448,7 +448,7 @@ class _PasswordRules extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF333330),
+              color: Color(0xFF1A1A1A),
             ),
           ),
           const SizedBox(height: 4),

@@ -667,7 +667,7 @@ class _AccountInfoState extends State<AccountInfo> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFE4E7EB)),
+          border: Border.all(color: const Color(0xFFE0E0E0)),
         ),
         child: Row(
           children: [
@@ -1421,7 +1421,7 @@ class _AccountInfoState extends State<AccountInfo> {
           text,
           style: TextStyle(
             fontSize: 12,
-            color: isMet ? const Color(0xFF2A7D8F) : const Color(0xFF888780),
+            color: isMet ? const Color(0xFF2A7D8F) : const Color(0xFF5F6368),
             decoration: TextDecoration.none,
             fontWeight: FontWeight.normal,
           ),
@@ -1495,7 +1495,7 @@ class _AccountInfoState extends State<AccountInfo> {
         return Scaffold(
           appBar: const PlatformAdaptiveAppBar(title: 'Account Information'),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
             child: Column(
               children: [
                 // Primary User Details Container
@@ -1505,7 +1505,7 @@ class _AccountInfoState extends State<AccountInfo> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: const Color(0xFFE4E7EB)),
+                      border: Border.all(color: const Color(0xFFE0E0E0)),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.04),

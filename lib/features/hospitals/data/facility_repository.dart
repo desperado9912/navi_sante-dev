@@ -327,13 +327,25 @@ class FacilityRepository {
 
   /// Returns distinct service names from cached facilities for filter dropdowns.
   /// Derived from Hive (no network call) — returns empty list if cache is cold.
+  /// Cached after first computation; invalidated when the facilities list changes.
+  List<String>? _cachedServiceOptions;
+  List<FacilityModel>? _serviceOptionsSourceList;
+
   List<String> getServiceOptions() {
     final all = _local.getAllFacilities();
+    // Invalidate if the source list object changed (new fetch/save).
+    if (!identical(all, _serviceOptionsSourceList)) {
+      _cachedServiceOptions = null;
+      _serviceOptionsSourceList = all;
+    }
+    if (_cachedServiceOptions != null) return _cachedServiceOptions!;
+
     final services = <String>{};
     for (final f in all) {
       services.addAll(f.servicesList);
     }
-    return services.toList()..sort();
+    _cachedServiceOptions = services.toList()..sort();
+    return _cachedServiceOptions!;
   }
 }
 

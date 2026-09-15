@@ -55,7 +55,7 @@ class ChatComposer extends StatelessWidget {
                       'Demandez à NaviSanté...',
                     ),
                     hintStyle: const TextStyle(
-                      color: Color(0xFF9AA0A6),
+                      color: Color(0xFF5F6368),
                       fontSize: 15,
                     ),
                     border: InputBorder.none,

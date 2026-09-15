@@ -20,6 +20,10 @@ const String _favouriteIdsKey = 'favourite_ids';
 const int _maxRecentSearches = 5;
 
 class MedicationLocal {
+  // In-memory cache — avoids re-parsing the full JSON blob on every read.
+  // Invalidated only by saveAllMedications() and clearAll().
+  List<MedicationModel>? _cachedMedications;
+
   // Opens all medication-related Hive boxes.
   static Future<void> init() async {
     await Future.wait([
@@ -31,20 +35,24 @@ class MedicationLocal {
 
   // MEDICATIONS
   Future<void> saveAllMedications(List<MedicationModel> medications) async {
+    _cachedMedications = medications;
     final box = Hive.box<String>(_medicationsBox);
     final encoded = jsonEncode(medications.map((m) => m.toJson()).toList());
     await box.put(_allMedicationsKey, encoded);
   }
 
   List<MedicationModel> getAllMedications() {
+    if (_cachedMedications != null) return _cachedMedications!;
+
     final box = Hive.box<String>(_medicationsBox);
     final encoded = box.get(_allMedicationsKey);
     if (encoded == null) return [];
 
     final decoded = jsonDecode(encoded) as List<dynamic>;
-    return decoded
+    _cachedMedications = decoded
         .map((e) => MedicationModel.fromJson(e as Map<String, dynamic>))
         .toList();
+    return _cachedMedications!;
   }
 
   // QUICK FILTERS — tiny, rarely changing list of condition names.
@@ -126,6 +134,7 @@ class MedicationLocal {
   // Wipes all cached medication data. Next getAllMedications() call
   // starts cold, next fetch pulls fresh from Supabase.
   Future<void> clearAll() async {
+    _cachedMedications = null;
     await Future.wait([
       Hive.box<String>(_medicationsBox).clear(),
       Hive.box<String>(_recentSearchesBox).clear(),

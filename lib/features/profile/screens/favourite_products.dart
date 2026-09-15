@@ -100,13 +100,17 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               context.t('No favourite medications yet', 'Aucun favoris pour le moment'),
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1A1A1A),
+              ),
             ),
             const SizedBox(height: 6),
             Text(
               context.tr('Tap the heart icon on any medication to save it here.'),
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF5F6368)),
             ),
           ],
         ),

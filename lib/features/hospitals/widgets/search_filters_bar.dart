@@ -69,7 +69,7 @@ class _FacilityFilterBarState extends State<FacilityFilterBar> {
     return Container(
       padding: const EdgeInsets.all(0),
       decoration: BoxDecoration(
-        color:        Colors.grey[100],
+        color:        Colors.transparent,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -181,7 +181,7 @@ class _PlatformAdaptiveDropdown extends StatelessWidget {
     return GestureDetector(
       onTap: () => _showCupertinoSheet(context),
       child: Container(
-        height: 44,
+        height: 30,
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           color:        Colors.white,
@@ -195,16 +195,16 @@ class _PlatformAdaptiveDropdown extends StatelessWidget {
                 value != null ? context.tr(value!) : context.tr(hint),
                 style: TextStyle(
                   fontSize: 12,
-                  color: value != null ? Colors.black87 : Colors.grey[600],
+                  color: value != null ? const Color(0xFF1A1A1A) : const Color(0xFF5F6368),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            Icon(
+            const Icon(
               CupertinoIcons.chevron_down,
-              size: 14,
-              color: Colors.grey[600],
+              size: 15,
+              color: Color(0xFF5F6368),
             ),
           ],
         ),
@@ -255,15 +255,15 @@ class _PlatformAdaptiveDropdown extends StatelessWidget {
       decoration: BoxDecoration(
         color:        Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border:       Border.all(color: Colors.grey[300]!),
+        border:       Border.all(color: const Color(0xFFE0E0E0)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value:           value,
-          hint:            Text(context.tr(hint), style: const TextStyle(fontSize: 12)),
+          hint:            Text(context.tr(hint), style: const TextStyle(fontSize: 12, color: Color(0xFF5F6368))),
           isExpanded:      true,
-          icon:            const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
-          style:           const TextStyle(fontSize: 12, color: Colors.black87),
+          icon:            const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Color(0xFF5F6368)),
+          style:           const TextStyle(fontSize: 12, color: Color(0xFF1A1A1A)),
           // Allows clearing a selection by re-selecting the current value's
           // "None" option — implemented by prepending a clear entry.
           items: [

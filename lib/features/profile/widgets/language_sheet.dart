@@ -85,7 +85,7 @@ class LanguageBottomSheet extends StatelessWidget {
                     child: const Icon(
                       CupertinoIcons.xmark,
                       size: 16,
-                      color: Color(0xFF555552),
+                      color: Color(0xFF5F6368),
                     ),
                   ),
                 ),
@@ -169,7 +169,7 @@ class LanguageBottomSheet extends StatelessWidget {
                       const Divider(
                         height: 1,
                         indent: 74,
-                        color: Color(0xFFE8E8E8),
+                        color: Color(0xFFE0E0E0),
                       ),
                   ],
                 );

@@ -151,7 +151,7 @@ class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
                             if (detail == null) return const SizedBox.shrink();
 
                             return IconButton(
-                              icon: const Icon(Icons.ios_share_rounded, size: 30, color: Color(0xFF888780)),
+                              icon: const Icon(Icons.ios_share_rounded, size: 30, color: Color(0xFF5F6368)),
                               onPressed: () {
                                 final url = MapLauncher.generateShareUrl(
                                   latitude: detail.latitude,
@@ -170,7 +170,7 @@ class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
                       Positioned(
                         right: 12,
                         child: IconButton(
-                          icon: const Icon(Icons.close_rounded, size: 30, color: Color(0xFF888780)),
+                          icon: const Icon(Icons.close_rounded, size: 30, color: Color(0xFF5F6368)),
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ),
@@ -244,6 +244,7 @@ class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w800,
+                              color: Color(0xFF1A1A1A),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -260,6 +261,7 @@ class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 14,
+                                  color: Color(0xFF1A1A1A),
                                 ),
                               ),
 
@@ -269,8 +271,8 @@ class _FacilityExpandedSheetState extends State<FacilityExpandedSheet> {
                                 const SizedBox(width: 12),
                                 Text(
                                   '${((detail.latitude - widget.userLat!).abs() * 111000).toStringAsFixed(0)}m',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
+                                  style: const TextStyle(
+                                    color: Color(0xFF5F6368),
                                     fontSize: 13,
                                   ),
                                 ),
@@ -425,7 +427,7 @@ class _InfoRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(fontSize: 13, height: 1.4),
+              style: const TextStyle(fontSize: 13, height: 1.4, color: Color(0xFF1A1A1A)),
             ),
           ),
         ],

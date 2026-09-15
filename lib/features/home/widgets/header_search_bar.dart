@@ -165,7 +165,7 @@ class HeaderSearchState extends State<HeaderSearch> {
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -214,9 +214,9 @@ class HeaderSearchState extends State<HeaderSearch> {
                               isDense: true,
                               contentPadding: EdgeInsets.zero,
                             ),
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 15,
-                              color: Colors.black87,
+                              color: Color(0xFF1A1A1A),
                             ),
                           ),
                         ),
@@ -403,6 +403,7 @@ class _SuggestionsBox extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A1A1A),
                       ),
                     ),
                     subtitle: Text(

@@ -115,7 +115,7 @@ class _GlassmorphicButton extends StatefulWidget {
     required this.icon,
     required this.onTap,
     required this.tooltip,
-    this.iconColor = Colors.black,
+    this.iconColor = const Color(0xFF1A1A1A),
     this.isLoading = false,
   });
 

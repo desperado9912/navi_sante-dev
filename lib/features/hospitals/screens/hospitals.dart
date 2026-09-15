@@ -49,7 +49,7 @@ class _ScreenHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(22, 8, 22, 0),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -126,15 +126,9 @@ class _RecentHistorySection extends StatelessWidget {
       builder: (context, state) {
         if (state.recentlyViewedIds.isEmpty) return const SizedBox.shrink();
 
-        // Resolve names; skip any ID no longer present in the cached list.
+        // Resolve names using O(1) map lookup; skip any ID not in cache.
         final entries = state.recentlyViewedIds
-            .map((id) {
-              try {
-                return state.facilities.firstWhere((f) => f.facilityId == id);
-              } catch (_) {
-                return null;
-              }
-            })
+            .map((id) => state.facilityById(id))
             .whereType<FacilityModel>()
             .toList();
 
@@ -150,7 +144,7 @@ class _RecentHistorySection extends StatelessWidget {
                 children: [
                   Text(
                     context.tr('Recent History'),
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A)),
                   ),
                   GestureDetector(
                     onTap: () =>
@@ -179,7 +173,7 @@ class _RecentHistorySection extends StatelessWidget {
                       avatar: const Icon(Icons.history_rounded, size: 14),
                       label: Text(
                         facility.name,
-                        style: const TextStyle(fontSize: 11),
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF1A1A1A)),
                       ),
                       backgroundColor: Colors.white,
                       side: BorderSide(color: Colors.grey[300]!),
@@ -291,7 +285,7 @@ class _HospitalsState extends State<Hospitals> {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: const Color(0xFFF7F8FA),
+      color: const Color(0xFFF8F9F8),
       child: SafeArea(
         bottom: false,
         // BlocListener refreshes service options when facilities finish loading.
@@ -381,20 +375,17 @@ class _ResultsGrid extends StatelessWidget {
           );
         }
 
-        // ── Source list: search results or browse list, pharmacy excluded ──
-        final source = isSearching ? state.searchResults : state.facilities;
-        final filtered = source
-            .where((f) => f.type != FacilityType.pharmacy)
-            .toList();
-
-        // Browse mode: sort by rating so "Top Rated Nearby" is meaningful,
-        // capped at 10 cards. Search mode: keep server order as-is.
-        final displayList = isSearching
-            ? filtered
-            : (List<FacilityModel>.from(filtered)
-                    ..sort((a, b) => b.rating.compareTo(a.rating)))
-                  .take(10)
-                  .toList();
+        // ── Source list: search results or pre-computed browse list ─────
+        // Browse mode uses hospitalBrowseList (pre-filtered, pre-sorted, pre-capped)
+        // to avoid filter+sort on every BlocBuilder rebuild.
+        final List<FacilityModel> displayList;
+        if (isSearching) {
+          displayList = state.searchResults
+              .where((f) => f.type != FacilityType.pharmacy)
+              .toList();
+        } else {
+          displayList = state.hospitalBrowseList;
+        }
 
         // ── Empty state ─────────────────────────────────────────────────────
         if (displayList.isEmpty) {
@@ -407,7 +398,7 @@ class _ResultsGrid extends StatelessWidget {
                   isSearching
                       ? context.tr('No results found')
                       : context.tr('No facilities available'),
-                  style: const TextStyle(color: Colors.grey),
+                  style: const TextStyle(color: Color(0xFF5F6368)),
                 ),
               ),
             ),
@@ -416,7 +407,7 @@ class _ResultsGrid extends StatelessWidget {
 
         // ── Section title + grid ────────────────────────────────────────────
         return SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 22),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           sliver: SliverMainAxisGroup(
             slivers: [
               SliverToBoxAdapter(
@@ -429,6 +420,7 @@ class _ResultsGrid extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
+                      color: Color(0xFF1A1A1A),
                     ),
                   ),
                 ),

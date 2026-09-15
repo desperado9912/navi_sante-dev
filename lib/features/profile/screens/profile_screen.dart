@@ -208,7 +208,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Text(
               context.tr('Cancel'),
               style: const TextStyle(
-                color: Color(0xFF888780),
+                color: Color(0xFF5F6368),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -246,7 +246,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (_) => const PopScope(
         canPop: false,
         child: Center(
-          child: CircularProgressIndicator(color: Color(0xFF1A1A1A)),
+          child: CircularProgressIndicator(color: Color(0xFF2A7D8F)),
         ),
       ),
     );
@@ -305,8 +305,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(width: 6),
         const Icon(
           CupertinoIcons.chevron_right,
-          size: 16,
-          color: Color(0xFF888780),
+          size: 18,
+          color: Color(0xFF5F6368),
         ),
       ],
     );
@@ -336,8 +336,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       const SizedBox(width: 6),
       const Icon(
         CupertinoIcons.chevron_right,
-        size: 16,
-        color: Color(0xFF888780),
+        size: 18,
+        color: Color(0xFF5F6368),
       ),
     ],
   );
@@ -360,13 +360,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             // ── Section label ───────────────────────────────
             Padding(
-              padding: const EdgeInsets.only(left: 24, bottom: 10),
+              padding: const EdgeInsets.only(left: 20, bottom: 10),
               child: Text(
                 context.tr('Settings'),
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF888780),
+                  color: Color(0xFF5F6368),
                   letterSpacing: 0.5,
                 ),
               ),
@@ -488,7 +488,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             // ── Logout button ────────────────────────────────
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: OutlinedButton(
                 onPressed: _confirmLogout,
                 style: OutlinedButton.styleFrom(
@@ -526,12 +526,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: const [
                   Text(
                     _copyright,
-                    style: TextStyle(fontSize: 12, color: Color(0xFF888780)),
+                    style: TextStyle(fontSize: 12, color: Color(0xFF5F6368)),
                   ),
                   SizedBox(height: 2),
                   Text(
                     _appVersion,
-                    style: TextStyle(fontSize: 12, color: Color(0xFF888780)),
+                    style: TextStyle(fontSize: 12, color: Color(0xFF5F6368)),
                   ),
                 ],
               ),
@@ -553,7 +553,7 @@ class _TileGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: List.generate(
           children.length * 2 - 1,

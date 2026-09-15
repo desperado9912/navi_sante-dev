@@ -37,7 +37,7 @@ class HighlightsCarousel extends StatelessWidget {
             key: const PageStorageKey<String>('highlights_carousel_list'),
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             itemCount: state.highlights.length,
             separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
@@ -75,7 +75,7 @@ class SelectedFacilityCard extends StatelessWidget {
     return SizedBox(
       height: 146,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Align(
           alignment: Alignment.centerLeft,
           child: FacilityCardUI(
@@ -168,6 +168,7 @@ class FacilityCardUI extends StatelessWidget {
                       facility.name,
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1A1A1A),
                         height: 1.2,
                       ),
                       maxLines: 2,
@@ -184,7 +185,7 @@ class FacilityCardUI extends StatelessWidget {
                           Text(
                             distanceStr,
                             style: theme.textTheme.labelSmall?.copyWith(
-                              color: Colors.grey[600],
+                              color: const Color(0xFF5F6368),
                               fontWeight: FontWeight.w500,
                             ),
                           ),

@@ -115,8 +115,7 @@ class _PharmacyScreenState extends State<PharmacyScreen> {
             prev.activeQuery != curr.activeQuery ||
             prev.searchResults != curr.searchResults ||
             prev.commonQuickFilters != curr.commonQuickFilters ||
-            prev.recentSearches != curr.recentSearches ||
-            prev.favouriteIds != curr.favouriteIds,
+            prev.recentSearches != curr.recentSearches,
         builder: (context, state) {
           return CustomScrollView(
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -233,7 +232,7 @@ class _PharmacyScreenState extends State<PharmacyScreen> {
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
           child: Text(
             headerLabel,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A)),
           ),
         ),
       ),
@@ -280,7 +279,7 @@ class _ErrorRetryView extends StatelessWidget {
             Text(
               context.tr(message),
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13.5, color: Colors.grey[700]),
+              style: const TextStyle(fontSize: 14, color: Color(0xFF5F6368)),
             ),
             const SizedBox(height: 14),
             OutlinedButton(

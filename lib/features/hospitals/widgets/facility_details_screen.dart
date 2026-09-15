@@ -53,6 +53,10 @@ class _FacilityDetailScreenState extends State<FacilityDetailScreen> {
         title: ('Details'),
       ),
       body: BlocBuilder<FacilityBloc, FacilityState>(
+        buildWhen: (prev, curr) =>
+            prev.detailStatus != curr.detailStatus ||
+            prev.currentDetail != curr.currentDetail ||
+            prev.errorMessage != curr.errorMessage,
         builder: (context, state) {
           // Error takes priority — covers "not found" and network failures.
           if (state.detailStatus == FacilityStatus.error) {
@@ -115,7 +119,7 @@ class _DetailContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -142,6 +146,7 @@ class _DetailContent extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
+                    color: Color(0xFF1A1A1A),
                   ),
                 ),
               ),
@@ -162,6 +167,7 @@ class _DetailContent extends StatelessWidget {
                 style: const TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 15,
+                  color: Color(0xFF1A1A1A),
                 ),
               ),
             ],
@@ -191,9 +197,9 @@ class _DetailContent extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               detail.description!,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 14,
-                color: Colors.grey[700],
+                color: Color(0xFF5F6368),
                 height: 1.5,
               ),
             ),
@@ -271,9 +277,9 @@ class _DetailContent extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Row(
                   children: [
-                    const Icon(Icons.circle, size: 6, color: Colors.grey),
+                    const Icon(Icons.circle, size: 8, color: Color(0xFF5F6368)),
                     const SizedBox(width: 10),
-                    Text(tag, style: const TextStyle(fontSize: 14)),
+                    Text(tag, style: const TextStyle(fontSize: 14, color: Color(0xFF1A1A1A))),
                   ],
                 ),
               ),
@@ -316,7 +322,7 @@ class _BookmarkButtonState extends State<_BookmarkButton> {
             isBookmarked
                 ? Icons.bookmark_rounded
                 : Icons.bookmark_border_rounded,
-            color: _tealColor,
+            color: isBookmarked ? _tealColor : const Color(0xFF5F6368),
           ),
         );
       },

@@ -54,10 +54,10 @@ class AuthTextField extends StatelessWidget {
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 15),
+            hintStyle: const TextStyle(color: Color(0xFF5F6368), fontSize: 15),
             prefixIcon: Icon(
               prefixIcon,
-              color: const Color(0xFF888780),
+              color: const Color(0xFF5F6368),
               size: 20,
             ),
             suffixIcon: isPassword
@@ -66,7 +66,7 @@ class AuthTextField extends StatelessWidget {
                       obscureText
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
-                      color: const Color(0xFF888780),
+                      color: const Color(0xFF5F6368),
                       size: 20,
                     ),
                     onPressed: onToggleObscure,

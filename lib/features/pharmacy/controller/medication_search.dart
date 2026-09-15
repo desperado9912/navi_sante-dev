@@ -78,10 +78,29 @@ class MedicationSearchEngine {
     'allergy': 'allergie',
   };
 
+  // ── Pre-computed normalized index ─────────────────────────────────────
+  // Built once when the pool reference changes (object identity check).
+  // Eliminates ~500-2000 _normalize() string allocations per keystroke.
+  static List<MedicationModel>? _lastPool;
+  static List<_NormalizedMedication> _normalizedPool = const [];
+
+  static void _ensureIndex(List<MedicationModel> pool) {
+    if (identical(pool, _lastPool)) return;
+    _lastPool = pool;
+    _normalizedPool = pool.map((m) => _NormalizedMedication(
+      name: _normalize(m.name),
+      brands: m.brandNames.map(_normalize).toList(growable: false),
+      conditions: m.conditions.map(_normalize).toList(growable: false),
+      retailers: m.retailers.map((r) => _normalize(r.name)).toList(growable: false),
+      description: m.description != null ? _normalize(m.description!) : '',
+    )).toList(growable: false);
+  }
+
   MedicationSearchResult search(List<MedicationModel> pool, String rawQuery) {
     final String query = rawQuery.trim();
     if (query.isEmpty) return const MedicationSearchResult(matches: []);
 
+    _ensureIndex(pool);
     final String normalizedQuery = _normalize(query);
 
     // Step 1 — whole phrase.
@@ -116,38 +135,30 @@ class MedicationSearchEngine {
     List<MedicationModel> pool,
     List<String> tokens,
   ) {
-    return pool.where((m) => _matches(m, tokens)).toList();
+    final List<MedicationModel> results = [];
+    for (int i = 0; i < pool.length; i++) {
+      if (_matches(_normalizedPool[i], tokens)) {
+        results.add(pool[i]);
+      }
+    }
+    return results;
   }
 
-  bool _matches(MedicationModel medication, List<String> tokens) {
-    final String name = _normalize(medication.name);
-    final List<String> brands = medication.brandNames
-        .map(_normalize)
-        .toList();
-    final List<String> conditions = medication.conditions
-        .map(_normalize)
-        .toList();
-    final List<String> retailers = medication.retailers
-        .map((r) => _normalize(r.name))
-        .toList();
-    final String description = medication.description != null
-        ? _normalize(medication.description!)
-        : '';
-
+  bool _matches(_NormalizedMedication normalized, List<String> tokens) {
     for (final String token in tokens) {
       final String frToEn = _frenchToCanonicalCondition[token] ?? token;
       final String enToFr = _canonicalToFrenchCondition[token] ?? token;
 
-      if (name.contains(token) || name.contains(frToEn)) return true;
-      if (brands.any((b) => b.contains(token) || b.contains(frToEn))) return true;
-      if (conditions.any(
+      if (normalized.name.contains(token) || normalized.name.contains(frToEn)) return true;
+      if (normalized.brands.any((b) => b.contains(token) || b.contains(frToEn))) return true;
+      if (normalized.conditions.any(
         (c) => c.contains(token) || c.contains(frToEn) || c.contains(enToFr),
       )) {
         return true;
       }
-      if (retailers.any((r) => r.contains(token) || r.contains(frToEn))) return true;
-      if (description.isNotEmpty &&
-          (description.contains(token) || description.contains(frToEn))) {
+      if (normalized.retailers.any((r) => r.contains(token) || r.contains(frToEn))) return true;
+      if (normalized.description.isNotEmpty &&
+          (normalized.description.contains(token) || normalized.description.contains(frToEn))) {
         return true;
       }
     }
@@ -159,9 +170,10 @@ class MedicationSearchEngine {
   /// CONDITION (the "symptom search" use case) over one that only
   /// matched a medication/brand name.
   String? _bestChipTerm(List<MedicationModel> pool, List<String> words) {
-    final Set<String> allConditions = pool
-        .expand((m) => m.conditions.map(_normalize))
-        .toSet();
+    final Set<String> allConditions = <String>{};
+    for (final n in _normalizedPool) {
+      allConditions.addAll(n.conditions);
+    }
 
     for (final String word in words) {
       final String translated = _frenchToCanonicalCondition[word] ?? word;
@@ -181,7 +193,7 @@ class MedicationSearchEngine {
 
   /// Lowercases and strips common French accents — same approach already
   /// used for the map screen's search bar.
-  String _normalize(String input) {
+  static String _normalize(String input) {
     const Map<String, String> accentMap = {
       'à': 'a', 'â': 'a', 'ä': 'a',
       'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
@@ -197,4 +209,22 @@ class MedicationSearchEngine {
     }
     return buffer.toString();
   }
+}
+
+/// Pre-computed normalized fields for a single medication — built once
+/// when the catalog is loaded, reused on every search keystroke.
+class _NormalizedMedication {
+  final String name;
+  final List<String> brands;
+  final List<String> conditions;
+  final List<String> retailers;
+  final String description;
+
+  const _NormalizedMedication({
+    required this.name,
+    required this.brands,
+    required this.conditions,
+    required this.retailers,
+    required this.description,
+  });
 }

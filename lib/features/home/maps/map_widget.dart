@@ -199,7 +199,7 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
         ),
         backgroundColor: const Color(0xFF1E293B),
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(24, 0, 24, 128),
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 110),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         duration: const Duration(seconds: 4), // Autodismisses after 4 seconds
         action: SnackBarAction(

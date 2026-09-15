@@ -31,7 +31,7 @@ class QuickFilterChips extends StatelessWidget {
           children: [
             Text(
               context.tr('Quick Filters:'),
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A)),
             ),
             if (canClear)
               GestureDetector(
@@ -76,7 +76,7 @@ class QuickFilterChips extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: isActive ? Colors.white : Colors.grey[700],
+                        color: isActive ? Colors.white : const Color(0xFF5F6368),
                       ),
                     ),
                   ),

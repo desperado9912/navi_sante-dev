@@ -128,7 +128,16 @@ class FacilityState {
   // Last error message — surfaced to the UI for snackbars or error widgets.
   final String? errorMessage;
 
-  const FacilityState({
+  // ── Pre-computed derived fields ──────────────────────────────────────
+  // Computed once at state construction time — zero work during widget builds.
+
+  /// Non-pharmacy facilities sorted by rating (top 10) for the Hospitals browse grid.
+  final List<FacilityModel> hospitalBrowseList;
+
+  /// O(1) lookup map keyed by facilityId — used by recent history, detail loading, etc.
+  final Map<String, FacilityModel> _facilityById;
+
+  FacilityState({
     this.facilities = const [],
     this.highlights = const [],
     this.searchResults = const [],
@@ -141,7 +150,18 @@ class FacilityState {
     this.bookmarkStatus = FacilityStatus.initial,
     this.activeQuery,
     this.errorMessage,
-  });
+  })  : hospitalBrowseList = _computeHospitalBrowseList(facilities),
+        _facilityById = { for (final f in facilities) f.facilityId: f };
+
+  static List<FacilityModel> _computeHospitalBrowseList(List<FacilityModel> facilities) {
+    if (facilities.isEmpty) return const [];
+    final filtered = facilities.where((f) => f.type != FacilityType.pharmacy).toList();
+    filtered.sort((a, b) => b.rating.compareTo(a.rating));
+    return filtered.length > 10 ? filtered.sublist(0, 10) : filtered;
+  }
+
+  /// Returns the facility with [facilityId], or null if not found. O(1).
+  FacilityModel? facilityById(String facilityId) => _facilityById[facilityId];
 
   // Sentinel pattern for nullable fields in copyWith.
   static const Object _sentinel = Object();
@@ -196,6 +216,9 @@ class FacilityState {
   // get saved facilities
   List<FacilityModel> get savedFacilities =>
       facilities.where((f) => bookmarkedIds.contains(f.facilityId)).toList();
+
+  @override
+  String toString() => 'FacilityState(facilities: ${facilities.length}, status: $facilitiesStatus)';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -212,7 +235,7 @@ class FacilityBloc extends Bloc<FacilityEvent, FacilityState> {
 
   FacilityBloc({required FacilityRepository repository})
     : _repository = repository,
-      super(const FacilityState()) {
+      super( FacilityState()) {
     // Facility List
     on<LoadFacilities>(_onLoadFacilities, transformer: droppable());
     on<LoadHighlights>(_onLoadHighlights);

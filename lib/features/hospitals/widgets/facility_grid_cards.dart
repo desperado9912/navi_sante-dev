@@ -81,6 +81,7 @@ class FacilityGridCard extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
+                              color: Color(0xFF1A1A1A),
                               height: 1.2,
                             ),
                             maxLines: 2,
@@ -192,6 +193,7 @@ class _CardImage extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
+                        color: Color(0xFF1A1A1A),
                       ),
                     ),
                   ],
@@ -262,7 +264,7 @@ class _BookmarkButtonState extends State<_BookmarkButton> {
                   ? Icons.bookmark_rounded
                   : Icons.bookmark_border_rounded,
               size: 16,
-              color: isBookmarked ? const Color(0xFF2A7D8F) : Colors.grey[700],
+              color: isBookmarked ? const Color(0xFF2A7D8F) : const Color(0xFF5F6368),
             ),
           ),
         );
@@ -347,14 +349,20 @@ class _ServiceChipsRow extends StatelessWidget {
       17.0; // measured: 9px text + 2*2px vertical padding + line height slack
   static const double _lineGap = 4.0; // gap between lines 1 and 2
 
+  // Chip width cache — service names are a finite, stable set so measuring
+  // the same label twice with TextPainter is pure waste.
+  static final Map<String, double> _chipWidthCache = {};
+
   /// Measures the rendered pixel width of a single chip.
   double _measureChipWidth(String label) {
-    final painter = TextPainter(
-      text: TextSpan(text: label, style: _chipStyle),
-      maxLines: 1,
-      textDirection: TextDirection.ltr,
-    )..layout();
-    return painter.width + _chipHPadding;
+    return _chipWidthCache.putIfAbsent(label, () {
+      final painter = TextPainter(
+        text: TextSpan(text: label, style: _chipStyle),
+        maxLines: 1,
+        textDirection: TextDirection.ltr,
+      )..layout();
+      return painter.width + _chipHPadding;
+    });
   }
 
   @override
@@ -465,7 +473,7 @@ class _Chip extends StatelessWidget {
         style: TextStyle(
           fontSize: 9,
           fontWeight: FontWeight.w600,
-          color: isOverflow ? Colors.grey[600] : const Color(0xFF2A7D8F),
+          color: isOverflow ? const Color(0xFF5F6368) : const Color(0xFF2A7D8F),
         ),
       ),
     );

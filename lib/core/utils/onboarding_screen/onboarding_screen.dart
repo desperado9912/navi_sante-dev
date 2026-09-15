@@ -223,8 +223,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           CircleAvatar(
             radius: 20,
             backgroundColor: const Color(
-              0xFFE0F2F1,
-            ), // Soft light teal circular background
+              0xFFF8F9F8,
+            ),
             child: Icon(icon, color: const Color(0xFF2A7D8F), size: 20),
           ),
           const SizedBox(height: 12),

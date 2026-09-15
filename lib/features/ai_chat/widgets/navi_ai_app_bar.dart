@@ -25,7 +25,7 @@ class NaviAiAppBar extends StatelessWidget implements PreferredSizeWidget {
           'Navi AI',
           style: TextStyle(
             fontWeight: FontWeight.w600,
-            color: Colors.black,
+            color: Color(0xFF1A1A1A),
             fontSize: 18,
           ),
         ),
@@ -39,7 +39,7 @@ class NaviAiAppBar extends StatelessWidget implements PreferredSizeWidget {
           child: IconButton(
             tooltip: t(context, 'Chat history', 'Historique'),
             onPressed: onHistoryTap,
-            icon: const Icon(Icons.access_time_rounded, color: Colors.black87),
+            icon: const Icon(Icons.access_time_rounded, color: Color(0xFF1A1A1A)),
           ),
         ),
       ],

@@ -28,7 +28,7 @@ class MedicationSearchBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.search_rounded, size: 22),
+          const Icon(Icons.search_rounded, size: 22, color: Color(0xFF5F6368)),
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
@@ -41,7 +41,7 @@ class MedicationSearchBar extends StatelessWidget {
                 border: InputBorder.none,
                 isDense: true,
               ),
-              style: const TextStyle(fontSize: 16, color: Colors.black87),
+              style: const TextStyle(fontSize: 14, color: Color(0xFF1A1A1A)),
             ),
           ),
           // Bound directly to the controller (a ValueListenable) rather

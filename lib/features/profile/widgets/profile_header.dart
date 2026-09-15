@@ -40,7 +40,7 @@ class ProfileHeader extends StatelessWidget {
 
         return Container(
           width: double.infinity,
-          margin: const EdgeInsets.symmetric(horizontal: 24),
+          margin: const EdgeInsets.symmetric(horizontal: 20),
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
           decoration: BoxDecoration(
             color: Colors.white,

@@ -48,6 +48,7 @@ class ChatHistorySheet extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
+                        color: Color(0xFF1A1A1A),
                       ),
                     ),
                   ),
@@ -87,7 +88,7 @@ class ChatHistorySheet extends StatelessWidget {
                       final conv = state.conversations[index];
                       return ListTile(
                         selected: conv.id == state.activeId,
-                        selectedTileColor: const Color(0xFFD7EEF3),
+                        selectedTileColor: const Color(0xFFD8F6FF),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -111,7 +112,7 @@ class ChatHistorySheet extends StatelessWidget {
                           tooltip: t(context, 'Delete', 'Supprimer'),
                           icon: const Icon(
                             Icons.delete_outline_rounded,
-                            color: Color(0xFF9AA0A6),
+                            color: Color(0xFF5F6368),
                           ),
                           onPressed: () => _confirmDelete(context, conv),
                         ),

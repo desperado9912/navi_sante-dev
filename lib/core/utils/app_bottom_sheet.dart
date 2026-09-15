@@ -72,7 +72,7 @@ class AppBottomSheet extends StatelessWidget {
                       child: const Icon(
                         CupertinoIcons.xmark,
                         size: 16,
-                        color: Color(0xFF555552),
+                        color: Color(0xFF5F6368),
                       ),
                     ),
                   ),

@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:navi_sante/core/utils/language_cubit/app_translations.dart';
 import '../../home/maps/map_launcher.dart';
+import '../controller/pharmacy_bloc.dart';
 import '../controller/pharmacy_model.dart';
 
 /// Compact medication card matching the Pharmacy screen mockup, trimmed
@@ -86,6 +88,7 @@ class _MedicationCardState extends State<MedicationCard> {
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
+                        color: Color(0xFF1A1A1A),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -93,7 +96,7 @@ class _MedicationCardState extends State<MedicationCard> {
                     if (m.dosages.isNotEmpty)
                       Text(
                         m.dosages.join(' / '),
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF5F6368)),
                       ),
                   ],
                 ),
@@ -101,20 +104,25 @@ class _MedicationCardState extends State<MedicationCard> {
               const SizedBox(width: 6),
               _DispensingBadge(isRx: isRx),
               const SizedBox(width: 4),
-              GestureDetector(
-                onTap: widget.onToggleFavourite,
-                child: Padding(
-                  padding: const EdgeInsets.all(2),
-                  child: Icon(
-                    widget.isFavourited
-                        ? Icons.favorite_rounded
-                        : Icons.favorite_border_rounded,
-                    color: widget.isFavourited
-                        ? const Color(0xFFE53935)
-                        : Colors.grey[400],
-                    size: 22,
-                  ),
-                ),
+              BlocSelector<PharmacyBloc, PharmacyState, bool>(
+                selector: (state) => state.isFavourited(widget.medication.medicationId),
+                builder: (context, isFav) {
+                  return GestureDetector(
+                    onTap: widget.onToggleFavourite,
+                    child: Padding(
+                      padding: const EdgeInsets.all(2),
+                      child: Icon(
+                        isFav
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
+                        color: isFav
+                            ? const Color(0xFFE53935)
+                            : const Color(0xFF5F6368),
+                        size: 22,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -142,7 +150,7 @@ class _MedicationCardState extends State<MedicationCard> {
             const SizedBox(height: 6),
             Text(
               '${context.tr('Treats: ')}${_capped(m.conditions, _maxConditionsShown)}',
-              style: TextStyle(fontSize: 11.5, color: Colors.grey[600]),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF5F6368)),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -161,7 +169,7 @@ class _MedicationCardState extends State<MedicationCard> {
                 if (m.retailers.length > _maxRetailersShown)
                   Text(
                     '+${m.retailers.length - _maxRetailersShown} ${context.tr('more')}',
-                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF5F6368)),
                   ),
               ],
             ),
@@ -181,15 +189,15 @@ class _MedicationCardState extends State<MedicationCard> {
                         if (m.description != null && m.description!.isNotEmpty)
                           Text(
                             m.description!,
-                            style: const TextStyle(fontSize: 12.5, height: 1.4),
+                            style: const TextStyle(fontSize: 12.5, height: 1.4, color: Color(0xFF1A1A1A)),
                           ),
                         const SizedBox(height: 6),
                         Text(
                           context.tr(m.dispensingNote),
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 11.5,
                             fontStyle: FontStyle.italic,
-                            color: Colors.grey[700],
+                            color: Color(0xFF5F6368),
                           ),
                         ),
                       ],
