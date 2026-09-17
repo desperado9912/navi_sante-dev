@@ -67,7 +67,7 @@ class FacilityModel extends Equatable {
       address: json['address'] as String?,
       phone: json['phone'] as String?,
       workHours: json['work_hours'] as String?,
-      
+
       rating: (json['rating'] as num).toDouble(),
       priceRange: json['price_range'] as String?,
       latitude: (json['latitude'] as num).toDouble(),
@@ -76,8 +76,9 @@ class FacilityModel extends Equatable {
       servicesList: (json['services_list'] as List<dynamic>? ?? [])
           .map((e) => e as String)
           .toList(),
-      servicesCount: (json['services_count'] as num?)?.toInt()
-      ?? (json['services_list'] as List<dynamic>? ?? []).length,
+      servicesCount:
+          (json['services_count'] as num?)?.toInt() ??
+          (json['services_list'] as List<dynamic>? ?? []).length,
     );
   }
 
@@ -211,6 +212,48 @@ class FacilityImage extends Equatable {
   List<Object?> get props => [id, url, isPrimary, displayOrder];
 }
 
+//FACILITY SPECIALIST MODEL
+/// A doctor/specialist attached to a facility.
+/// Used inside [FacilityDetailModel] for the detail-screen "Specialists" row.
+class FacilitySpecialist extends Equatable {
+  final String id;
+  final String name;
+  final String? specialty;
+  final String? photoUrl;
+  final bool isAvailable;
+
+  const FacilitySpecialist({
+    required this.id,
+    required this.name,
+    this.specialty,
+    this.photoUrl,
+    required this.isAvailable,
+  });
+
+  factory FacilitySpecialist.fromJson(Map<String, dynamic> json) {
+    return FacilitySpecialist(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      specialty: json['specialty'] as String?,
+      photoUrl: json['photo_url'] as String?,
+      // Defaults to false (not true) when missing — never claim a doctor
+      // is available on incomplete data.
+      isAvailable: json['is_available'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'specialty': specialty,
+    'photo_url': photoUrl,
+    'is_available': isAvailable,
+  };
+
+  @override
+  List<Object?> get props => [id, name, specialty, photoUrl, isAvailable];
+}
+
 // Facility Detail Model
 /// Includes description, tags, and all images
 /// Fetched on demand when the user taps a facility, then cached in Hive by `facility_id`.
@@ -230,6 +273,7 @@ class FacilityDetailModel extends Equatable {
   final List<FacilityImage> images;
   final List<String> services;
   final List<String> tags;
+  final List<FacilitySpecialist> specialists;
 
   const FacilityDetailModel({
     required this.facilityId,
@@ -247,6 +291,7 @@ class FacilityDetailModel extends Equatable {
     required this.images,
     required this.services,
     required this.tags,
+    this.specialists = const [],
   });
 
   /// Parses the JSON object returned by `get_facility_detail()` RPC.
@@ -278,6 +323,9 @@ class FacilityDetailModel extends Equatable {
       tags: (json['tags'] as List<dynamic>? ?? [])
           .map((e) => e as String)
           .toList(),
+      specialists: (json['specialists'] as List<dynamic>? ?? [])
+          .map((e) => FacilitySpecialist.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 
@@ -297,6 +345,7 @@ class FacilityDetailModel extends Equatable {
     'images': images.map((e) => e.toJson()).toList(),
     'services': services,
     'tags': tags,
+    'specialists': specialists.map((e) => e.toJson()).toList(),
   };
 
   /// Returns the primary image URL, falling back to the first image, or null.
@@ -325,5 +374,6 @@ class FacilityDetailModel extends Equatable {
     images,
     services,
     tags,
+    specialists,
   ];
 }

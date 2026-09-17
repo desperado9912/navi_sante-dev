@@ -119,8 +119,8 @@ class _NavigationMenuState extends State<NavigationMenu> {
                           label: context.tr('Discover'),
                         ),
                         NavigationDestination(
-                          icon: const Icon(CupertinoIcons.plus_app),
-                          selectedIcon: const Icon(CupertinoIcons.plus_app_fill),
+                          icon: const Icon(CupertinoIcons.waveform_path_ecg),
+                          selectedIcon: const Icon(CupertinoIcons.waveform_path_ecg),
                           label: context.tr('Hospitals'),
                         ),
                         NavigationDestination(

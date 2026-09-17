@@ -1,7 +1,7 @@
 import 'dart:io' show Platform;
 import 'package:navi_sante/core/utils/navigation_menu.dart'
     show navBottomPadding;
-import 'package:navi_sante/features/Scontributors/my_facility.dart';
+import 'package:navi_sante/features/profile/screens/my_facility.dart';
 import 'package:navi_sante/features/profile/screens/favourite_products.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/cupertino.dart';

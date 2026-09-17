@@ -125,6 +125,10 @@ class AppTranslations extends Translations {
     'Address': 'Address',
     'Phone Number': 'Phone Number',
     'Emergency Services': 'Emergency Services',
+    'Infrastructure': 'Infrastructure',
+    'infrastructure': 'Infrastructure',
+    'Available': 'Available',
+    'Unavailable': 'Unavailable',
     'No facilities found': 'No facilities found',
     'Try adjusting your search or filters':
         'Try adjusting your search or filters',
@@ -404,6 +408,10 @@ class AppTranslations extends Translations {
     'Address': 'Adresse',
     'Phone Number': 'Numéro de téléphone',
     'Emergency Services': 'Services d’urgence',
+    'Infrastructure': 'Infrastructures',
+    'infrastructure': 'Infrastructures',
+    'Available': 'Disponible',
+    'Unavailable': 'Indisponible',
     'No facilities found': 'Aucun établissement trouvé',
     'Try adjusting your search or filters':
         'Essayez d’ajuster votre recherche ou vos filtres',

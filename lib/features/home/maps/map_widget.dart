@@ -567,23 +567,15 @@ class _HomeMapWidgetState extends State<HomeMapWidget>
       child: HighlightsCarousel(
         userLat: state.userLocation!.latitude,
         userLng: state.userLocation!.longitude,
-        onCardTap: (facility) async {
+        onCardTap: (facility) {
           setState(() {
             _selectedFacility = facility;
           });
-          context.read<FacilityBloc>().add(
-            LoadFacilityDetail(facility.facilityId),
+          _animatedMapMove(
+            LatLng(facility.latitude, facility.longitude),
+            15.5,
           );
-          context.read<MapCubit>().expandSheet(facility.facilityId);
-          await FacilityExpandedSheet.show(
-            context,
-            facility.facilityId,
-            userLat: state.userLocation?.latitude,
-            userLng: state.userLocation?.longitude,
-          );
-          if (context.mounted) {
-            context.read<MapCubit>().selectPin(facility.facilityId);
-          }
+          context.read<MapCubit>().selectPin(facility.facilityId);
         },
       ),
     );

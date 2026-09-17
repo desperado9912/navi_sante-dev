@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
@@ -96,9 +97,9 @@ class _DetailContent extends StatelessWidget {
       );
     } on MapLaunchException catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(AppTranslations.tr(e.message, context))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppTranslations.tr(e.message, context))),
+      );
     }
   }
 
@@ -269,9 +270,62 @@ class _DetailContent extends StatelessWidget {
             ),
           ],
 
-          // ── Tags (amenities/equipment) ───────────────────────────────────
+          // Specilists Section
+          if (detail.specialists.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                const Icon(
+                  Icons.person_3,
+                  size: 20,
+                  color: _tealColor,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  context.t("Specialists", "Spécialistes"),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 154,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: detail.specialists.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 10),
+                itemBuilder: (context, index) =>
+                    _SpecialistCard(specialist: detail.specialists[index]),
+              ),
+            ),
+          ],
+
+          // Tags (amenities/equipment)
           if (detail.tags.isNotEmpty) ...[
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                const Icon(
+                  Icons.apartment_rounded,
+                  size: 20,
+                  color: _tealColor,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  context.tr('Infrastructure'),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
             ...detail.tags.map(
               (tag) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
@@ -279,7 +333,13 @@ class _DetailContent extends StatelessWidget {
                   children: [
                     const Icon(Icons.circle, size: 8, color: Color(0xFF5F6368)),
                     const SizedBox(width: 10),
-                    Text(tag, style: const TextStyle(fontSize: 14, color: Color(0xFF1A1A1A))),
+                    Text(
+                      tag,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -346,6 +406,132 @@ class _ContactRow extends StatelessWidget {
           Expanded(child: Text(label, style: const TextStyle(fontSize: 13))),
         ],
       ),
+    );
+  }
+}
+
+class _SpecialistCard extends StatelessWidget {
+  final FacilitySpecialist specialist;
+  const _SpecialistCard({required this.specialist});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 108,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: 84,
+            width: double.infinity,
+            child: specialist.photoUrl != null
+                ? CachedNetworkImage(
+                    imageUrl: specialist.photoUrl!,
+                    fit: BoxFit.cover,
+                    memCacheWidth: 220,
+                    placeholder: (_, _) => const _SpecialistAvatarPlaceholder(),
+                    errorWidget: (_, _, _) =>
+                        const _SpecialistAvatarPlaceholder(),
+                  )
+                : const _SpecialistAvatarPlaceholder(),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        specialist.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                      ),
+                      if (specialist.specialty != null) ...[
+                        const SizedBox(height: 1),
+                        Text(
+                          specialist.specialty!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Color(0xFF5F6368),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  _AvailabilityBadge(isAvailable: specialist.isAvailable),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SpecialistAvatarPlaceholder extends StatelessWidget {
+  const _SpecialistAvatarPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      // TODO: CHANGE / HARMONISE COLOR
+      color: Colors.grey[200],
+      child: Icon(Icons.person_rounded, color: Colors.grey[400], size: 32),
+    );
+  }
+}
+
+class _AvailabilityBadge extends StatelessWidget {
+  final bool isAvailable;
+  const _AvailabilityBadge({required this.isAvailable});
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: CHANGE / HARMONISE COLOR
+    final color = isAvailable
+        ? const Color(0xFF2E7D32)
+        : const Color(0xFF9E9E9E);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            context.tr(isAvailable ? 'Available' : 'Unavailable'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 8,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
