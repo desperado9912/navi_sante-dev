@@ -112,7 +112,7 @@ class _FacilityFilterBarState extends State<FacilityFilterBar> {
               const SizedBox(width: 10),
               Expanded(
                 child: SizedBox(
-                  height: 44,
+                  height: 40,
                   child: FilledButton.icon(
                     onPressed: () => widget.onApply(
                       service:    _selectedService,
@@ -181,7 +181,7 @@ class _PlatformAdaptiveDropdown extends StatelessWidget {
     return GestureDetector(
       onTap: () => _showCupertinoSheet(context),
       child: Container(
-        height: 30,
+        height: 40,
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           color:        Colors.white,

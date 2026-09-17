@@ -9,6 +9,7 @@ never in the mobile app.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import logging
@@ -34,14 +35,26 @@ OPENROUTER_MODEL = os.getenv(
 GATEWAY_SECRET = os.getenv("GATEWAY_SECRET", "").strip()
 
 MAX_OUTPUT_TOKENS = 400
-REQUEST_TIMEOUT_S = 30.0
-CONNECT_TIMEOUT_S = 15.0
-RATE_LIMIT_PER_MIN = 8
+
+
+
+
+
+
+
+GATEWAY_BUDGET_S = 20.0
+CONNECT_TIMEOUT_S = 5.0
+FIRST_ATTEMPT_TIMEOUT_S = 14.0
+RETRY_TIMEOUT_S = 5.0
+
+RATE_LIMIT_PER_MIN = 40
 HISTORY_TURNS = 6
 HISTORY_CHARS = 400
 USER_CHARS = 1200
-TOOL_CONTENT_CHARS = 1600
-MAX_TOOL_CALLS = 2
+TOOL_CONTENT_CHARS = 1400
+MAX_TOOL_CALLS = 3
+DEBOUNCE_S = 0.8
+IN_FLIGHT_STALE_S = 25.0
 
 SYSTEM = """You are Navi AI, the in-app assistant inside NaviSanté.
 
@@ -165,11 +178,44 @@ class ChatResponse(BaseModel):
     error: str | None = None
 
 
-_http = httpx.Client(
-    timeout=httpx.Timeout(REQUEST_TIMEOUT_S, connect=CONNECT_TIMEOUT_S),
-    limits=httpx.Limits(max_keepalive_connections=8, max_connections=16),
+logger = logging.getLogger("navisante_gateway")
+
+
+
+
+_http = httpx.AsyncClient(
+    timeout=httpx.Timeout(
+        FIRST_ATTEMPT_TIMEOUT_S,
+        connect=CONNECT_TIMEOUT_S,
+        pool=5.0,
+    ),
+    limits=httpx.Limits(
+        max_keepalive_connections=4,
+        max_connections=8,
+        keepalive_expiry=12.0,
+    ),
+    headers={"Accept-Encoding": "gzip"},
 )
 _buckets: dict[str, dict[str, Any]] = {}
+_bucket_lock = asyncio.Lock()
+
+
+
+
+
+_lean_mode = False
+
+
+def _set_lean_mode() -> None:
+    global _lean_mode
+    if not _lean_mode:
+        _lean_mode = True
+        logger.info(
+            "Upstream rejected extended params once; using the lean payload "
+            "for all future requests (avoids a repeated extra round trip)."
+        )
+
+
 _MD = re.compile(r"[*_`#>]{1,3}")
 _FR_HINT = re.compile(
     r"\b(je|tu|vous|nous|le|la|les|des|une|est|sont|hôpital|hopital|"
@@ -199,41 +245,56 @@ def _msg(lang: str, en: str, fr: str) -> str:
     return fr if lang == "fr" else en
 
 
-def _rate_limit(user_key: str, msg_hash: str, lang: str) -> str | None:
+async def _rate_limit(user_key: str, msg_hash: str, lang: str) -> str | None:
     now = time.time()
-    b: dict[str, Any] = _buckets.get(user_key) or {}
-    if not b or now > b["reset_at"]:
-        b = {
-            "count": 0,
-            "reset_at": now + 60,
-            "in_flight": False,
-            "last_hash": "",
-            "last_at": 0.0,
-        }
-        _buckets[user_key] = b
-    if b["in_flight"]:
-        return _msg(
-            lang,
-            "Please wait for the current reply to finish.",
-            "Attendez la fin de la réponse en cours.",
-        )
-    if b["last_hash"] == msg_hash and now - b["last_at"] < 2.5:
-        return _msg(
-            lang,
-            "That message was just sent.",
-            "Ce message vient d’être envoyé.",
-        )
-    if b["count"] >= RATE_LIMIT_PER_MIN:
-        return _msg(
-            lang,
-            "Too many requests. Try again in a minute.",
-            "Trop de demandes. Réessayez dans une minute.",
-        )
-    b["count"] += 1
-    b["in_flight"] = True
-    b["last_hash"] = msg_hash
-    b["last_at"] = now
-    return None
+    async with _bucket_lock:
+        b: dict[str, Any] = _buckets.get(user_key) or {}
+        if not b or now > b["reset_at"]:
+            b = {
+                "count": 0,
+                "reset_at": now + 60,
+                "in_flight": False,
+                "last_hash": "",
+                "last_at": 0.0,
+            }
+            _buckets[user_key] = b
+
+        if b["in_flight"] and now - float(b["last_at"] or 0) > IN_FLIGHT_STALE_S:
+            b["in_flight"] = False
+
+        if b["in_flight"]:
+            return _msg(
+                lang,
+                "Please wait for the current reply to finish.",
+                "Attendez la fin de la réponse en cours.",
+            )
+        if b["last_hash"] == msg_hash and now - float(b["last_at"] or 0) < DEBOUNCE_S:
+            return _msg(
+                lang,
+                "That message was just sent.",
+                "Ce message vient d’être envoyé.",
+            )
+        if b["count"] >= RATE_LIMIT_PER_MIN:
+            return _msg(
+                lang,
+                "Too many requests. Try again in a minute.",
+                "Trop de demandes. Réessayez dans une minute.",
+            )
+        b["count"] += 1
+        b["in_flight"] = True
+        b["last_hash"] = msg_hash
+        b["last_at"] = now
+        return None
+
+
+async def _release_bucket(user_key: str, *, refund: bool) -> None:
+    async with _bucket_lock:
+        b = _buckets.get(user_key)
+        if not b:
+            return
+        b["in_flight"] = False
+        if refund and b["count"] > 0:
+            b["count"] -= 1
 
 
 def _ids_from_tool_json(name: str, content: str) -> tuple[list[str], list[str]]:
@@ -261,30 +322,57 @@ def _ids_from_tool_json(name: str, content: str) -> tuple[list[str], list[str]]:
     return fac, med
 
 
-def _openrouter(
-    messages: list[dict[str, Any]], *, with_tools: bool
+def _openrouter_headers() -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://navisante.app",
+        "X-Title": "NaviSante Navi AI",
+    }
+
+
+def _openrouter_payload(
+    messages: list[dict[str, Any]], *, with_tools: bool, lean: bool
 ) -> dict[str, Any]:
-    if not OPENROUTER_API_KEY:
-        raise HTTPException(status_code=503, detail="AI is not configured.")
     payload: dict[str, Any] = {
         "model": OPENROUTER_MODEL,
         "messages": messages,
-        "temperature": 0.35,
+        "temperature": 0.3,
         "max_tokens": MAX_OUTPUT_TOKENS,
+        "stream": False,
     }
     if with_tools:
         payload["tools"] = TOOLS
         payload["tool_choice"] = "auto"
+    if not lean:
+        # Faster routing / no hidden reasoning tokens when the provider supports it.
+        payload["reasoning"] = {"enabled": False, "exclude": True}
+        payload["provider"] = {
+            "sort": "latency",
+            "allow_fallbacks": True,
+        }
+    return payload
+
+
+async def _openrouter_once(
+    messages: list[dict[str, Any]],
+    *,
+    with_tools: bool,
+    lean: bool,
+    timeout_s: float,
+) -> dict[str, Any]:
+    if not OPENROUTER_API_KEY:
+        raise HTTPException(status_code=503, detail="AI is not configured.")
     try:
-        res = _http.post(
+        res = await _http.post(
             "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://navisante.app",
-                "X-Title": "NaviSante Navi AI",
-            },
-            json=payload,
+            headers=_openrouter_headers(),
+            json=_openrouter_payload(
+                messages, with_tools=with_tools, lean=lean
+            ),
+            timeout=httpx.Timeout(
+                timeout_s, connect=min(CONNECT_TIMEOUT_S, timeout_s)
+            ),
         )
     except httpx.TimeoutException as exc:
         logger.warning("OpenRouter timeout: %s", exc)
@@ -304,6 +392,8 @@ def _openrouter(
     if res.status_code == 429:
         logger.warning("OpenRouter 429 Rate Limit: %s", res.text)
         raise HTTPException(status_code=429, detail="llm_rate")
+    if res.status_code == 400 and not lean:
+        raise HTTPException(status_code=409, detail="lean_retry")
     if res.status_code >= 400:
         logger.error("OpenRouter error %s: %s", res.status_code, res.text)
         raise HTTPException(status_code=502, detail="llm_error")
@@ -312,6 +402,45 @@ def _openrouter(
     except Exception as exc:
         logger.exception("Failed to parse OpenRouter JSON: %s", exc)
         raise HTTPException(status_code=502, detail="llm_error") from exc
+
+
+async def _openrouter(
+    messages: list[dict[str, Any]], *, with_tools: bool
+) -> dict[str, Any]:
+    start = time.monotonic()
+    lean = _lean_mode
+    last: HTTPException | None = None
+    for attempt in range(2):
+        remaining = GATEWAY_BUDGET_S - (time.monotonic() - start)
+        if remaining <= 1.5:
+            break
+        timeout_s = min(
+            remaining, FIRST_ATTEMPT_TIMEOUT_S if attempt == 0 else RETRY_TIMEOUT_S
+        )
+        try:
+            return await _openrouter_once(
+                messages, with_tools=with_tools, lean=lean, timeout_s=timeout_s
+            )
+        except HTTPException as exc:
+            last = exc
+            if exc.status_code == 409:
+                # Learn once, skip the failing attempt forever after.
+                lean = True
+                _set_lean_mode()
+                continue
+            remaining_after = GATEWAY_BUDGET_S - (time.monotonic() - start)
+            retryable = (
+                attempt == 0
+                and exc.status_code in (502, 504)
+                and exc.detail in ("gateway", "unexpected", "llm_error", "timeout")
+                and remaining_after > 3.0
+            )
+            if not retryable:
+                raise
+            # No artificial sleep: budget is already tight, and a fresh
+            # connection attempt is the useful part of the retry.
+    assert last is not None
+    raise last
 
 
 def _fail_from_http(exc: HTTPException, lang: str) -> ChatResponse:
@@ -352,7 +481,17 @@ def _fail_from_http(exc: HTTPException, lang: str) -> ChatResponse:
     )
 
 
-logger = logging.getLogger("navisante_gateway")
+async def _warm_upstream() -> None:
+    if not OPENROUTER_API_KEY:
+        return
+    try:
+        await _http.get(
+            "https://openrouter.ai/api/v1/models",
+            headers=_openrouter_headers(),
+            timeout=httpx.Timeout(8.0, connect=4.0),
+        )
+    except Exception:
+        logger.warning("OpenRouter warmup skipped", exc_info=True)
 
 
 @asynccontextmanager
@@ -362,13 +501,14 @@ async def _lifespan(_: FastAPI):
         OPENROUTER_MODEL,
         bool(OPENROUTER_API_KEY),
     )
+    await _warm_upstream()
     yield
-    _http.close()
+    await _http.aclose()
 
 
 app = FastAPI(
     title="NaviSanté AI Gateway",
-    version="1.2.0",
+    version="1.3.0",
     lifespan=_lifespan,
     docs_url=None,
     redoc_url=None,
@@ -379,8 +519,8 @@ app.add_middleware(
     allow_methods=["POST", "GET"],
     allow_headers=["*"],
 )
-
-
+ 
+ 
 @app.get("/")
 @app.get("/health")
 def health() -> dict[str, Any]:
@@ -393,7 +533,7 @@ def health() -> dict[str, Any]:
 
 
 @app.post("/v1/chat", response_model=ChatResponse)
-def chat(
+async def chat(
     body: ChatRequest,
     x_gateway_secret: str | None = Header(default=None),
     x_user_id: str | None = Header(default=None),
@@ -402,7 +542,7 @@ def chat(
         raise HTTPException(status_code=503, detail="unconfigured")
     if x_gateway_secret != GATEWAY_SECRET:
         raise HTTPException(status_code=401, detail="unauthorized")
-
+ 
     message = (body.message or "").strip()
     follow_up = bool(body.tool_results)
     lang = _lang(body.context, message)
@@ -412,17 +552,21 @@ def chat(
             error=_msg(lang, "Please type a message.", "Écrivez un message."),
         )
 
-    user_key = x_user_id or "anon"
+    # Signed-in users share one bucket across their conversations (correct).
+    # Signed-out users used to ALL share a single "anon" bucket, so one
+    # device's in-flight chat could throttle every other anonymous device.
+    # Keying by conversation instead keeps limiting per-device/per-chat.
+    user_key = x_user_id or f"anon:{body.conversation_id}"
     msg_hash = hashlib.sha256(
         f"{body.conversation_id}:{message.lower()}".encode()
     ).hexdigest()
-    bucket = _buckets.get(user_key)
+    reserved = False
     if not follow_up:
-        limited = _rate_limit(user_key, msg_hash, lang)
-        bucket = _buckets.get(user_key)
+        limited = await _rate_limit(user_key, msg_hash, lang)
         if limited:
             return ChatResponse(ok=False, error=limited)
-
+        reserved = True
+ 
     ctx = body.context
     names = ", ".join(ctx.bookmark_names[:6])
     context_line = (
@@ -434,7 +578,7 @@ def chat(
         + ". GPS is already known — do not call a tool just to read it. "
         "Coverage is Cameroon-wide, not Yaoundé-only."
     )
-
+ 
     messages: list[dict[str, Any]] = [
         {"role": "system", "content": SYSTEM},
         {"role": "system", "content": context_line},
@@ -446,10 +590,10 @@ def chat(
             )
     if message:
         messages.append({"role": "user", "content": message[:USER_CHARS]})
-
+ 
     facility_ids: list[str] = []
     medication_ids: list[str] = []
-
+ 
     if body.tool_results:
         assistant_calls = []
         for tr in body.tool_results[:MAX_TOOL_CALLS]:
@@ -485,9 +629,10 @@ def chat(
                     "content": tr.content[:TOOL_CONTENT_CHARS],
                 }
             )
-
+ 
+    failed = False
     try:
-        data = _openrouter(messages, with_tools=not follow_up)
+        data = await _openrouter(messages, with_tools=not follow_up)
         choice = (data.get("choices") or [{}])[0]
         msg = choice.get("message") or {}
         raw_calls = msg.get("tool_calls") or []
@@ -514,9 +659,11 @@ def chat(
             medication_ids=medication_ids[:3],
         )
     except HTTPException as exc:
+        failed = True
         logger.warning("Chat request failed with HTTP %s: %s", exc.status_code, exc.detail)
         return _fail_from_http(exc, lang)
     except Exception as exc:
+        failed = True
         logger.exception("Unexpected error handling chat request: %s", exc)
         return ChatResponse(
             ok=False,
@@ -527,5 +674,5 @@ def chat(
             ),
         )
     finally:
-        if bucket is not None:
-            bucket["in_flight"] = False
+        if reserved:
+            await _release_bucket(user_key, refund=failed)

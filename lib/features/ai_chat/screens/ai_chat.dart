@@ -110,9 +110,7 @@ class _AiChatViewState extends State<_AiChatView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kNaviChatBg,
-      appBar: NaviAiAppBar(
-        onHistoryTap: () => showChatHistorySheet(context),
-      ),
+      appBar: NaviAiAppBar(onHistoryTap: () => showChatHistorySheet(context)),
       body: Column(
         children: [
           Expanded(
@@ -140,7 +138,8 @@ class _AiChatViewState extends State<_AiChatView> {
                     }
                     return ChatMessageBubble(
                       message: messages[index],
-                      showRetry: messages[index].isError &&
+                      showRetry:
+                          messages[index].isError &&
                           index == messages.length - 1 &&
                           !state.sending,
                     );

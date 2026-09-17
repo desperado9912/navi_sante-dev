@@ -123,9 +123,8 @@ class AiChatTools {
       var remote = await facilities
           .searchFacilities(
             query: query,
-            typeFilter: (type == 'hospital' ||
-                    type == 'clinic' ||
-                    type == 'pharmacy')
+            typeFilter:
+                (type == 'hospital' || type == 'clinic' || type == 'pharmacy')
                 ? type
                 : null,
             serviceFilter: service.isEmpty ? null : service,
@@ -168,7 +167,8 @@ class AiChatTools {
     if (lat != null && lng != null) {
       pool = List<FacilityModel>.from(pool)
         ..sort(
-          (a, b) => a.distanceTo(lat!, lng!).compareTo(b.distanceTo(lat!, lng!)),
+          (a, b) =>
+              a.distanceTo(lat!, lng!).compareTo(b.distanceTo(lat!, lng!)),
         );
     }
 
@@ -198,7 +198,9 @@ class AiChatTools {
     final cached = facilityById(id);
     if (cached != null) return _slimFacility(cached);
     try {
-      final detail = await facilities.getFacilityDetail(id).timeout(_toolTimeout);
+      final detail = await facilities
+          .getFacilityDetail(id)
+          .timeout(_toolTimeout);
       if (detail == null) return {'error': 'Facility not found'};
       final desc = detail.description;
       return {

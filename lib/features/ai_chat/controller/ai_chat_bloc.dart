@@ -65,7 +65,9 @@ class AiChatState extends Equatable {
   }) {
     return AiChatState(
       conversations: conversations ?? this.conversations,
-      activeId: identical(activeId, _unset) ? this.activeId : activeId as String?,
+      activeId: identical(activeId, _unset)
+          ? this.activeId
+          : activeId as String?,
       sendingId: identical(sendingId, _unset)
           ? this.sendingId
           : sendingId as String?,
@@ -110,7 +112,10 @@ class AiChatBloc extends Bloc<AiChatEvent, AiChatState> {
     return t.length > 42 ? '${t.substring(0, 42)}…' : t;
   }
 
-  Future<void> _onStarted(AiChatStarted event, Emitter<AiChatState> emit) async {
+  Future<void> _onStarted(
+    AiChatStarted event,
+    Emitter<AiChatState> emit,
+  ) async {
     emit(state.copyWith(conversations: _local.loadAll(), activeId: null));
   }
 

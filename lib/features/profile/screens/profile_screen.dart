@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 import 'package:navi_sante/core/utils/navigation_menu.dart'
     show navBottomPadding;
+import 'package:navi_sante/features/Scontributors/my_facility.dart';
 import 'package:navi_sante/features/profile/screens/favourite_products.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/cupertino.dart';
@@ -163,8 +164,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       AppFeedback.show(
         context,
         type: FeedbackType.info,
-        message:
-            'No email app found. Please contact $email directly.',
+        message: 'No email app found. Please contact $email directly.',
       );
     }
   }
@@ -414,6 +414,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       );
                     },
                   ),
+
+                  SettingsTile(
+                    icon: CupertinoIcons.waveform_path_ecg,
+                    title: 'My Health Facility',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                          builder: (context) => const MyFacilityScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -504,7 +517,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.logout, size: 20, color: Color(0xFFC0392B)),
+                    const Icon(
+                      Icons.logout,
+                      size: 20,
+                      color: Color(0xFFC0392B),
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       context.tr('Log Out'),

@@ -3,13 +3,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:navi_sante/features/home/screens/home_screen.dart';
-import 'package:navi_sante/features/hospitals/screens/hospitals.dart';
+import 'package:navi_sante/features/hospitals/screens/facilities.dart';
 import 'package:navi_sante/features/pharmacy/screens/pharmacy.dart';
 import 'package:navi_sante/features/profile/screens/profile_screen.dart';
 import 'package:navi_sante/core/utils/network_banner/connectivity_banner.dart';
 import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
 import 'package:navi_sante/core/performance/fade_indexed_stack.dart';
 import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
+import 'package:navi_sante/features/Scontributors/contribute.dart';
 
 // Apps core naviagtion widget (Navigation menu)
 // Main entry point from auth holds all other main screens, using index stack.
@@ -128,6 +129,11 @@ class _NavigationMenuState extends State<NavigationMenu> {
                           label: context.tr('Medications'),
                         ),
                         NavigationDestination(
+                          icon: const Icon(CupertinoIcons.add_circled),
+                          selectedIcon: const Icon(CupertinoIcons.add_circled_solid),
+                          label: context.t('Contribute', 'Contribuer'),
+                          ),
+                        NavigationDestination(
                           icon: const Icon(CupertinoIcons.person),
                           selectedIcon: const Icon(CupertinoIcons.person_fill),
                           label: context.tr('Profile'),
@@ -167,6 +173,7 @@ class NavigationController extends GetxController {
     const RepaintBoundary(child: ScreenWrapper(child: HomeScreen())),
     const RepaintBoundary(child: ScreenWrapper(child: Hospitals())),
     const RepaintBoundary(child: ScreenWrapper(child: PharmacyScreen())),
+    const RepaintBoundary(child: ScreenWrapper(child: ContributeScreen())),
     const RepaintBoundary(child: ScreenWrapper(child: ProfileScreen())),
   ];
 
@@ -174,6 +181,7 @@ class NavigationController extends GetxController {
     'Discover',
     'Find Sanctuary',
     'Medications',
+    'Contribute',
     'Profile',
   ];
 }
