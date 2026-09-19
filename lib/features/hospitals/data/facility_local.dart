@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../controller/facility_model.dart';
 
-// Rename to facility_cache_manager.
-
 // The local data manager for facility data.
 /// Owns all Hive read/write operations for facility data.
 /// JSON-encoded strings storage instead of TypeAdapters.
@@ -16,7 +14,7 @@ const String _facilitiesBox = 'facilities';
 const String _detailsBox = 'facility_details';
 const String _recentlyViewedBox = 'recently_viewed';
 const String _bookmarkedFacilitiesBox = 'bookmarks';
-// const String _bookmarksBox = 'bookmarks';
+const String _catalogBox = 'catalog';
 
 /// Key for the single entry that holds the full facility list.
 const String _allFacilitiesKey = 'all';
@@ -26,6 +24,11 @@ const String _recentlyViewedKey = 'recent';
 
 /// Key for the bookmarked facility IDs list.
 const String _bookmarkIdsKey = 'bookmark_ids';
+
+/// Keys for the cached services / tags reference lists [contributeForm]
+const String _servicesCatalogKey = 'services';
+const String _tagsCatalogKey = 'tags';
+const String _catalogFetchedAtKey = 'catalog_fetched_at';
 
 /// Maximum number of recently-viewed entries kept in Hive.
 const int _maxRecentlyViewed = 10;
@@ -48,6 +51,7 @@ class FacilityLocal {
       Hive.openBox<String>(_detailsBox),
       Hive.openBox<String>(_recentlyViewedBox),
       Hive.openBox<String>(_bookmarkedFacilitiesBox),
+      Hive.openBox<String>(_catalogBox),
     ]);
   }
 
@@ -168,6 +172,37 @@ class FacilityLocal {
     await Hive.box<String>(_bookmarkedFacilitiesBox).delete(_bookmarkIdsKey);
   }
 
+  // SERVICES & TAGS CATALOG (contribute screen form)
+  /// Persists the services + tags reference lists together with a fetch
+  /// timestamp, so the repository can decide when they're stale.
+  Future<void> saveCatalog({
+    required List<String> services,
+    required List<String> tags,
+  }) async {
+    final box = Hive.box<String>(_catalogBox);
+    await box.put(_servicesCatalogKey, jsonEncode(services));
+    await box.put(_tagsCatalogKey, jsonEncode(tags));
+    await box.put(_catalogFetchedAtKey, DateTime.now().toIso8601String());
+  }
+ 
+  List<String> getCachedServices() {
+    final encoded = Hive.box<String>(_catalogBox).get(_servicesCatalogKey);
+    if (encoded == null) return const [];
+    return (jsonDecode(encoded) as List<dynamic>).cast<String>();
+  }
+ 
+  List<String> getCachedTags() {
+    final encoded = Hive.box<String>(_catalogBox).get(_tagsCatalogKey);
+    if (encoded == null) return const [];
+    return (jsonDecode(encoded) as List<dynamic>).cast<String>();
+  }
+
+  /// Null if never fetched.
+  DateTime? getCatalogFetchedAt() {
+    final raw = Hive.box<String>(_catalogBox).get(_catalogFetchedAtKey);
+    if (raw == null) return null;
+    return DateTime.tryParse(raw);
+  }
 
   // Cache Management: wipes all cached facility data for storage.
   /// The next [getAllFacilities] emission will fetch fresh from database.
@@ -179,6 +214,7 @@ class FacilityLocal {
       Hive.box<String>(_detailsBox).clear(),
       Hive.box<String>(_recentlyViewedBox).clear(),
       Hive.box<String>(_bookmarkedFacilitiesBox).clear(),
+      Hive.box<String>(_catalogBox).clear(),
     ]);
   }
 }

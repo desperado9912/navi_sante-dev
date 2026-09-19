@@ -10,7 +10,7 @@ import 'package:navi_sante/core/utils/network_banner/connectivity_banner.dart';
 import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
 import 'package:navi_sante/core/performance/fade_indexed_stack.dart';
 import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
-import 'package:navi_sante/features/Scontributors/contribute.dart';
+import 'package:navi_sante/features/Scontribute/screen/contribute.dart';
 
 // Apps core naviagtion widget (Navigation menu)
 // Main entry point from auth holds all other main screens, using index stack.
@@ -91,9 +91,9 @@ class _NavigationMenuState extends State<NavigationMenu> {
                         return TextStyle(
                           color: isSelected ? _activeColor : _inactiveColor,
                           fontWeight: isSelected
-                              ? FontWeight.w700
+                              ? FontWeight.w800
                               : FontWeight.w600,
-                          fontSize: 10,
+                          fontSize: 9,
                         );
                       }),
                       iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((
@@ -102,7 +102,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
                         final isSelected = states.contains(WidgetState.selected);
                         return IconThemeData(
                           color: isSelected ? _activeColor : _inactiveColor,
-                          size: 26,
+                          size: 24,
                         );
                       }),
                     ),

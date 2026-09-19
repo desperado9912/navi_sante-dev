@@ -232,7 +232,7 @@ class _PharmacyScreenState extends State<PharmacyScreen> {
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
           child: Text(
             headerLabel,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A)),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A)),
           ),
         ),
       ),

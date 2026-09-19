@@ -47,7 +47,7 @@ class _MedicationCardState extends State<MedicationCard> {
     final bool isRx = m.dispensingClass == DispensingClass.rx;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -219,7 +219,7 @@ class _MedicationCardState extends State<MedicationCard> {
                         ? CupertinoIcons.chevron_up
                         : CupertinoIcons.chevron_down,
                     color: const Color(0xFF2A7D8F),
-                    size: 22,
+                    size: 20,
                   ),
                 ],
               ),

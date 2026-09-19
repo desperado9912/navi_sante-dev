@@ -100,4 +100,28 @@ class FacilityRemote {
         .eq('facility_id', facilityId)
         .eq('user_id', userId);
   }
+
+  // SERVICES & TAGS CATALOG
+  /// Returns every known service name, alphabetically sorted.
+  Future<List<String>> getServicesCatalog() async {
+    final response = await _supabase
+        .from('services')
+        .select('name')
+        .order('name', ascending: true);
+    return (response as List<dynamic>)
+        .map((row) => row['name'] as String)
+        .toList();
+  }
+ 
+  /// Returns every known tag (used as "infrastructure") name, sorted.
+  Future<List<String>> getTagsCatalog() async {
+    final response = await _supabase
+        .from('tags')
+        .select('name')
+        .order('name', ascending: true);
+    return (response as List<dynamic>)
+        .map((row) => row['name'] as String)
+        .toList();
+  }
 }
+

@@ -34,6 +34,9 @@ class FacilityRepository {
   static const int _maxSearchCacheEntries = 40;
   static const int _minRemoteQueryLength = 3;
   static const Duration _facilitiesTtl = Duration(minutes: 10);
+  static const Duration _catalogTtl = Duration(days: 1);
+
+  Future<void>? _inFlightCatalogRefresh;
 
   Future<List<FacilityModel>>? _inFlightAllFacilities;
   DateTime? _lastAllFacilitiesFetchAt;
@@ -315,13 +318,13 @@ class FacilityRepository {
   }
 
   /// Removes a bookmark for the authenticated user then syncs to cache.
-  Future<void> removeBookmark(String facilityId) async{
+  Future<void> removeBookmark(String facilityId) async {
     await _remote.removeBookmark(facilityId);
     final ids = _local.getBookmarkIds()..remove(facilityId);
     await _local.saveBookmarkIds(ids);
   }
 
-  /// Clears cached bookmars Id set. 
+  /// Clears cached bookmars Id set.
   // Called on Signout so next user never gets stale bookmark list.
   Future<void> clearBookmarkIds() => _local.clearBookmarkIds();
 
@@ -346,6 +349,56 @@ class FacilityRepository {
     }
     _cachedServiceOptions = services.toList()..sort();
     return _cachedServiceOptions!;
+  }
+
+  /// SERVICES & TAGS CATALOG [contribute form autocomplete]
+  // Cache-first, exactly like getAllFacilities(): the cached list (if any)
+  // returns instantly and a single shared network refresh only fires once
+  // per TTL window — repeated calls (every keystroke while typing) never
+  // trigger extra reads against the database.
+
+  /// Every known service name, ready for local (no-egress) autocomplete.
+  Future<List<String>> getServicesCatalog() async {
+    final cached = _local.getCachedServices();
+    unawaited(_refreshCatalogIfStale());
+    if (cached.isNotEmpty) return cached;
+    await _refreshCatalogIfStale(force: true);
+    return _local.getCachedServices();
+  }
+
+  /// Every known tag ("infrastructure") name, ready for local autocomplete.
+  Future<List<String>> getTagsCatalog() async {
+    final cached = _local.getCachedTags();
+    unawaited(_refreshCatalogIfStale());
+    if (cached.isNotEmpty) return cached;
+    await _refreshCatalogIfStale(force: true);
+    return _local.getCachedTags();
+  }
+
+  Future<void> _refreshCatalogIfStale({bool force = false}) {
+    if (_inFlightCatalogRefresh != null) return _inFlightCatalogRefresh!;
+
+    final fetchedAt = _local.getCatalogFetchedAt();
+    final isStale =
+        force ||
+        fetchedAt == null ||
+        DateTime.now().difference(fetchedAt) > _catalogTtl;
+    if (!isStale) return Future.value();
+
+    final future = () async {
+      try {
+        final results = await Future.wait([
+          _remote.getServicesCatalog(),
+          _remote.getTagsCatalog(),
+        ]);
+        await _local.saveCatalog(services: results[0], tags: results[1]);
+      } catch (_) {
+        // Network failure: keep serving whatever is already cached.
+      }
+    }();
+
+    _inFlightCatalogRefresh = future;
+    return future.whenComplete(() => _inFlightCatalogRefresh = null);
   }
 }
 

@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
@@ -276,7 +277,7 @@ class _DetailContent extends StatelessWidget {
             Row(
               children: [
                 const Icon(
-                  Icons.person_3,
+                  CupertinoIcons.person_3_fill,
                   size: 20,
                   color: _tealColor,
                 ),
@@ -417,10 +418,10 @@ class _SpecialistCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 108,
+      width: 112,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.grey[300]!),
       ),
       clipBehavior: Clip.antiAlias,
@@ -428,13 +429,14 @@ class _SpecialistCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            height: 84,
+            height: 88,
             width: double.infinity,
             child: specialist.photoUrl != null
                 ? CachedNetworkImage(
                     imageUrl: specialist.photoUrl!,
                     fit: BoxFit.cover,
-                    memCacheWidth: 220,
+                    alignment: Alignment.topCenter,
+                    memCacheWidth: 250,
                     placeholder: (_, _) => const _SpecialistAvatarPlaceholder(),
                     errorWidget: (_, _, _) =>
                         const _SpecialistAvatarPlaceholder(),
@@ -493,9 +495,8 @@ class _SpecialistAvatarPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // TODO: CHANGE / HARMONISE COLOR
-      color: Colors.grey[200],
-      child: Icon(Icons.person_rounded, color: Colors.grey[400], size: 32),
+      color: Color(0xFF2A7D8F),
+      child: Icon(CupertinoIcons.person_fill, color: Color(0xFF5F6368), size: 32),
     );
   }
 }
@@ -506,19 +507,18 @@ class _AvailabilityBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: CHANGE / HARMONISE COLOR
     final color = isAvailable
-        ? const Color(0xFF2E7D32)
+        ? Colors.green
         : const Color(0xFF9E9E9E);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 6,
+          width: 8,
           height: 6,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: 5),
         Flexible(
           child: Text(
             context.tr(isAvailable ? 'Available' : 'Unavailable'),
