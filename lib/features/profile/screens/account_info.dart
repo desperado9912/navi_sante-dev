@@ -4,8 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
 import 'package:navi_sante/core/utils/language_cubit/app_translations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
-import 'package:navi_sante/features/profile/controllers/security_controller.dart';
-import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
+import 'package:navi_sante/features/profile/viewmodel/security_cubit.dart';
 import 'package:navi_sante/core/utils/app_error_ui.dart';
 import 'package:navi_sante/core/utils/app_error_mapper.dart';
 
@@ -24,10 +23,7 @@ class _AccountInfoState extends State<AccountInfo> {
   @override
   void initState() {
     super.initState();
-    MemoryLeakTracker.logInit(this);
-    MemoryLeakTracker.logInit(_nameController);
-    MemoryLeakTracker.logInit(_securityController);
-    
+
     final initialName = supa
         .Supabase
         .instance
@@ -40,9 +36,6 @@ class _AccountInfoState extends State<AccountInfo> {
 
   @override
   void dispose() {
-    MemoryLeakTracker.logDispose(this);
-    MemoryLeakTracker.logDispose(_nameController);
-    MemoryLeakTracker.logDispose(_securityController);
     _nameController.dispose();
     _securityController.dispose();
     super.dispose();

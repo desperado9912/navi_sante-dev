@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:dio/dio.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import 'package:flutter_map/flutter_map.dart';
-import '../controller/map_cache_manager.dart';
+import '../data/map_cache_manager.dart';
 import 'map_service.dart';
 
 class _TileCoord {

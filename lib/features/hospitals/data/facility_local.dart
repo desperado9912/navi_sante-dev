@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:hive_flutter/hive_flutter.dart';
-import '../controller/facility_model.dart';
+import 'facility_model.dart';
 
 // The local data manager for facility data.
 /// Owns all Hive read/write operations for facility data.
@@ -24,6 +24,9 @@ const String _recentlyViewedKey = 'recent';
 
 /// Key for the bookmarked facility IDs list.
 const String _bookmarkIdsKey = 'bookmark_ids';
+
+/// Key for the contributed facility IDs list.
+const String _contributorIdsKey = 'contributor_facility_ids';
 
 /// Keys for the cached services / tags reference lists [contributeForm]
 const String _servicesCatalogKey = 'services';
@@ -62,6 +65,31 @@ class FacilityLocal {
     final box = Hive.box<String>(_facilitiesBox);
     final encoded = jsonEncode(facilities.map((f) => f.toJson()).toList());
     await box.put(_allFacilitiesKey, encoded);
+  }
+
+  /// Merges [fresh] into the cached facility list. Existing facilities are
+  /// updated with fresh data; new ones are appended. Persists to Hive.
+  Future<List<FacilityModel>> upsertFacilities(List<FacilityModel> fresh) async {
+    final current = getAllFacilities().toList();
+    bool changed = false;
+
+    for (final facility in fresh) {
+      final index = current.indexWhere((f) => f.facilityId == facility.facilityId);
+      if (index >= 0) {
+        if (current[index] != facility) {
+          current[index] = facility;
+          changed = true;
+        }
+      } else {
+        current.add(facility);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      await saveAllFacilities(current);
+    }
+    return current;
   }
 
   // Returns the cached facility list, or an empty list if the cache is cold.
@@ -170,6 +198,19 @@ class FacilityLocal {
   // Called on sign out so the next user never sees a stale bookmark list.
   Future<void> clearBookmarkIds() async {
     await Hive.box<String>(_bookmarkedFacilitiesBox).delete(_bookmarkIdsKey);
+  }
+
+  // CONTRIBUTOR BADGES HIVE CACHE
+  Future<void> saveContributorFacilityIds(Set<String> ids) async {
+    final box = Hive.box<String>(_bookmarkedFacilitiesBox);
+    await box.put(_contributorIdsKey, jsonEncode(ids.toList()));
+  }
+
+  Set<String> getContributorFacilityIds() {
+    final box = Hive.box<String>(_bookmarkedFacilitiesBox);
+    final encoded = box.get(_contributorIdsKey);
+    if (encoded == null) return {};
+    return (jsonDecode(encoded) as List<dynamic>).cast<String>().toSet();
   }
 
   // SERVICES & TAGS CATALOG (contribute screen form)

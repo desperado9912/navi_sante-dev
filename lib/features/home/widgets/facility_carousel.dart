@@ -2,8 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:navi_sante/core/utils/language_cubit/app_translations.dart';
-import '../../hospitals/controller/facility_bloc.dart';
-import '../../hospitals/controller/facility_model.dart';
+import '../../hospitals/viewmodels/facility_bloc.dart';
+import '../../hospitals/data/facility_model.dart';
 
 // Floating horizontal carousel showing the 5 closest facilities to the user.
 // Sits above the bottom navigation bar, overlaying the map.

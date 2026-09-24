@@ -1,5 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../controller/pharmacy_model.dart';
+import 'pharmacy_model.dart';
 
 /// Owns all network calls for medication data. No caching, no retry
 /// logic, no single-flight guarding — that all lives in

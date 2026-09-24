@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import '../controller/map_cubit.dart';
+import '../viewmodel/map_cubit.dart';
 
 /// Linearly interpolates between two [LatLng] points. Good enough for the
 /// short distances covered between consecutive GPS fixes (metres, not

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/utils/language_cubit/auth_language_cubit.dart';
+import '../../../core/utils/language_cubit/language_cubit.dart';
 
 class LanguagePicker extends StatelessWidget {
   const LanguagePicker({super.key});

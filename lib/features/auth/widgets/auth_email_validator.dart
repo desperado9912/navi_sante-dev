@@ -10,10 +10,8 @@
 //          Curated list of common disposable email providers.
 //          Expand this list over time as new providers emerge.
 
-import 'dart:io';
+// import 'dart:io';
 import 'dart:async';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:navi_sante/core/performance/isolate_runner.dart';
 
 // Layer 1: RFC-compliant regex format check.
 const String emailRegexPattern =
@@ -23,20 +21,20 @@ final RegExp emailRegex = RegExp(emailRegexPattern);
 
 // Layer 2: MX record proxy — DNS and TCP reachability check.
 // Must be a top level or static function — closures cannot be sent to isolates.
-Future<bool> _isDomainReachable(String domain) async {
-  try {
-    final addresses = await InternetAddress.lookup(
-      domain,
-    ).timeout(const Duration(seconds: 5));
-    return addresses.isNotEmpty;
-  } on SocketException {
-    return false;
-  } on TimeoutException {
-    return true;
-  } catch (_) {
-    return true;
-  }
-}
+// Future<bool> _isDomainReachable(String domain) async {
+//   try {
+//     final addresses = await InternetAddress.lookup(
+//       domain,
+//     ).timeout(const Duration(seconds: 5));
+//     return addresses.isNotEmpty;
+//   } on SocketException {
+//     return false;
+//   } on TimeoutException {
+//     return true;
+//   } catch (_) {
+//     return true;
+//   }
+// }
 
 class AppEmailValidator {
   AppEmailValidator._();
@@ -56,13 +54,19 @@ class AppEmailValidator {
       return 'Disposable email addresses are not allowed.';
     }
 
-    // Layer 3 check (DNS reachability — not available on web)
-    if (!kIsWeb) {
-      final domainReachable = await IsolateRunner.run(_isDomainReachable, domain);
-      if (!domainReachable) {
-        return 'This email domain does not appear to be valid.';
-      }
-    }
+    // Layer 3 check (DNS reachability)
+    // if (!_isDomainReachable (domain)) {
+    //   return 'This email domain does not appear to be valid.';
+    // }
+
+    //   final domainReachable = await IsolateRunner.run(
+    //     _isDomainReachable,
+    //     domain,
+    //   );
+    //   if (!domainReachable) {
+    //     return 'This email domain does not appear to be valid.';
+    //   }
+    // }
     return null;
   }
 

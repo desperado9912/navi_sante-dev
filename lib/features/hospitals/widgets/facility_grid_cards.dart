@@ -3,8 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
-import '../controller/facility_bloc.dart';
-import '../controller/facility_model.dart';
+import '../viewmodels/facility_bloc.dart';
+import '../data/facility_model.dart';
 import '../../home/maps/map_launcher.dart';
 
 // =============================================================================

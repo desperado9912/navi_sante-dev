@@ -1,10 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
 import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
 import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
-import '../../pharmacy/controller/pharmacy_bloc.dart';
+import '../../pharmacy/viewmodels/pharmacy_bloc.dart';
 import '../../pharmacy/widgets/medication_card.dart';
 
 class FavouriteProducts extends StatefulWidget {
@@ -18,7 +17,6 @@ class _FavouriteProductsState extends State<FavouriteProducts> {
   @override
   void initState() {
     super.initState();
-    MemoryLeakTracker.logInit(this);
 
     // Trigger load if not loaded yet — droppable() on PharmacyBloc means
     // this is a safe no-op if the Pharmacy screen already loaded these
@@ -29,7 +27,6 @@ class _FavouriteProductsState extends State<FavouriteProducts> {
 
   @override
   void dispose() {
-    MemoryLeakTracker.logDispose(this);
     super.dispose();
   }
 

@@ -1,7 +1,7 @@
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:url_launcher/url_launcher.dart';
-import '../../profile/controllers/navigation_app_settings.dart';
+import '../../profile/viewmodel/navigation_app.dart';
 
 // Url launcher file to configure launching 'get directions' in native map app.
 // Launches the user's preferred maps app with a pre-set destination for navigation.

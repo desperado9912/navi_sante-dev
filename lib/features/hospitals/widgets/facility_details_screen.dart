@@ -2,12 +2,16 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
 import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
-import 'package:navi_sante/features/hospitals/controller/facility_bloc.dart';
-import 'package:navi_sante/features/hospitals/widgets/facility_details_image_carousel.dart';
+import 'package:navi_sante/features/hospitals/viewmodels/facility_bloc.dart';
+import 'package:navi_sante/features/hospitals/widgets/facility_details_screen_image_carousel.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../controller/facility_model.dart';
+import '../data/facility_model.dart';
+import '../data/facility_repository.dart';
+import '../../contribute/widgets/contributor_badge.dart';
+
 import '../../home/maps/map_launcher.dart';
 
 // lib/features/hospitals/screens/facility_detail_screen.dart
@@ -172,6 +176,10 @@ class _DetailContent extends StatelessWidget {
                   color: Color(0xFF1A1A1A),
                 ),
               ),
+              const SizedBox(width: 10),
+
+              // ── Contributor badge ────────────────────────────────────────────────
+              _ContributorBadgeSlot(facilityId: detail.facilityId),
             ],
           ),
 
@@ -349,6 +357,59 @@ class _DetailContent extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _ContributorBadgeSlot extends StatefulWidget {
+  final String facilityId;
+  const _ContributorBadgeSlot({required this.facilityId});
+
+  @override
+  State<_ContributorBadgeSlot> createState() => _ContributorBadgeSlotState();
+}
+
+class _ContributorBadgeSlotState extends State<_ContributorBadgeSlot> {
+  bool _isContributor = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStatus();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ContributorBadgeSlot oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.facilityId != widget.facilityId) {
+      _loadStatus();
+    }
+  }
+
+  void _loadStatus() {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) {
+      if (_isContributor) setState(() => _isContributor = false);
+      return;
+    }
+
+    final repo = context.read<FacilityRepository>();
+    // Instant sync read from Hive / memory cache (0 egress, 0ms latency)
+    if (repo.isCurrentUserContributorSync(widget.facilityId)) {
+      _isContributor = true;
+    } else {
+      // Async check that populates and persists cache if true
+      repo.isCurrentUserContributor(widget.facilityId).then((result) {
+        if (mounted && result != _isContributor) {
+          setState(() => _isContributor = result);
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isContributor) return const SizedBox.shrink();
+    return const ContributorBadge();
   }
 }
 

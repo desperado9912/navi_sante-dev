@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/utils/language_cubit/auth_language_cubit.dart';
+import '../../../core/utils/language_cubit/language_cubit.dart';
 
 const kNaviTeal = Color(0xFF2A7D8F);
 const kNaviChatBg = Color(0xFFF8F9F8);

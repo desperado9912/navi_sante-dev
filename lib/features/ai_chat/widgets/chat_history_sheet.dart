@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../controller/ai_chat_bloc.dart';
-import '../controller/ai_chat_models.dart';
+import '../viewmodel/ai_chat_bloc.dart';
+import '../models/ai_chat_models.dart';
 import 'ai_chat_style.dart';
 
 Future<void> showChatHistorySheet(BuildContext context) {

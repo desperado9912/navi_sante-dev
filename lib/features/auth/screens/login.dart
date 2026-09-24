@@ -1,14 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../cubit/auth_cubit.dart';
-import '../../../core/utils/language_cubit/auth_language_cubit.dart';
+import '../viewmodel/auth_cubit.dart';
+import '../../../core/utils/language_cubit/language_cubit.dart';
 import '../widgets/auth_text_field.dart';
 import '../widgets/language_picker.dart';
 import 'signup.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
 import 'package:navi_sante/core/utils/app_error_ui.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -27,16 +26,10 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    MemoryLeakTracker.logInit(this);
-    MemoryLeakTracker.logInit(_emailCtrl);
-    MemoryLeakTracker.logInit(_passwordCtrl);
   }
 
   @override
   void dispose() {
-    MemoryLeakTracker.logDispose(this);
-    MemoryLeakTracker.logDispose(_emailCtrl);
-    MemoryLeakTracker.logDispose(_passwordCtrl);
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
@@ -472,14 +465,10 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
   void initState() {
     super.initState();
     _ctrl = TextEditingController(text: widget.prefillEmail);
-    MemoryLeakTracker.logInit(this);
-    MemoryLeakTracker.logInit(_ctrl);
   }
 
   @override
   void dispose() {
-    MemoryLeakTracker.logDispose(this);
-    MemoryLeakTracker.logDispose(_ctrl);
     _ctrl.dispose();
     super.dispose();
   }

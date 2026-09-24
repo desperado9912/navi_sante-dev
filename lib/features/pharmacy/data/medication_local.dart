@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:hive_flutter/hive_flutter.dart';
-import '../controller/pharmacy_model.dart';
+import 'pharmacy_model.dart';
 
 // Owns all Hive read/write operations for medication data. JSON-encoded
 // strings storage, same approach as FacilityLocal. No network calls —

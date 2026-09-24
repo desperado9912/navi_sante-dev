@@ -1,6 +1,7 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../controller/facility_model.dart';
+import 'facility_model.dart';
 
 /// Owns all Database network calls for facility data.
 /// No business logic, no caching — just RPC calls and model parsing.
@@ -11,6 +12,8 @@ import '../controller/facility_model.dart';
 class FacilityRemote {
   final SupabaseClient _supabase;
   FacilityRemote(this._supabase);
+
+  SupabaseClient get supabase => _supabase;
 
   /// Fetches every facility in the database
   /// Called once per session; result is cached entirely in Hive.
@@ -83,11 +86,13 @@ class FacilityRemote {
   Future<void> addBookmark(String facilityId) async {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) throw Exception('User not authenticated');
-    await _supabase.from('facility_bookmarks').upsert(
-      {'user_id': userId, 'facility_id': facilityId},
-      onConflict: 'user_id,facility_id',
-      ignoreDuplicates: true,
-      );
+    await _supabase
+        .from('facility_bookmarks')
+        .upsert(
+          {'user_id': userId, 'facility_id': facilityId},
+          onConflict: 'user_id,facility_id',
+          ignoreDuplicates: true,
+        );
   }
 
   /// Removes a bookmark. RLS enforces ownership.
@@ -112,7 +117,7 @@ class FacilityRemote {
         .map((row) => row['name'] as String)
         .toList();
   }
- 
+
   /// Returns every known tag (used as "infrastructure") name, sorted.
   Future<List<String>> getTagsCatalog() async {
     final response = await _supabase
@@ -123,5 +128,19 @@ class FacilityRemote {
         .map((row) => row['name'] as String)
         .toList();
   }
-}
 
+  // CONTRIBUTOR BADGE
+  /// Displays if the current user is a credited contributor for this facility
+  Future<bool> isCurrentUserContributor(String facilityId) async {
+    try {
+      final response = await _supabase.rpc(
+        'is_facility_contributor',
+        params: {'p_facility_id': facilityId},
+      );
+      return response == true;
+    } catch (e) {
+      debugPrint('isCurrentUserContributor failed for $facilityId: $e');
+      return false;
+    }
+  }
+}

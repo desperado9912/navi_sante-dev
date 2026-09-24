@@ -4,12 +4,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:navi_sante/core/utils/language_cubit/app_translations.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../hospitals/controller/facility_bloc.dart';
-import '../../hospitals/controller/facility_model.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../hospitals/viewmodels/facility_bloc.dart';
+import '../../hospitals/data/facility_model.dart';
 import '../../hospitals/data/facility_repository.dart';
 
 // Home screen Floating search bar with user profile avatar.
+// TODO RESTORE PROFILE AVATAR
 
 // Search typing shows a compact dropdown of 4 matching facilities below the bar.
 // Queries local cached facilities immediately with a debounced direct database query guard.
@@ -237,7 +238,7 @@ class HeaderSearchState extends State<HeaderSearch> {
                         const SizedBox(width: 8),
 
                         // Build account Profile avatar
-                        const _SearchBarAvatar(),
+                        // const _SearchBarAvatar(),
                       ],
                     ),
                   ),
@@ -423,63 +424,63 @@ class _SuggestionsBox extends StatelessWidget {
 }
 
 // Profile avatar / initilas init class
-class _SearchBarAvatar extends StatelessWidget {
-  const _SearchBarAvatar();
+// class _SearchBarAvatar extends StatelessWidget {
+//   const _SearchBarAvatar();
 
-  String _initials(String source) {
-    final trimmed = source.trim();
-    if (trimmed.isEmpty) return '';
-    final name = trimmed.contains('@') ? trimmed.split('@').first : trimmed;
-    final parts = name.split(RegExp(r'\s+'));
-    if (parts.length == 1) return parts[0][0].toUpperCase();
-    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-  }
+//   String _initials(String source) {
+//     final trimmed = source.trim();
+//     if (trimmed.isEmpty) return '';
+//     final name = trimmed.contains('@') ? trimmed.split('@').first : trimmed;
+//     final parts = name.split(RegExp(r'\s+'));
+//     if (parts.length == 1) return parts[0][0].toUpperCase();
+//     return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<AuthState>(
-      stream: Supabase.instance.client.auth.onAuthStateChange,
-      builder: (context, _) {
-        // Read the current session on every auth event (name change, refresh, etc.)
-        final user = Supabase.instance.client.auth.currentUser;
-        final customName =
-            (user?.userMetadata?['custom_display_name'] as String?) ?? '';
-        final fullName = (user?.userMetadata?['full_name'] as String?) ?? '';
-        final resolvedName = customName.isNotEmpty ? customName : fullName;
-        final email = user?.email ?? '';
+//   @override
+//   Widget build(BuildContext context) {
+//     return StreamBuilder<AuthState>(
+//       stream: Supabase.instance.client.auth.onAuthStateChange,
+//       builder: (context, _) {
+//         // Read the current session on every auth event (name change, refresh, etc.)
+//         final user = Supabase.instance.client.auth.currentUser;
+//         final customName =
+//             (user?.userMetadata?['custom_display_name'] as String?) ?? '';
+//         final fullName = (user?.userMetadata?['full_name'] as String?) ?? '';
+//         final resolvedName = customName.isNotEmpty ? customName : fullName;
+//         final email = user?.email ?? '';
 
-        // Use name if available, otherwise fall back to email for initials.
-        final source = resolvedName.isNotEmpty ? resolvedName : email;
-        final initials = _initials(source);
-        final bool hasInitials = initials.isNotEmpty;
+//         // Use name if available, otherwise fall back to email for initials.
+//         final source = resolvedName.isNotEmpty ? resolvedName : email;
+//         final initials = _initials(source);
+//         final bool hasInitials = initials.isNotEmpty;
 
-        return Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: const Color(0xFF2A7D8F).withValues(alpha: 0.12),
-            shape: BoxShape.circle,
-          ),
-          child: hasInitials
-              ? Center(
-                  child: Text(
-                    initials,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2A7D8F),
-                      height: 1,
-                    ),
-                  ),
-                )
-              // Fallback: no session yet or anonymous user
-              : const Icon(
-                  CupertinoIcons.profile_circled,
-                  color: Color(0xFF5F6368),
-                  size: 39,
-                ),
-        );
-      },
-    );
-  }
-}
+//         return Container(
+//           width: 40,
+//           height: 40,
+//           decoration: BoxDecoration(
+//             color: const Color(0xFF2A7D8F).withValues(alpha: 0.12),
+//             shape: BoxShape.circle,
+//           ),
+//           child: hasInitials
+//               ? Center(
+//                   child: Text(
+//                     initials,
+//                     style: const TextStyle(
+//                       fontSize: 14,
+//                       fontWeight: FontWeight.bold,
+//                       color: Color(0xFF2A7D8F),
+//                       height: 1,
+//                     ),
+//                   ),
+//                 )
+//               // Fallback: no session yet or anonymous user
+//               : const Icon(
+//                   CupertinoIcons.profile_circled,
+//                   color: Color(0xFF5F6368),
+//                   size: 39,
+//                 ),
+//         );
+//       },
+//     );
+//   }
+// }

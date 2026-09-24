@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:navi_sante/features/home/screens/home_screen.dart';
-import 'package:navi_sante/features/hospitals/screens/facilities.dart';
-import 'package:navi_sante/features/pharmacy/screens/pharmacy.dart';
-import 'package:navi_sante/features/profile/screens/profile_screen.dart';
+import 'package:navi_sante/screens/home.dart';
+import 'package:navi_sante/screens/facilities.dart';
+import 'package:navi_sante/screens/pharmacy.dart';
+import 'package:navi_sante/screens/profile.dart';
 import 'package:navi_sante/core/utils/network_banner/connectivity_banner.dart';
 import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
 import 'package:navi_sante/core/performance/fade_indexed_stack.dart';
 import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
-import 'package:navi_sante/features/Scontribute/screen/contribute.dart';
+import 'package:navi_sante/screens/contribute.dart';
 
 // Apps core naviagtion widget (Navigation menu)
 // Main entry point from auth holds all other main screens, using index stack.

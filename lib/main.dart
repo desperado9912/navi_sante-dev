@@ -6,15 +6,15 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'features/hospitals/data/facility_local.dart';
 import 'features/pharmacy/data/medication_local.dart';
-import 'features/profile/controllers/navigation_app_settings.dart';
-import 'features/home/controller/map_cache_manager.dart';
+import 'features/profile/viewmodel/navigation_app.dart';
+import 'features/home/data/map_cache_manager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'app.dart';
-import 'core/utils/onboarding_screen/onboarding_screen.dart';
+import 'screens/onboarding.dart';
 import 'core/utils/language_cubit/language_cubit.dart';
-import 'features/ai_chat/data/ai_chat_local.dart';
+import 'features/ai_chat/models/ai_chat_local.dart';
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();

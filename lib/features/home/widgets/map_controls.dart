@@ -3,9 +3,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:navi_sante/features/ai_chat/screens/ai_chat.dart';
-import '../controller/map_cubit.dart';
-import 'map_info_sheet.dart';
+import 'package:navi_sante/screens/ai_chat.dart';
+import '../viewmodel/map_cubit.dart';
+// import 'map_info_sheet.dart';
+// TODO: RESTORE MAP INFO SHEET
 
 /// A sleek, glassmorphic column of map controls (zoom in, zoom out, center/locate, info etc.).
 class MapControls extends StatelessWidget {
@@ -47,14 +48,14 @@ class MapControls extends StatelessWidget {
               isLoading: false,
               onTap: () => mapCubit.locateUser(requestPermission: true),
             ),
-            const SizedBox(height: 10),
+            // const SizedBox(height: 10),
 
-            //Info button
-            _GlassmorphicButton(
-              icon: CupertinoIcons.info_circle,
-              tooltip: 'map info',
-              onTap: () => _showMapInfoSheet(context),
-            ),
+            // //Info button
+            // _GlassmorphicButton(
+            //   icon: CupertinoIcons.info_circle,
+            //   tooltip: 'map info',
+            //   onTap: () => _showMapInfoSheet(context),
+            // ),
             const SizedBox(height: 40),
 
             // AI Chat Button
@@ -88,20 +89,20 @@ class MapControls extends StatelessWidget {
   }
 }
 
-void _showMapInfoSheet(BuildContext context) {
-  showModalBottomSheet<void>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    barrierColor: kCupertinoModalBarrierColor,
-    isScrollControlled: true,
-    enableDrag: true,
-    sheetAnimationStyle: AnimationStyle(
-      duration: const Duration(milliseconds: 250),
-      reverseDuration: const Duration(milliseconds: 200),
-    ),
-    builder: (_) => const MapInfoSheet(),
-  );
-}
+// void _showMapInfoSheet(BuildContext context) {
+//   showModalBottomSheet<void>(
+//     context: context,
+//     backgroundColor: Colors.transparent,
+//     barrierColor: kCupertinoModalBarrierColor,
+//     isScrollControlled: true,
+//     enableDrag: true,
+//     sheetAnimationStyle: AnimationStyle(
+//       duration: const Duration(milliseconds: 250),
+//       reverseDuration: const Duration(milliseconds: 200),
+//     ),
+//     builder: (_) => const MapInfoSheet(),
+//   );
+// }
 
 /// A highly polished, custom glassmorphic button with built-in micro-animations on tap.
 class _GlassmorphicButton extends StatefulWidget {

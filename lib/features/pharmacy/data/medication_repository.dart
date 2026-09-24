@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import '../controller/pharmacy_model.dart';
+import 'pharmacy_model.dart';
 import 'medication_local.dart';
 import 'medication_remote.dart';
 

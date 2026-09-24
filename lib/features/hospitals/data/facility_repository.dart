@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:collection';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'facility_local.dart';
-import '../controller/facility_model.dart';
+import 'facility_model.dart';
 import 'facility_remote.dart';
 
 // The Controller / Business Logic Layer: It receives user actions/events from the UI (like starting a search or loading details), queries the Repository, and updates the reactive FacilityState with the results (loaded facilities, highlights, search results, recents, etc.) to redraw the UI.
@@ -47,15 +48,30 @@ class FacilityRepository {
   _SearchRequest? _queuedSearch;
   Completer<List<FacilityModel>>? _queuedSearchCompleter;
 
+  final StreamController<List<FacilityModel>> _facilitiesStreamController =
+      StreamController<List<FacilityModel>>.broadcast();
+
+  Stream<List<FacilityModel>> get facilitiesStream =>
+      _facilitiesStreamController.stream;
+
+  RealtimeChannel? _facilitiesRealtimeChannel;
+  Timer? _realtimeDebounce;
+
+  final Set<String> _contributedFacilityIds = {};
+  final Set<String> _checkedFacilityIds = {};
+  bool _contributorCacheLoaded = false;
+
   FacilityRepository({
     required FacilityLocal local,
     required FacilityRemote remote,
   }) : _local = local,
-       _remote = remote;
+       _remote = remote {
+    subscribeToFacilityUpdates();
+  }
 
   /// Returns a Stream that emits cached facilities immediately, then a
-  /// single shared network refresh when the cache is missing or stale.
-  Stream<List<FacilityModel>> getAllFacilities() async* {
+  /// single shared network refresh when the cache is missing, stale, or forced.
+  Stream<List<FacilityModel>> getAllFacilities({bool force = false}) async* {
     final cached = _local.getAllFacilities();
     if (cached.isNotEmpty) yield cached;
 
@@ -69,6 +85,7 @@ class FacilityRepository {
     }
 
     final bool cacheIsFresh =
+        !force &&
         cached.isNotEmpty &&
         _lastAllFacilitiesFetchAt != null &&
         DateTime.now().difference(_lastAllFacilitiesFetchAt!) < _facilitiesTtl;
@@ -77,7 +94,8 @@ class FacilityRepository {
     final future = _fetchAndCacheAllFacilities();
     _inFlightAllFacilities = future;
     try {
-      yield await future;
+      final fresh = await future;
+      yield fresh;
     } catch (error) {
       if (cached.isEmpty) rethrow;
     } finally {
@@ -87,11 +105,72 @@ class FacilityRepository {
     }
   }
 
-  Future<List<FacilityModel>> _fetchAndCacheAllFacilities() async {
+  Future<List<FacilityModel>> _fetchAndCacheAllFacilities({
+    bool broadcast = false,
+  }) async {
     final fresh = await _remote.getAllFacilities();
     await _local.saveAllFacilities(fresh);
     _lastAllFacilitiesFetchAt = DateTime.now();
+    // Only broadcast when called from realtime/search paths — NOT from
+    // getAllFacilities() which already yields via emit.forEach in the bloc.
+    if (broadcast && !_facilitiesStreamController.isClosed) {
+      _facilitiesStreamController.add(fresh);
+    }
     return fresh;
+  }
+
+  /// Forces a fresh network fetch from Supabase, updates local Hive cache,
+  /// and broadcasts the updated facilities list to all active UI subscribers.
+  /// Shares the in-flight future so concurrent callers don't stack network
+  /// calls — critical for preventing realtime event pile-ups.
+  Future<List<FacilityModel>> refreshAllFacilities() async {
+    if (_inFlightAllFacilities != null) {
+      return _inFlightAllFacilities!;
+    }
+    final future = _fetchAndCacheAllFacilities(broadcast: true);
+    _inFlightAllFacilities = future;
+    try {
+      return await future;
+    } finally {
+      if (identical(_inFlightAllFacilities, future)) {
+        _inFlightAllFacilities = null;
+      }
+    }
+  }
+
+  /// Subscribes to realtime updates on health_facilities so newly added or
+  /// updated facilities in the database immediately reflect in the app.
+  void subscribeToFacilityUpdates() {
+    unsubscribeFromFacilityUpdates();
+    try {
+      _facilitiesRealtimeChannel = _remote.supabase
+          .channel('public:health_facilities')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'health_facilities',
+            callback: (payload) {
+              // Debounce: batch DB changes (e.g. multi-row inserts) coalesce
+              // into a single refresh instead of stacking concurrent fetches.
+              _realtimeDebounce?.cancel();
+              _realtimeDebounce = Timer(const Duration(seconds: 2), () {
+                unawaited(refreshAllFacilities());
+              });
+            },
+          )
+          .subscribe();
+    } catch (_) {
+      // Fallback silently if realtime replication is unconfigured
+    }
+  }
+
+  void unsubscribeFromFacilityUpdates() {
+    if (_facilitiesRealtimeChannel != null) {
+      try {
+        _remote.supabase.removeChannel(_facilitiesRealtimeChannel!);
+      } catch (_) {}
+      _facilitiesRealtimeChannel = null;
+    }
   }
 
   /// Returns the [count] closest facilities to the user's position.
@@ -204,6 +283,13 @@ class FacilityRepository {
       final results = await future;
       if (epoch == _searchEpoch) {
         _putSearchCache(request.cacheKey, results);
+      }
+      if (results.isNotEmpty) {
+        await _local.upsertFacilities(results);
+        final all = _local.getAllFacilities();
+        if (!_facilitiesStreamController.isClosed) {
+          _facilitiesStreamController.add(all);
+        }
       }
       return results;
     } finally {
@@ -399,6 +485,54 @@ class FacilityRepository {
 
     _inFlightCatalogRefresh = future;
     return future.whenComplete(() => _inFlightCatalogRefresh = null);
+  }
+
+  // CONTRIBUTOR STATUS CACHING
+  void _ensureContributorCacheLoaded() {
+    if (!_contributorCacheLoaded) {
+      _contributedFacilityIds.addAll(_local.getContributorFacilityIds());
+      _contributorCacheLoaded = true;
+    }
+  }
+
+  /// Instant synchronous check: returns true if the user is already confirmed
+  /// as a contributor in local Hive storage or memory. Zero network call.
+  bool isCurrentUserContributorSync(String facilityId) {
+    _ensureContributorCacheLoaded();
+    return _contributedFacilityIds.contains(facilityId);
+  }
+
+  /// Checks if current user is a credited contributor for this facility.
+  /// Hits local cache first. If not cached, performs one RPC call and caches
+  /// the result locally to eliminate repeated egress calls on future visits.
+  Future<bool> isCurrentUserContributor(String facilityId) async {
+    _ensureContributorCacheLoaded();
+    if (_contributedFacilityIds.contains(facilityId)) {
+      return true;
+    }
+    if (_checkedFacilityIds.contains(facilityId)) {
+      return false;
+    }
+
+    try {
+      final isContributor = await _remote.isCurrentUserContributor(facilityId);
+      _checkedFacilityIds.add(facilityId);
+      if (isContributor) {
+        _contributedFacilityIds.add(facilityId);
+        await _local.saveContributorFacilityIds(_contributedFacilityIds);
+      }
+      return isContributor;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void dispose() {
+    _realtimeDebounce?.cancel();
+    unsubscribeFromFacilityUpdates();
+    if (!_facilitiesStreamController.isClosed) {
+      _facilitiesStreamController.close();
+    }
   }
 }
 

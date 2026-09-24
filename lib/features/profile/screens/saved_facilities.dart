@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 // import 'package:cached_network_image/cached_network_image.dart';
-import 'package:navi_sante/core/performance/memory_leak_tracker.dart';
 import 'package:navi_sante/core/utils/platform_adaptive_app_bar.dart';
 import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../hospitals/controller/facility_bloc.dart';
-import '../../hospitals/controller/facility_model.dart';
+import '../../hospitals/viewmodels/facility_bloc.dart';
+import '../../hospitals/data/facility_model.dart';
 import '../../hospitals/widgets/facility_details_screen.dart';
 
 class SavedFacilities extends StatefulWidget {
@@ -19,7 +18,6 @@ class _SavedFacilitiesState extends State<SavedFacilities> {
   @override
   void initState() {
     super.initState();
-    MemoryLeakTracker.logInit(this);
 
     final bloc = context.read<FacilityBloc>();
     if (!bloc.state.hasFacilities) {
@@ -30,7 +28,6 @@ class _SavedFacilitiesState extends State<SavedFacilities> {
 
   @override
   void dispose() {
-    MemoryLeakTracker.logDispose(this);
     super.dispose();
   }
 

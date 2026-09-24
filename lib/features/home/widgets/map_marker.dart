@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import '../../hospitals/controller/facility_model.dart';
+import '../../hospitals/data/facility_model.dart';
 
 // Custom pin widget rendered on the map for each facility.
 // Used inside flutter_map's Marker.child parameter.
