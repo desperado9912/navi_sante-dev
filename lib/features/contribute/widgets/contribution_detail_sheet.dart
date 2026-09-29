@@ -1,6 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/contribution_ticket.dart';
+import '../Screens/suggest_facility.dart';
+import '../Screens/add_photo.dart';
+import '../Screens/update_facility.dart';
 
 class ContributionDetailSheet extends StatelessWidget {
   final ContributionTicket ticket;
@@ -16,9 +20,34 @@ class ContributionDetailSheet extends StatelessWidget {
     );
   }
 
+  void _navigateToEdit(BuildContext context) {
+    // Close the bottom sheet first
+    Navigator.pop(context);
+
+    Widget screen;
+    switch (ticket.type) {
+      case ContributionType.addPhoto:
+        screen = AddPhotoScreen(editingTicket: ticket);
+        break;
+      case ContributionType.updateFacility:
+        screen = UpdateFacilityScreen(editingTicket: ticket);
+        break;
+      case ContributionType.suggestFacility:
+      case ContributionType.addReview:
+        screen = SuggestFacilityScreen(editingTicket: ticket);
+        break;
+    }
+
+    Navigator.push(
+      context,
+      CupertinoPageRoute(builder: (_) => screen),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
+    final isRejected = ticket.status == ContributionStatus.rejected;
 
     return Container(
       height: mediaQuery.size.height * 0.85,
@@ -46,27 +75,29 @@ class ContributionDetailSheet extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      ticket.id,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF5F6368),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        ticket.id,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF5F6368),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      ticket.facilityName,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
+                      const SizedBox(height: 2),
+                      Text(
+                        ticket.facilityName,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A1A),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close, size: 22),
@@ -283,6 +314,26 @@ class ContributionDetailSheet extends StatelessWidget {
                         ),
                       ),
                     ],
+                  ],
+
+                  // Edit & Resubmit button for rejected tickets
+                  if (isRejected) ...[
+                    const SizedBox(height: 28),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () => _navigateToEdit(context),
+                        icon: const Icon(Icons.edit_outlined, size: 18),
+                        label: const Text('Edit & Resubmit'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFFD93025),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ],
               ),

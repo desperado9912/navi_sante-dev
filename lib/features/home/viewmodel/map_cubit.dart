@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:latlong2/latlong.dart';
-import '../maps/map_service.dart';
+import '../map/map_service.dart';
 
 /// Base state representing the map's current configuration and context.
 /// Handles map functions and states.

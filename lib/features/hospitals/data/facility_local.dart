@@ -137,6 +137,15 @@ class FacilityLocal {
     return detail;
   }
 
+  /// Evicts the cached detail for [facilityId] from both in-memory and Hive
+  /// storage. The next call to [getFacilityDetail] for this facility will
+  /// return `null`, forcing a fresh network fetch via the repository.
+  Future<void> invalidateFacilityDetail(String facilityId) async {
+    _detailCache.remove(facilityId);
+    final box = Hive.box<String>(_detailsBox);
+    await box.delete(facilityId);
+  }
+
   // RECENTLY VIEWED FACILITIES HIVE BOX
   /// Records [facilityId] as the most-recently-viewed facility.
   /// Maintains a capped list of [_maxRecentlyViewed] IDs. If the ID already

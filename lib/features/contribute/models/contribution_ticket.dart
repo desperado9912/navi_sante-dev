@@ -19,7 +19,76 @@ enum ContributionType {
   suggestFacility,
   updateFacility,
   addReview,
-  addPhoto,
+  addPhoto;
+
+  static ContributionType fromString(String? value) {
+    switch (value?.trim().toLowerCase()) {
+      case 'update_facility':
+      case 'updatefacility':
+        return ContributionType.updateFacility;
+      case 'add_photo':
+      case 'addphoto':
+        return ContributionType.addPhoto;
+      case 'add_review':
+      case 'addreview':
+        return ContributionType.addReview;
+      default:
+        return ContributionType.suggestFacility;
+    }
+  }
+
+  String get wireName {
+    switch (this) {
+      case ContributionType.suggestFacility:
+        return 'suggest_facility';
+      case ContributionType.updateFacility:
+        return 'update_facility';
+      case ContributionType.addReview:
+        return 'add_review';
+      case ContributionType.addPhoto:
+        return 'add_photo';
+    }
+  }
+}
+
+/// Keeps the current suggestion RPC compatible while allowing the same ticket
+/// row to describe update and photo workflows until the database adds a
+/// dedicated contribution-type column.
+class ContributionMetadata {
+  static const String marker = '[NAVISANTE_CONTRIBUTION]';
+
+  static String encode({
+    required ContributionType type,
+    required String facilityId,
+    String? description,
+  }) {
+    final body = description?.trim() ?? '';
+    return '$marker type=${type.wireName};facility_id=$facilityId\n$body';
+  }
+
+  static ContributionMetadata? parse(String? raw) {
+    if (raw == null || !raw.startsWith(marker)) return null;
+    final newline = raw.indexOf('\n');
+    final header = newline == -1 ? raw : raw.substring(0, newline);
+    final typeMatch = RegExp(r'type=([^;]+)').firstMatch(header);
+    final facilityMatch = RegExp(r'facility_id=([^;\s]+)').firstMatch(header);
+    if (typeMatch == null || facilityMatch == null) return null;
+    return ContributionMetadata._(
+      type: ContributionType.fromString(typeMatch.group(1)),
+      facilityId: facilityMatch.group(1)!,
+      description: newline == -1 ? null : raw.substring(newline + 1).trim(),
+    );
+  }
+
+  final ContributionType type;
+  final String facilityId;
+  final String? description;
+
+  ContributionMetadata._({
+    required this.type,
+    required this.facilityId,
+    required this.description,
+  });
 }
 
 class ContributionTicket {
@@ -31,6 +100,7 @@ class ContributionTicket {
   final String? rejectionReason;
   final Map<String, dynamic> data;
   final List<String> photoUrls;
+  final String? targetFacilityId;
 
   // Raw fields kept alongside `data` (which only holds display strings) so
   // the suggest-facility form can pre-fill itself exactly when a rejected
@@ -57,6 +127,7 @@ class ContributionTicket {
     this.rejectionReason,
     this.data = const {},
     this.photoUrls = const [],
+    this.targetFacilityId,
     this.facilityType,
     this.city,
     this.address,
@@ -106,9 +177,13 @@ class ContributionTicket {
       }
     }
 
+    final metadata = ContributionMetadata.parse(json['description'] as String?);
+    final displayDescription = metadata?.description ?? json['description'] as String?;
+
     return ContributionTicket(
       id: json['id'] as String,
-      type: ContributionType.suggestFacility,
+      type: metadata?.type ??
+          ContributionType.fromString(json['contribution_type'] as String?),
       facilityName: json['facility_name'] as String? ?? 'Unnamed facility',
       dateText: _formatRelativeDate(createdAt),
       status: ContributionStatus.fromString(json['status'] as String? ?? 'pending'),
@@ -118,8 +193,8 @@ class ContributionTicket {
         'City': json['city'] as String? ?? '',
         'Address': json['address'] as String? ?? '',
         'Phone': json['phone'] as String? ?? '',
-        if ((json['description'] as String?)?.isNotEmpty ?? false)
-          'Description': json['description'] as String,
+        if (displayDescription?.isNotEmpty ?? false)
+          'Description': displayDescription,
         'Work Days': json['work_days'] as String? ?? '',
         if (lat != null && lng != null)
           'Coordinates':
@@ -130,11 +205,14 @@ class ContributionTicket {
         if (infraList.isNotEmpty) 'Infrastructure': infraList,
       },
       photoUrls: photos,
+      targetFacilityId: metadata?.facilityId ??
+          json['created_facility_id'] as String? ??
+          json['target_facility_id'] as String?,
       facilityType: _capitalize(json['facility_type'] as String? ?? ''),
       city: json['city'] as String?,
       address: json['address'] as String?,
       phone: json['phone'] as String?,
-      description: json['description'] as String?,
+      description: displayDescription,
       workDays: json['work_days'] as String?,
       priceRange: _capitalize(json['price_range'] as String? ?? ''),
       rating: (json['rating'] as num?)?.toDouble(),

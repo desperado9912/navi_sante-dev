@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:navi_sante/core/utils/language_cubit/language_cubit.dart';
 import '../viewmodels/facility_bloc.dart';
 import '../data/facility_model.dart';
-import '../../home/maps/map_launcher.dart';
+import '../../home/map/map_launcher.dart';
 
 // =============================================================================
 // facility_grid_card.dart
@@ -67,10 +67,12 @@ class FacilityGridCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // ── Top content group (name + chips) ─────────────────
-                  // Flexible + ClipRect: defensive net — content shrinks
-                  // gracefully on very small screens, never overflows.
+                  // Flexible + SingleChildScrollView: guarantees that on any device
+                  // or font scale, contents fit or clip cleanly without throwing
+                  // RenderFlex overflow errors.
                   Flexible(
-                    child: ClipRect(
+                    child: SingleChildScrollView(
+                      physics: const NeverScrollableScrollPhysics(),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,6 +113,7 @@ class FacilityGridCard extends StatelessWidget {
                             side: const BorderSide(color: Color(0xFF2A7D8F)),
                             padding: const EdgeInsets.symmetric(vertical: 6),
                             minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -367,11 +370,13 @@ class _ServiceChipsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (services.isEmpty) return const SizedBox(height: _chipHeight);
+    if (services.isEmpty) return const SizedBox.shrink();
 
-    return SizedBox(
-      // Cap service chips to exactly 2 lines no matter what the packing algorithm decides.
-      height: (_chipHeight * 2) + _lineGap,
+    return ConstrainedBox(
+      // Cap service chips to at most 2 lines, allowing 1 line if that is all that fits.
+      constraints: const BoxConstraints(
+        maxHeight: (_chipHeight * 2) + _lineGap,
+      ),
       child: ClipRect(
         clipBehavior: Clip.hardEdge,
         child: LayoutBuilder(

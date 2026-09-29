@@ -12,7 +12,7 @@ import '../data/facility_model.dart';
 import '../data/facility_repository.dart';
 import '../../contribute/widgets/contributor_badge.dart';
 
-import '../../home/maps/map_launcher.dart';
+import '../../home/map/map_launcher.dart';
 
 // lib/features/hospitals/screens/facility_detail_screen.dart
 //

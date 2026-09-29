@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/contribution_ticket.dart';
+import '../../hospitals/data/facility_model.dart';
+import '../../hospitals/data/facility_repository.dart';
 
 /// Backend service for the Contributors module.
 ///
@@ -24,12 +26,16 @@ import '../models/contribution_ticket.dart';
 /// directly from the Supabase SQL editor.
 class ContributionBackendService {
   final SupabaseClient _client;
+  final FacilityRepository? _facilityRepository;
   static const String _photosBucket = 'facility_suggestion_photos';
 
   RealtimeChannel? _channel;
 
-  ContributionBackendService({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  ContributionBackendService({
+    SupabaseClient? client,
+    FacilityRepository? facilityRepository,
+  })  : _client = client ?? Supabase.instance.client,
+        _facilityRepository = facilityRepository;
 
   String get _requireUserId {
     final id = _client.auth.currentUser?.id;
@@ -56,6 +62,10 @@ class ContributionBackendService {
   /// public URL).
   Future<ContributionTicket> submitFacilitySuggestion({
     String? ticketId,
+    ContributionType contributionType = ContributionType.suggestFacility,
+    String? targetFacilityId,
+    bool reuseRejectedTicket = true,
+    bool failOnPhotoUpload = false,
     required String facilityName,
     required String facilityType,
     required String city,
@@ -73,14 +83,27 @@ class ContributionBackendService {
   }) async {
     final userId = _requireUserId;
 
-    final photoUrls = await _uploadPhotos(userId, localPhotoPaths);
+    final photoUrls = await _uploadPhotos(
+      userId,
+      localPhotoPaths,
+      failOnUpload: failOnPhotoUpload,
+    );
+    final submittedDescription = contributionType == ContributionType.suggestFacility
+        ? description
+        : ContributionMetadata.encode(
+            type: contributionType,
+            facilityId: targetFacilityId!,
+            description: description,
+          );
 
     final resolvedTicketId = ticketId ??
-        await _findRejectedTicket(
-          userId: userId,
-          facilityName: facilityName,
-          city: city,
-        );
+        (reuseRejectedTicket
+            ? await _findRejectedTicket(
+                userId: userId,
+                facilityName: facilityName,
+                city: city,
+              )
+            : null);
 
     final dynamic response;
     if (resolvedTicketId != null) {
@@ -91,7 +114,7 @@ class ContributionBackendService {
         'p_city': city,
         'p_address': address,
         'p_phone': phone,
-        'p_description': description,
+        'p_description': submittedDescription,
         'p_work_days': workDays,
         'p_latitude': latitude,
         'p_longitude': longitude,
@@ -108,7 +131,7 @@ class ContributionBackendService {
         'p_city': city,
         'p_address': address,
         'p_phone': phone,
-        'p_description': description,
+        'p_description': submittedDescription,
         'p_work_days': workDays,
         'p_latitude': latitude,
         'p_longitude': longitude,
@@ -126,6 +149,85 @@ class ContributionBackendService {
     return ticket;
   }
 
+  /// Uses the existing facility-suggestion RPC and ticket lifecycle for a
+  /// photo contribution. The selected facility snapshot gives the reviewer
+  /// enough context even though this flow does not create a new facility.
+  Future<ContributionTicket> submitPhotoContribution({
+    String? ticketId,
+    required FacilityDetailModel facility,
+    required List<String> localPhotoPaths,
+  }) {
+    return submitFacilitySuggestion(
+      ticketId: ticketId,
+      contributionType: ContributionType.addPhoto,
+      targetFacilityId: facility.facilityId,
+      reuseRejectedTicket: false,
+      failOnPhotoUpload: true,
+      facilityName: facility.name,
+      facilityType: _facilityTypeLabel(facility.type),
+      city: facility.city ?? 'Yaounde',
+      address: facility.address ?? '',
+      phone: facility.phone ?? '',
+      description: 'Photos submitted for review.',
+      workDays: facility.workHours ?? 'Not specified',
+      latitude: facility.latitude,
+      longitude: facility.longitude,
+      priceRange: facility.priceRange ?? 'Affordable',
+      rating: facility.rating,
+      services: facility.services,
+      infrastructure: facility.tags,
+      localPhotoPaths: localPhotoPaths,
+    );
+  }
+
+  /// Uses the existing suggestion RPC with the complete edited facility
+  /// snapshot. The admin can review the proposed values in the same ticket
+  /// workflow already used for new facilities.
+  Future<ContributionTicket> submitFacilityUpdate({
+    String? ticketId,
+    required FacilityDetailModel facility,
+    required String facilityName,
+    required String facilityType,
+    required String city,
+    required String address,
+    required String phone,
+    required String description,
+    required String workDays,
+    required double latitude,
+    required double longitude,
+    required String priceRange,
+    required double rating,
+    required List<String> services,
+    required List<String> infrastructure,
+    required List<String> localPhotoPaths,
+  }) {
+    return submitFacilitySuggestion(
+      ticketId: ticketId,
+      contributionType: ContributionType.updateFacility,
+      targetFacilityId: facility.facilityId,
+      reuseRejectedTicket: false,
+      facilityName: facilityName,
+      facilityType: facilityType,
+      city: city,
+      address: address,
+      phone: phone,
+      description: description,
+      workDays: workDays,
+      latitude: latitude,
+      longitude: longitude,
+      priceRange: priceRange,
+      rating: rating,
+      services: services,
+      infrastructure: infrastructure,
+      localPhotoPaths: localPhotoPaths,
+    );
+  }
+
+  static String _facilityTypeLabel(FacilityType type) {
+    final value = type.name;
+    return value[0].toUpperCase() + value.substring(1);
+  }
+
   /// Looks for the user's own rejected ticket matching this facility
   /// name + city (case-insensitive), so resubmission reuses the same row.
   Future<String?> _findRejectedTicket({
@@ -135,14 +237,19 @@ class ContributionBackendService {
   }) async {
     final rows = await _client
         .from('facility_suggestions')
-        .select('id')
+        .select('id, description')
         .eq('user_id', userId)
         .eq('status', 'rejected')
         .ilike('facility_name', facilityName.trim())
         .ilike('city', city.trim())
         .limit(1);
-    if ((rows as List).isEmpty) return null;
-    return rows.first['id'] as String;
+    for (final row in rows as List) {
+      final metadata = ContributionMetadata.parse(row['description'] as String?);
+      if (metadata == null || metadata.type == ContributionType.suggestFacility) {
+        return row['id'] as String;
+      }
+    }
+    return null;
   }
 
   /// Uploads every local file path to Storage under the user's own folder
@@ -150,8 +257,9 @@ class ContributionBackendService {
   /// public URLs, preserving order and passing already-hosted URLs through.
   Future<List<String>> _uploadPhotos(
     String userId,
-    List<String> localPhotoPaths,
-  ) async {
+    List<String> localPhotoPaths, {
+    bool failOnUpload = false,
+  }) async {
     final urls = <String>[];
     for (final path in localPhotoPaths) {
       if (path.startsWith('http://') || path.startsWith('https://')) {
@@ -161,6 +269,9 @@ class ContributionBackendService {
       final file = File(path);
       if (!file.existsSync()) {
         debugPrint('Local photo file does not exist: $path');
+        if (failOnUpload) {
+          throw StateError('A selected photo is no longer available.');
+        }
         continue;
       }
       final extension = path.split('.').last.toLowerCase();
@@ -187,6 +298,9 @@ class ContributionBackendService {
         urls.add(_client.storage.from(_photosBucket).getPublicUrl(storagePath));
       } catch (e) {
         debugPrint('Photo upload failed for bucket $_photosBucket, path $storagePath: $e');
+        if (failOnUpload) {
+          throw StateError('A photo could not be uploaded. Please try again.');
+        }
         // Skip the failed photo rather than failing the whole submission.
       }
     }
@@ -211,7 +325,7 @@ class ContributionBackendService {
         .select(
           'id, status, created_at, rejection_reason, facility_name, facility_type, '
           'city, address, phone, description, work_days, price_range, rating, '
-          'services, infrastructure, photo_urls, coordinates',
+          'services, infrastructure, photo_urls, coordinates, created_facility_id',
         )
         .eq('user_id', userId)
         .order('created_at', ascending: false);
@@ -226,9 +340,11 @@ class ContributionBackendService {
   /// Subscribes to realtime changes on the user's own tickets so an admin
   /// approval/rejection (run from the SQL editor) reflects in the app
   /// instantly, with no polling or manual refresh.
-  void subscribeToContributionUpdates() {
+  void subscribeToContributionUpdates({FacilityRepository? facilityRepository}) {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return;
+
+    final repo = facilityRepository ?? _facilityRepository;
 
     unsubscribeFromContributionUpdates();
     _channel = _client
@@ -246,6 +362,14 @@ class ContributionBackendService {
             if (payload.eventType == PostgresChangeEvent.delete) return;
             final ticket = _ticketFromRow(payload.newRecord);
             ContributionTicketsStore.instance.upsertTicket(ticket);
+
+            // Invalidate cached detail if ticket transitioned to approved
+            if (ticket.status == ContributionStatus.approved) {
+              if (ticket.targetFacilityId != null) {
+                repo?.invalidateFacilityDetail(ticket.targetFacilityId!);
+              }
+              repo?.refreshAllFacilities();
+            }
           },
         )
         .subscribe();

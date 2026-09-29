@@ -1,8 +1,45 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-class UpdateFacilityScreen extends StatelessWidget {
-  const UpdateFacilityScreen({super.key});
+import '../models/contribution_ticket.dart';
+import '../widgets/facility_selector.dart';
+import 'suggest_facility.dart';
+import '../../hospitals/data/facility_model.dart';
+
+/// Selects an existing facility, then reuses the complete suggestion form in
+/// update mode with the facility's current values prefilled.
+class UpdateFacilityScreen extends StatefulWidget {
+  final ContributionTicket? editingTicket;
+
+  const UpdateFacilityScreen({super.key, this.editingTicket});
+
+  @override
+  State<UpdateFacilityScreen> createState() => _UpdateFacilityScreenState();
+}
+
+class _UpdateFacilityScreenState extends State<UpdateFacilityScreen> {
+  FacilityDetailModel? _facility;
+
+  void _continueToForm() {
+    final facility = _facility;
+    if (facility == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Select a facility first.')),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      CupertinoPageRoute(
+        builder: (_) => SuggestFacilityScreen(
+          initialFacility: facility,
+          contributionType: ContributionType.updateFacility,
+          editingTicket: widget.editingTicket,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,43 +63,33 @@ class UpdateFacilityScreen extends StatelessWidget {
         centerTitle: true,
       ),
       body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2A7D8F).withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    CupertinoIcons.pencil_ellipsis_rectangle,
-                    color: Color(0xFF2A7D8F),
-                    size: 34,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Update Facility',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1A1A),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Search existing healthcare facilities to correct information or submit verified updates.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Color(0xFF5F6368)),
-                ),
-              ],
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+          children: [
+            const Text(
+              'Choose a facility to update',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
-          ),
+            const SizedBox(height: 8),
+            FacilitySelector(
+              initialFacilityId: widget.editingTicket?.targetFacilityId,
+              onSelected: (facility) => setState(() => _facility = facility),
+              onCleared: () => setState(() => _facility = null),
+            ),
+            const SizedBox(height: 28),
+            FilledButton.icon(
+              onPressed: _continueToForm,
+              icon: const Icon(Icons.edit_note_rounded),
+              label: const Text('Continue to facility information'),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF2A7D8F),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

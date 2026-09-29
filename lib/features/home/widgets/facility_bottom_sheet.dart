@@ -6,7 +6,7 @@ import '../../hospitals/viewmodels/facility_bloc.dart';
 import '../../hospitals/data/facility_model.dart';
 import '../../hospitals/widgets/facility_details_screen.dart';
 import 'package:share_plus/share_plus.dart';
-import '../maps/map_launcher.dart';
+import '../map/map_launcher.dart';
 
 // FACILITY EXPANDED BOTTOM SHEET
 // Shown as a modal bottom sheet when user taps the a facility pin or facility carousel card.

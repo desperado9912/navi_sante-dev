@@ -177,6 +177,13 @@ class _FacilityResults extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (facilities.isEmpty) return const SizedBox.shrink();
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final double childAspectRatio = screenWidth < 360
+        ? 0.58
+        : screenWidth < 390
+            ? 0.60
+            : 0.62;
+
     return Padding(
       padding: const EdgeInsets.only(top: 10, bottom: 6),
       child: GridView.count(
@@ -185,7 +192,7 @@ class _FacilityResults extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 0.62,
+        childAspectRatio: childAspectRatio,
         children: [
           for (final facility in facilities.take(3))
             FacilityGridCard(

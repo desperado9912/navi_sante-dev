@@ -405,6 +405,13 @@ class _ResultsGrid extends StatelessWidget {
           );
         }
 
+        final screenWidth = MediaQuery.sizeOf(context).width;
+        final double childAspectRatio = screenWidth < 360
+            ? 0.58
+            : screenWidth < 390
+                ? 0.60
+                : 0.62;
+
         // ── Section title + grid ────────────────────────────────────────────
         return SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -426,11 +433,11 @@ class _ResultsGrid extends StatelessWidget {
                 ),
               ),
               SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   mainAxisSpacing: 16,
                   crossAxisSpacing: 12,
-                  childAspectRatio: 0.62,
+                  childAspectRatio: childAspectRatio,
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final facility = displayList[index];

@@ -373,6 +373,12 @@ class FacilityRepository {
     }
   }
 
+  /// Evicts the cached detail for [facilityId] so the next
+  /// [getFacilityDetail] call fetches fresh data from the network.
+  /// Called when a contribution affecting this facility is approved.
+  Future<void> invalidateFacilityDetail(String facilityId) =>
+      _local.invalidateFacilityDetail(facilityId);
+
   /// Records a facility as recently viewed (capped at 10 entries).
   /// Called by the BLoC when a user opens a facility detail.
   Future<void> saveRecentlyViewed(String facilityId) =>

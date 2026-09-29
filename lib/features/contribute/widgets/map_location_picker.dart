@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:navi_sante/features/home/maps/map_service.dart';
+import 'package:navi_sante/features/home/map/map_service.dart';
 
 class CompactMapLocationPreview extends StatelessWidget {
   final LatLng selectedLocation;

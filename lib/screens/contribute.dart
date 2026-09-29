@@ -10,6 +10,8 @@ import '../features/contribute/Screens/update_facility.dart';
 // import '../features/contribute/sub_screens/add_review.dart';
 import '../features/contribute/Screens/add_photo.dart';
 import '../features/contribute/viewmodel/contribute_bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../features/hospitals/data/facility_repository.dart';
 
 class ContributeScreen extends StatefulWidget {
   const ContributeScreen({super.key});
@@ -30,7 +32,14 @@ class _ContributeScreenState extends State<ContributeScreen> {
   void initState() {
     super.initState();
     _loadTickets();
-    _backendService.subscribeToContributionUpdates();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _backendService.subscribeToContributionUpdates(
+      facilityRepository: context.read<FacilityRepository>(),
+    );
   }
 
   @override
@@ -542,15 +551,9 @@ class _ContributeScreenState extends State<ContributeScreen> {
   }
 
   Widget _buildTicketCard(ContributionTicket ticket) {
-    final isEditableRejection =
-        ticket.status == ContributionStatus.rejected &&
-        ticket.type == ContributionType.suggestFacility;
-
     return _PressableTicketCard(
       ticket: ticket,
-      onTap: () => isEditableRejection
-          ? _navigateToScreen(SuggestFacilityScreen(editingTicket: ticket))
-          : ContributionDetailSheet.show(context, ticket),
+      onTap: () => ContributionDetailSheet.show(context, ticket),
     );
   }
 }
@@ -805,7 +808,7 @@ class _PressableTicketCardState extends State<_PressableTicketCard> {
                               itemCount: ticket.photoUrls.length > 4
                                   ? 4
                                   : ticket.photoUrls.length,
-                              separatorBuilder: (_, __) =>
+                              separatorBuilder: (_, index) =>
                                   const SizedBox(width: 8),
                               itemBuilder: (context, i) {
                                 final isLast =
@@ -820,7 +823,7 @@ class _PressableTicketCardState extends State<_PressableTicketCard> {
                                         width: 48,
                                         height: 48,
                                         fit: BoxFit.cover,
-                                        placeholder: (_, __) => Container(
+                                        placeholder: (_, url) => Container(
                                           width: 48,
                                           height: 48,
                                           color: const Color(0xFFF0F0F0),
@@ -830,7 +833,7 @@ class _PressableTicketCardState extends State<_PressableTicketCard> {
                                             color: Color(0xFF9CA3AF),
                                           ),
                                         ),
-                                        errorWidget: (_, __, ___) => Container(
+                                        errorWidget: (_, url, error) => Container(
                                           width: 48,
                                           height: 48,
                                           color: const Color(0xFFF0F0F0),

@@ -12,6 +12,7 @@ import '../widgets/map_location_picker.dart';
 import '../widgets/work_days_sheet.dart';
 import '../viewmodel/contribute_bloc.dart';
 import '../../hospitals/data/facility_repository.dart';
+import '../../hospitals/data/facility_model.dart';
 import '../models/contribution_ticket.dart';
 import '../widgets/postgis_utils.dart';
 
@@ -21,7 +22,15 @@ class SuggestFacilityScreen extends StatefulWidget {
   /// Used for the "Edit & resubmit" flow on a rejected ticket.
   ///
   final ContributionTicket? editingTicket;
-  const SuggestFacilityScreen({super.key, this.editingTicket});
+  final FacilityDetailModel? initialFacility;
+  final ContributionType contributionType;
+
+  const SuggestFacilityScreen({
+    super.key,
+    this.editingTicket,
+    this.initialFacility,
+    this.contributionType = ContributionType.suggestFacility,
+  });
 
   @override
   State<SuggestFacilityScreen> createState() => _SuggestFacilityScreenState();
@@ -143,7 +152,11 @@ class _SuggestFacilityScreenState extends State<SuggestFacilityScreen> {
     _infraSearchController.addListener(_onInfraSearchChanged);
 
     final editing = widget.editingTicket;
-    if (editing != null) _prefillFromTicket(editing);
+    if (editing != null) {
+      _prefillFromTicket(editing);
+    } else if (widget.initialFacility != null) {
+      _prefillFromFacility(widget.initialFacility!);
+    }
 
     _loadCatalog();
   }
@@ -181,6 +194,30 @@ class _SuggestFacilityScreenState extends State<SuggestFacilityScreen> {
     _selectedServices.addAll(ticket.services);
     _selectedInfrastructure.addAll(ticket.infrastructure);
     _selectedPhotos.addAll(ticket.photoUrls);
+  }
+
+  void _prefillFromFacility(FacilityDetailModel facility) {
+    _nameController.text = facility.name;
+    _addressController.text = facility.address ?? '';
+    _phoneController.text = facility.phone ?? '';
+    _descriptionController.text = facility.description ?? '';
+    _ratingController.text = facility.rating.toStringAsFixed(1);
+    _selectedType = _types.firstWhere(
+      (type) => type.toLowerCase() == facility.type.name.toLowerCase(),
+      orElse: () => 'Hospital',
+    );
+    _selectedCity = _cities.contains(facility.city) ? facility.city : null;
+    _selectedPriceRange = _priceRanges.firstWhere(
+      (range) => range.toLowerCase() == facility.priceRange?.toLowerCase(),
+      orElse: () => 'Affordable',
+    );
+    _selectedWorkDays = facility.workHours ?? _selectedWorkDays;
+    _selectedCoordinates = LatLng(facility.latitude, facility.longitude);
+    _hasCustomCoordinates = true;
+    _coordinatesController.text =
+        '${facility.latitude.toStringAsFixed(7)}, ${facility.longitude.toStringAsFixed(7)}';
+    _selectedServices.addAll(facility.services);
+    _selectedInfrastructure.addAll(facility.tags);
   }
 
   /// Loads the services/tags catalog through [FacilityRepository], which
@@ -304,6 +341,7 @@ class _SuggestFacilityScreenState extends State<SuggestFacilityScreen> {
   }
 
   bool get _isFormValid {
+    final isUpdate = widget.contributionType == ContributionType.updateFacility;
     return _nameController.text.trim().isNotEmpty &&
         _selectedType != null &&
         _selectedCity != null &&
@@ -311,8 +349,8 @@ class _SuggestFacilityScreenState extends State<SuggestFacilityScreen> {
         _phoneController.text.trim().isNotEmpty &&
         _selectedPriceRange != null &&
         _isRatingValid &&
-        _selectedServices.length >= 3 &&
-        _selectedInfrastructure.length >= 3;
+        (isUpdate || _selectedServices.length >= 3) &&
+        (isUpdate || _selectedInfrastructure.length >= 3);
   }
 
   Future<void> _fetchCurrentLocation() async {
@@ -415,6 +453,11 @@ class _SuggestFacilityScreenState extends State<SuggestFacilityScreen> {
       // resubmits onto that same ticket — see ContributionBackendService).
       await _backendService.submitFacilitySuggestion(
         ticketId: widget.editingTicket?.id,
+        contributionType: widget.contributionType,
+        targetFacilityId: widget.initialFacility?.facilityId ??
+            widget.editingTicket?.targetFacilityId,
+        reuseRejectedTicket: widget.contributionType ==
+            ContributionType.suggestFacility,
         facilityName: _nameController.text.trim(),
         facilityType: _selectedType ?? 'Hospital',
         city: _selectedCity ?? 'Yaoundé',
@@ -457,9 +500,13 @@ class _SuggestFacilityScreenState extends State<SuggestFacilityScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                widget.editingTicket != null
-                    ? 'Suggestion updated! Pending review.'
-                    : 'Facility suggested! Your submission is now pending review.',
+                widget.contributionType == ContributionType.updateFacility
+                    ? (widget.editingTicket != null
+                        ? 'Facility update resubmitted! Pending review.'
+                        : 'Facility update submitted! Pending review.')
+                    : (widget.editingTicket != null
+                        ? 'Suggestion updated! Pending review.'
+                        : 'Facility suggested! Your submission is now pending review.'),
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
@@ -475,6 +522,8 @@ class _SuggestFacilityScreenState extends State<SuggestFacilityScreen> {
   @override
   Widget build(BuildContext context) {
     final isValid = _isFormValid;
+    final isUpdateWorkflow =
+        widget.contributionType == ContributionType.updateFacility;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9F8),
@@ -486,7 +535,11 @@ class _SuggestFacilityScreenState extends State<SuggestFacilityScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.editingTicket != null ? 'Edit suggestion' : 'Suggest facility',
+          widget.contributionType == ContributionType.updateFacility
+              ? 'Update facility'
+              : (widget.editingTicket != null
+                    ? 'Edit suggestion'
+                    : 'Suggest facility'),
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -814,7 +867,9 @@ class _SuggestFacilityScreenState extends State<SuggestFacilityScreen> {
                     controller: _servicesSearchController,
                     hint: 'Health services (At least 3 required*)',
                     prefixIcon: CupertinoIcons.search,
-                    isError: _isAttemptedSubmit && _selectedServices.length < 3,
+                    isError: !isUpdateWorkflow &&
+                        _isAttemptedSubmit &&
+                        _selectedServices.length < 3,
                   ),
  
                   // Suggestion Dropdown popup
@@ -843,7 +898,9 @@ class _SuggestFacilityScreenState extends State<SuggestFacilityScreen> {
                       );
                     }).toList(),
                   ),
-                  if (_isAttemptedSubmit && _selectedServices.length < 3)
+                  if (!isUpdateWorkflow &&
+                      _isAttemptedSubmit &&
+                      _selectedServices.length < 3)
                     const Padding(
                       padding: EdgeInsets.only(top: 6),
                       child: Text(
@@ -870,7 +927,9 @@ class _SuggestFacilityScreenState extends State<SuggestFacilityScreen> {
                     controller: _infraSearchController,
                     hint: '(At least 3 required*)',
                     prefixIcon: CupertinoIcons.search,
-                    isError: _isAttemptedSubmit && _selectedInfrastructure.length < 3,
+                    isError: !isUpdateWorkflow &&
+                        _isAttemptedSubmit &&
+                        _selectedInfrastructure.length < 3,
                   ),
  
                   // Suggestion Dropdown popup
@@ -900,7 +959,9 @@ class _SuggestFacilityScreenState extends State<SuggestFacilityScreen> {
                       );
                     }).toList(),
                   ),
-                  if (_isAttemptedSubmit && _selectedInfrastructure.length < 3)
+                  if (!isUpdateWorkflow &&
+                      _isAttemptedSubmit &&
+                      _selectedInfrastructure.length < 3)
                     const Padding(
                       padding: EdgeInsets.only(top: 6),
                       child: Text(
